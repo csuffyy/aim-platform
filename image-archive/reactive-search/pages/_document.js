@@ -29,7 +29,7 @@ export default class MyDocument extends Document {
             content="width=device-width, initial-scale=1, shrink-to-fit=no"
           />
           <meta name="theme-color" content="#000000" />
-          <title>MovieSearch</title>
+          <title>AIM@SK</title>
 
           <link
             rel="stylesheet"

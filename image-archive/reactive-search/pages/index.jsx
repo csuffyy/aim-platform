@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import {
   ReactiveBase,
+  TagCloud,
   SelectedFilters,
   ResultCard
 } from "@appbaseio/reactivesearch";
@@ -11,8 +12,8 @@ import "./index.css";
 
 const components = {
   settings: {
-    app: "MovieAppFinal",
-    credentials: "RxIAbH9Jc:6d3a5016-5e9d-448f-bd2b-63c80b401484",
+    app: "movie7",
+    url: "http://192.168.136.128:9200/",
     theme: {
       typography: {
         fontFamily:
@@ -34,17 +35,42 @@ const components = {
     showClearAll: true,
     clearAllLabel: "Clear filters"
   },
+  tagCloudDescription: {
+    componentId: "tagCloud",
+    dataField: "descriptions.raw",
+    title: "",
+    size: 200,
+    showCount: true,
+    multiSelect: true,
+    queryFormat: "or",
+    react: {
+      and: [
+        "mainSearch",
+        "results",
+        "gender-list",
+        "bodypart-list",
+        "age-slider",
+        "acquisitiondate-range"
+      ]
+    },
+    showFilter: true,
+    filterLabel: "Description",
+    URLParams: false,
+    loader: "Loading ..."
+  },
+
   resultCard: {
     componentId: "results",
     dataField: "original_title.search",
     react: {
       and: [
         "mainSearch",
-        "RangeSlider",
-        "language-list",
-        "date-filter",
-        "genres-list",
-        "revenue-list"
+        "modality-list",
+        "gender-list",
+        "bodypart-list",
+        "age-slider",
+        "acquisitiondate-range",
+        "tagCloud"
       ]
     },
     pagination: true,
@@ -54,85 +80,107 @@ const components = {
     size: 12,
     Loader: "Loading...",
     noResults: "No results found...",
-    sortOptions: [
-      {
-        dataField: "revenue",
-        sortBy: "desc",
-        label: "Sort by Revenue(High to Low) \u00A0"
-      },
-      {
-        dataField: "popularity",
-        sortBy: "desc",
-        label: "Sort by Popularity(High to Low)\u00A0 \u00A0"
-      },
-      {
-        dataField: "vote_average",
-        sortBy: "desc",
-        label: "Sort by Ratings(High to Low) \u00A0"
-      },
-      {
-        dataField: "original_title.raw",
-        sortBy: "asc",
-        label: "Sort by Title(A-Z) \u00A0"
-      }
-    ],
+    // sortOptions: [
+    //   {
+    //     dataField: "revenue",
+    //     sortBy: "desc",
+    //     label: "Sort by Revenue(High to Low) \u00A0"
+    //   },
+    //   {
+    //     dataField: "popularity",
+    //     sortBy: "desc",
+    //     label: "Sort by Popularity(High to Low)\u00A0 \u00A0"
+    //   },
+    //   {
+    //     dataField: "vote_average",
+    //     sortBy: "desc",
+    //     label: "Sort by Ratings(High to Low) \u00A0"
+    //   },
+    //   {
+    //     dataField: "original_title.raw",
+    //     sortBy: "asc",
+    //     label: "Sort by Title(A-Z) \u00A0"
+    //   }
+    // ],
     onData: res => ({
       description: (
         <div className="main-description">
           <div className="ih-item square effect6 top_to_bottom">
-            <a target="#" href={"http://www.imdb.com/title/" + res.imdb_id}>
+            <a
+              target="#"
+              href={
+                "http://192.168.136.128:8080/index.html?input=http://192.168.136.128:3000/static/dicom/" +
+                res.dicom_filename
+              }
+            >
               <div className="img">
                 <img
-                  src={"https://image.tmdb.org/t/p/w500" + res.poster_path}
+                  src={"static/" + res.thumbnail_filename}
                   alt={res.original_title}
                   className="result-image"
                 />
               </div>
               <div className="info colored">
-                <h3 className="overlay-title">{res.original_title}</h3>
+                <h3 className="overlay-title">
+                  {res.original_title}
+                  <button
+                    type="button"
+                    class="btn btn-dark"
+                    style={{ marginLeft: "100px" }}
+                    onClick={e => AddToCollection(e, res)}
+                  >
+                    <i className="fa fa-plus" />{" "}
+                  </button>
+                </h3>
 
                 <div className="overlay-description">{res.tagline}</div>
 
                 <div className="overlay-info">
                   <div className="rating-time-score-container">
-                    <div className="sub-title Rating-data">
+                    <div className="sub-title Modality-data">
                       <b>
-                        Imdb
-                        <span className="details"> {res.vote_average}/10 </span>
+                        Modality
+                        <span className="details"> {res.Modality} </span>
                       </b>
                     </div>
-                    <div className="time-data">
+                    {/*                    <div className="time-data">
                       <b>
                         <span className="time">
                           <i className="fa fa-clock-o" />{" "}
                         </span>{" "}
                         <span className="details">{res.time_str}</span>
                       </b>
-                    </div>
-                    <div className="sub-title Score-data">
-                      <b>
-                        Score:
-                        <span className="details"> {res.score}</span>
-                      </b>
-                    </div>
-                  </div>
-                  <div className="revenue-lang-container">
-                    <div className="revenue-data">
-                      <b>
-                        <span>Revenue:</span>{" "}
-                        <span className="details"> ${res.or_revenue}</span>{" "}
-                      </b>
-                    </div>
+                    </div>*/}
 
-                    <div className="sub-title language-data">
+                    {Number.isInteger(res.PatientAgeInt) && (
+                      <div className="sub-title Age-data">
+                        <b>
+                          Age:
+                          <span className="details"> {res.PatientAgeInt}</span>
+                        </b>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="revenue-lang-container">
+                    {res.AcquisitionDate && (
+                      <div className="sub-title AcquisitionDate-data">
+                        <b>
+                          Acquisition Date:
+                          <span className="details">
+                            {" "}
+                            {res.AcquisitionDatePretty}
+                          </span>
+                        </b>
+                      </div>
+                    )}
+
+                    {/*<div className="revenue-data">
                       <b>
-                        Language:
-                        <span className="details">
-                          {" "}
-                          {res.original_language}
-                        </span>
+                        <span> </span>{" "}
+                        <span className="details"> &nbsp;{res.or_revenue}</span>{" "}
                       </b>
-                    </div>
+                    </div>*/}
                   </div>
                 </div>
               </div>
@@ -140,7 +188,9 @@ const components = {
           </div>
         </div>
       ),
-      url: "http://www.imdb.com/title/" + res.imdb_id
+      url:
+        "http://192.168.136.128:8080/index.html?input=http://192.168.136.128:3000/static/dicom/" +
+        res.dicom_filename
     }),
     innerClass: {
       title: "result-title",
@@ -154,6 +204,13 @@ const components = {
   }
 };
 
+function AddToCollection(e, res) {
+  console.log(e);
+  console.log(res);
+  e.preventDefault();
+  // CALL API
+}
+
 class Main extends Component {
   constructor(props) {
     super(props);
@@ -165,6 +222,8 @@ class Main extends Component {
   }
 
   handleClick() {
+    console.log("handleClick");
+    console.log(this);
     this.setState({
       isClicked: !this.state.isClicked,
       message: this.state.isClicked ? "🔬 Show Filters" : "🎬 Show Movies"
@@ -219,6 +278,17 @@ class Main extends Component {
             >
               {this.state.message}
             </button>
+          </div>
+
+          <div className="bottom-bar">
+            <div className="filter-heading center">
+              <b>
+                {" "}
+                <i className="fa fa-cloud" /> Tag Cloud{" "}
+              </b>
+            </div>
+
+            <TagCloud {...components.tagCloudDescription} />
           </div>
         </ReactiveBase>
       </div>
