@@ -1,0 +1,19 @@
+{
+  "presets": ["next/babel"],
+  "plugins": [
+    "emotion",
+    "transform-class-properties",
+    "transform-object-rest-spread",
+    "transform-decorators-legacy",
+    [
+      "direct-import",
+      [
+        "@appbaseio/reactivesearch",
+        {
+          "name": "@appbaseio/reactivesearch",
+          "indexFile": "@appbaseio/reactivesearch/lib/index.es.js"
+        }
+      ]
+    ]
+  ]
+}
