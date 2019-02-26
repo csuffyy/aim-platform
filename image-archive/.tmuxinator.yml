@@ -1,0 +1,40 @@
+# sudo apt install tmuxinator
+# place this file in ".tmuxinatior.yml" then from that directory enter the command "mux"
+name: AIM
+root: ~/
+windows:
+  -  DAN: ''
+  -  elastic: 
+      layout: tiled
+      panes:
+        - sudo docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -it docker.elastic.co/elasticsearch/elasticsearch:6.6.0 /bin/bash
+        - curl -H 'Content-Type: application/json' -v http://192.168.136.148:9200/movieappfinal/_search?scroll=5m -d '{"query":{"match_all":{}}}' | jq
+  - dejavu: 
+      layout: tiled
+      panes:
+        - sudo docker run -p 1358:1358 -d appbaseio/dejavu
+        - echo 'http://localhost:1358/'
+  - dwv:
+      root: ~/dwv-jqmobile
+      layout: tiled
+      panes:
+        - yarn run start
+        - echo "http://192.168.136.148:8080/index.html?input=http://192.168.136.148:3000/static/92939506.dcm"
+  - react:
+      root: ~/MovieSearch
+      layout: tiled
+      panes:
+        - npm run dev
+        - echo "http://localhost:3000"
+  - funnel:
+      root: ~/pixel_deidentify
+      layout: tiled
+      panes:
+        - . activate; "#python load_elastic.py"
+        - . activate;
+  - python:
+      root: ~/pixel_deidentify
+      layout: tiled
+      panes:
+        - . activate; python3
+
