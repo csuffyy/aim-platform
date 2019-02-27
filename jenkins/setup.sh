@@ -8,16 +8,25 @@ export OS_USER_DOMAIN_NAME="Default"
 export OS_IDENTITY_API_VERSION=3
 
 
+
+# Create Jenkins VM
 INSTANCE_NAME='AIM-Jenkins'
 FLOATING_IP='172.20.4.43'
-
-# Create VM
 openstack server create --flavor m1.medium --image Ubuntu-Server-18.04-2018Sep19 --security-group pathway-demo_8080 --security-group default --security-group ssh_22 --key-name Daniel-CCM --network test_network $INSTANCE_NAME
+# Wait for instance to get an internal IP before adding a float
+openstack server add floating ip $INSTANCE_NAME $FLOATING_IP
+
+# Create Development VM
+INSTANCE_NAME='AIM-Elastic-Dev'
+FLOATING_IP='172.20.4.85'
+
+openstack server create --flavor plaussenlab-ws --image Ubuntu-Server-18.04-2018Sep19 --security-group 9200 --security-group default --security-group ssh_22 --key-name Daniel-CCM --network test_network $INSTANCE_NAME
 # Wait for instance to get an internal IP before adding a float
 openstack server add floating ip $INSTANCE_NAME $FLOATING_IP
 
 # Login
 ssh -i ~/.ssh/id_rsa_CCM ubuntu@$FLOATING_IP
+ssh -i ~/.ssh/id_rsa_CCM ubuntu@172.20.4.85
 
 # Install
 sudo apt install openjdk-8-jre
@@ -36,3 +45,5 @@ open $FLOATING_IP:8080
 # create admin user:
 # Username: ccm
 # Password: 
+# Optionally Install Blue Ocean plugin
+# http://172.20.4.43:8080/blue/
