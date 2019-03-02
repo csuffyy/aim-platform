@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # HOST_IP=192.168.136.128
+echo 2
 echo $HOST_IP
 ES_PORT=9200
 INDEX_NAME=movie7
