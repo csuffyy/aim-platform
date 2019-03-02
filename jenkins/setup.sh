@@ -47,3 +47,9 @@ open $FLOATING_IP:8080
 # Password: 
 # Optionally Install Blue Ocean plugin
 # http://172.20.4.43:8080/blue/
+
+# Install Docker
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+sudo apt-get update
+sudo apt-get install -y docker-ce
