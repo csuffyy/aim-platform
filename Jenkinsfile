@@ -45,7 +45,9 @@ showChangeLogs()
 // https://plugins.jenkins.io/last-changes
 
 def masterIP = InetAddress.localHost.hostAddress
+def slaveIP = Jenkins.getInstance().getComputer(env['NODE_NAME']).getHostName()
 println "Master located at ${masterIP}"
+println "slave located at ${slaveIP}"
 
 // echo vm.max_map_count=262144 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p    # for Elastic Compute
 // echo fs.inotify.max_user_watches=582222 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p    # for NodeJS to watch more files
