@@ -90,8 +90,8 @@ pipeline {
       }
     }
     stage('DWV') {
-      dir('image-archive/dwv/') {
-        steps {
+      steps {
+        dir('image-archive/dwv/') {
           sh 'yarn install'
           sh 'yarn run start &'
           sh """bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:8080`" != "200" ]]; do echo "trying again"; sleep 5; done; curl localhost:8080; echo "DWV UP"'"""
@@ -99,8 +99,8 @@ pipeline {
       }
     }
     // stage('ReactiveSearch') {
-    //   dir('image-archive/reactive-search/') {
-    //     steps {
+  //     steps {
+      //   dir('image-archive/reactive-search/') {
     //       sh 'npm install'
     //       sh 'npm run dev &'
 
