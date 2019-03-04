@@ -45,9 +45,7 @@ showChangeLogs()
 // https://plugins.jenkins.io/last-changes
 
 def masterIP = InetAddress.localHost.hostAddress
-def slaveIP = InetAddress.localHost.canonicalHostName
 println "Master located at ${masterIP}"
-println "slave located at ${slaveIP}"
 
 // echo vm.max_map_count=262144 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p    # for Elastic Compute
 // echo fs.inotify.max_user_watches=582222 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p    # for NodeJS to watch more files
@@ -62,7 +60,8 @@ pipeline {
   }
   environment {
     CI = 'true'
-    HOST_IP = "${InetAddress.localHost.hostAddress}"
+    MASTER_IP = "${InetAddress.localHost.hostAddress}"
+    HOST_IP = "localhost"
     // BRANCH_NAME2 = "${env.BRANCH_NAME == 'trunk' ? '': env.BRANCH_NAME}"
   }
   stages {
