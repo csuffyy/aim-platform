@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Exit early if docker is already installed
 sudo docker -v && exit 0
 

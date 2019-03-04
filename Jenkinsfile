@@ -71,7 +71,7 @@ pipeline {
     }
     stage('Install Docker') {
       steps {
-        sh "jenkins/install_docker.sh"
+        sh "sudo jenkins/install_docker.sh"
       }
     }
     stage('Setup ElasticSearch') {
