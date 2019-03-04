@@ -110,7 +110,7 @@ pipeline {
     // }
   }
 
-  post {
+  // post {
     // Always runs. And it runs before any of the other post conditions.
     // always {
       // Let's wipe out the workspace before we finish!
@@ -132,7 +132,7 @@ pipeline {
     //        subject: "That build failed!", 
     //        body: "Nothing to see here")
     // }
-  }
+  // }
 
   // The options directive is for configuration that applies to the whole job.
   options {
