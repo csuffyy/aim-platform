@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # HOST_IP=192.168.136.128
-echo 2
+HOST_IP="${HOST_IP:-localhost}"
 echo $HOST_IP
 ES_PORT=9200
 INDEX_NAME=movie7
 
 # Create index
-curl -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ES_PORT/$INDEX_NAME -w "\n" -d  @- << EOF
+curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ES_PORT/$INDEX_NAME -w "\n" -d  @- << EOF
 {
   "mappings": {
     "tweet": {
@@ -121,10 +121,10 @@ curl -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ES_PORT/$INDEX_
 }
 EOF
 
-curl -X POST http://$HOST_IP:$ES_PORT/$INDEX_NAME/_close -w "\n"
+curl -s -X POST http://$HOST_IP:$ES_PORT/$INDEX_NAME/_close -w "\n"
 
 # followed by the actual addition of analyzers with:
-curl -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ES_PORT/$INDEX_NAME/_settings -w "\n" -d  @- << EOF
+curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ES_PORT/$INDEX_NAME/_settings -w "\n" -d  @- << EOF
 {
   "analysis" : {
     "analyzer":{
@@ -176,9 +176,9 @@ curl -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ES_PORT/$INDEX_
 EOF
 
 # followed by opening of the index. It is important to open the index up for any indexing and search operations to occur.
-curl -X POST http://$HOST_IP:$ES_PORT/$INDEX_NAME/_open -w "\n"
+curl -s -X POST http://$HOST_IP:$ES_PORT/$INDEX_NAME/_open -w "\n"
 
-# curl -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ES_PORT/$INDEX_NAME/_mapping/tweet -w "\n" -d  @- << EOF
+# curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ES_PORT/$INDEX_NAME/_mapping/tweet -w "\n" -d  @- << EOF
 # {
 #   "properties": {
 #     "Modality": {
@@ -195,6 +195,6 @@ curl -X POST http://$HOST_IP:$ES_PORT/$INDEX_NAME/_open -w "\n"
 # }
 # EOF
 
-curl -X GET http://$HOST_IP:$ES_PORT/$INDEX_NAME | jq
+curl -s -X GET http://$HOST_IP:$ES_PORT/$INDEX_NAME | jq
 
 

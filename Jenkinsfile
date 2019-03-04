@@ -50,6 +50,7 @@ println "Master located at ${masterIP}"
 // echo vm.max_map_count=262144 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p    # for Elastic Compute
 // echo fs.inotify.max_user_watches=582222 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p    # for NodeJS to watch more files
 
+// sudo apt-get install jq
 
 pipeline {
   agent {
@@ -85,11 +86,11 @@ pipeline {
           // sh 'sudo docker run -p 1358:1358 -d appbaseio/dejavu'
         }
       }
-      post {
-        failure {
-            sh 'sudo docker rm -f elasticsearch'
-        }
-      }
+      // post {
+      //   failure {
+      //       sh 'sudo docker rm -f elasticsearch'
+      //   }
+      // }
     }
     stage('DWV') {
       steps {
