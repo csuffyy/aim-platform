@@ -46,8 +46,6 @@ showChangeLogs()
 
 def masterIP = InetAddress.localHost.hostAddress
 println "Master located at ${masterIP}"
-println currentBuild.rawBuild.changeSets
-
 
 // echo vm.max_map_count=262144 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p    # for Elastic Compute
 // echo fs.inotify.max_user_watches=582222 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p    # for NodeJS to watch more files
@@ -62,8 +60,7 @@ pipeline {
   }
   environment {
     CI = 'true'
-    // HOST_IP = InetAddress.localHost.hostAddress
-    HOST_IP = showChangeLogs()
+    HOST_IP = InetAddress.localHost.hostAddress
   }
   stages {
     stage('Start') {
@@ -71,17 +68,17 @@ pipeline {
         echo "${params.Greeting} World! ${env.HOST_IP}"
       }
     }
-    // stage('Create VM') {
-    //     steps {
-    //         sh 'touch /home/ubuntu/test'
-    //     }
-    // }
-    stage('ElasticSearch') {
+    stage('Install Docker') {
+      steps {
+        sh "jenkins/install_docker.sh"
+      }
+    }
+    stage('Setup ElasticSearch') {
       steps {
         dir('image-archive/elastic-search/') {
           sh 'sudo docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -v `pwd`/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml docker.elastic.co/elasticsearch/elasticsearch:6.6.0'
-          sh """bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:9200`" != "200" ]]; do echo "trying again"; sleep 5; done'"""
-          sh 'docker logs elasticsearch'
+          sh """bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:9200`" != "200" ]]; do echo "trying again"; sleep 5; done; curl localhost:9200; echo "ELASTIC UP"'"""
+          sh 'sudo docker logs elasticsearch'
           sh 'init_elastic.sh'
           // sh 'sudo docker run -p 1358:1358 -d appbaseio/dejavu'
         }
@@ -92,8 +89,57 @@ pipeline {
         }
       }
     }
+    stage('DWV') {
+      dir('image-archive/dwv/') {
+        steps {
+          sh 'yarn install'
+          sh 'yarn run start &'
+          sh """bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:8080`" != "200" ]]; do echo "trying again"; sleep 5; done; curl localhost:8080; echo "DWV UP"'"""
+        }
+      }
+    }
+    // stage('ReactiveSearch') {
+    //   dir('image-archive/reactive-search/') {
+    //     steps {
+    //       sh 'npm install'
+    //       sh 'npm run dev &'
+
+    //     }
+    //   }
+    // }
+  }
+
+  post {
+    // Always runs. And it runs before any of the other post conditions.
+    always {
+      // Let's wipe out the workspace before we finish!
+      // deleteDir()
+    }
+    
+    success {
+      mail(from: "danielsnider12@gmail.com", 
+           to: "danielsnider12@gmail.com", 
+           subject: "That build passed.",
+           body: "Nothing to see here")
+    }
+
+    failure {
+      mail(from: "danielsnider12@gmail.com", 
+           to: "danielsnider12@gmail.com", 
+           subject: "That build failed!", 
+           body: "Nothing to see here")
+    }
+  }
+
+  // The options directive is for configuration that applies to the whole job.
+  options {
+    // For example, we'd like to make sure we only keep 10 builds at a time, so
+    // we don't fill up our storage!
+    buildDiscarder(logRotator(numToKeepStr:'10'))
+    
+    // And we'd really like to be sure that this build doesn't hang forever, so
+    // let's time it out after an hour.
+    timeout(time: 60, unit: 'MINUTES')
   }
 }
-
-
 
