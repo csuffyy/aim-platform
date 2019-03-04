@@ -195,6 +195,8 @@ curl -s -X POST http://$HOST_IP:$ES_PORT/$INDEX_NAME/_open -w "\n"
 # }
 # EOF
 
-curl -s -X GET http://$HOST_IP:$ES_PORT/$INDEX_NAME | jq
+sleep 2
+curl -s -X GET http://$HOST_IP:$ES_PORT/$INDEX_NAME 
+# curl -s -X GET http://$HOST_IP:$ES_PORT/$INDEX_NAME | jq
 
 
