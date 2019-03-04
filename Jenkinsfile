@@ -13,7 +13,7 @@
 // }
 
 
-showChangeLogs()
+
 
 @NonCPS
 def showChangeLogs() {
@@ -32,6 +32,7 @@ def showChangeLogs() {
   }
 }
 
+showChangeLogs()
 
 // @NonCPS
 // def branchForBuild( build ) {
@@ -45,6 +46,7 @@ def showChangeLogs() {
 
 def masterIP = InetAddress.localHost.hostAddress
 println "Master located at ${masterIP}"
+println currentBuild.rawBuild.changeSets
 
 
 // echo vm.max_map_count=262144 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p    # for Elastic Compute
@@ -60,7 +62,8 @@ pipeline {
   }
   environment {
     CI = 'true'
-    HOST_IP = '${InetAddress.localHost.hostAddress}'
+    // HOST_IP = InetAddress.localHost.hostAddress
+    HOST_IP = showChangeLogs()
   }
   stages {
     stage('Start') {
