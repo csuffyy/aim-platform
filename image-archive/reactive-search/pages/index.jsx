@@ -13,7 +13,7 @@ import "./index.css";
 const components = {
   settings: {
     app: "movie7",
-    url: "http://192.168.136.128:9200/",
+    url: "http://localhost:9200/",
     theme: {
       typography: {
         fontFamily:
@@ -109,7 +109,7 @@ const components = {
             <a
               target="#"
               href={
-                "http://192.168.136.128:8080/index.html?input=http://192.168.136.128:3000/static/dicom/" +
+                "http://localhost:8080/index.html?input=http://localhost:3000/static/dicom/" +
                 res.dicom_filename
               }
             >
@@ -189,7 +189,7 @@ const components = {
         </div>
       ),
       url:
-        "http://192.168.136.128:8080/index.html?input=http://192.168.136.128:3000/static/dicom/" +
+        "http://localhost:8080/index.html?input=http://localhost:3000/static/dicom/" +
         res.dicom_filename
     }),
     innerClass: {
