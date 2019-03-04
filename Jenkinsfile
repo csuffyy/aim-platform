@@ -45,7 +45,7 @@ showChangeLogs()
 // https://plugins.jenkins.io/last-changes
 
 def masterIP = InetAddress.localHost.hostAddress
-def slaveIP = Jenkins.getInstance().getComputer(env['NODE_NAME']).getHostName()
+def slaveIP = InetAddress.localHost.canonicalHostName
 println "Master located at ${masterIP}"
 println "slave located at ${slaveIP}"
 
