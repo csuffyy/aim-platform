@@ -60,7 +60,8 @@ pipeline {
   }
   environment {
     CI = 'true'
-    HOST_IP = InetAddress.localHost.hostAddress
+    HOST_IP = "${InetAddress.localHost.hostAddress}"
+    // BRANCH_NAME2 = "${env.BRANCH_NAME == 'trunk' ? '': env.BRANCH_NAME}"
   }
   stages {
     stage('Start') {
