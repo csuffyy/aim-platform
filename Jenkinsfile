@@ -85,7 +85,7 @@ pipeline {
       }
       post {
         failure {
-            sh 'docker rm -f elasticsearch'
+            sh 'sudo docker rm -f elasticsearch'
         }
       }
     }
