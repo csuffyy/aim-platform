@@ -95,11 +95,11 @@ pipeline {
           // sh 'sudo docker run -p 1358:1358 -d appbaseio/dejavu'
         }
       }
-      // post {
-      //   failure {
-      //       sh 'sudo docker rm -f elasticsearch'
-      //   }
-      // }
+      post {
+        failure {
+            sh 'sudo docker rm -f elasticsearch'
+        }
+      }
     }
     stage('DWV') {
       steps {
