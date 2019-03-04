@@ -80,7 +80,7 @@ pipeline {
           sh 'sudo docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -v `pwd`/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml docker.elastic.co/elasticsearch/elasticsearch:6.6.0'
           sh """bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:9200`" != "200" ]]; do echo "trying again"; sleep 5; done; curl localhost:9200; echo "ELASTIC UP"'"""
           sh 'sudo docker logs elasticsearch'
-          sh 'init_elastic.sh'
+          sh './init_elastic.sh'
           // sh 'sudo docker run -p 1358:1358 -d appbaseio/dejavu'
         }
       }
