@@ -1,5 +1,5 @@
 # Exit early if docker is already installed
-docker -v && exit 0
+sudo docker -v && exit 0
 
 # Install docker
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
