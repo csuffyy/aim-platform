@@ -59,7 +59,7 @@ println "Master located at ${masterIP}"
 // echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
 // sudo apt-get update && sudo apt-get install yarn
 
-
+// sudo apt install tmuxinator tmux
 
 pipeline {
   agent {
@@ -85,7 +85,7 @@ pipeline {
         sh "sudo jenkins/install_docker.sh"
       }
     }
-    stage('Setup ElasticSearch') {
+    stage('Install ElasticSearch') {
       steps {
         dir('image-archive/elastic-search/') {
           sh 'sudo docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -v `pwd`/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml docker.elastic.co/elasticsearch/elasticsearch:6.6.0'
@@ -101,7 +101,7 @@ pipeline {
         }
       }
     }
-    stage('DWV') {
+    stage('Install DWV') {
       steps {
         dir('image-archive/dwv/') {
           sh 'yarn install'
@@ -110,9 +110,18 @@ pipeline {
         }
       }
     }
-    stage('ReactiveSearch') {
+    stage('Install ReactiveSearch') {
       steps {
         dir('image-archive/reactive-search/') {
+          sh 'npm install'
+          sh 'npm run dev &'
+          sh """bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:3000`" != "200" ]]; do echo "trying again"; sleep 5; done; curl localhost:3000; echo "ReactiveSearch UP"'"""
+        }
+      }
+    }
+    stage('Start Tmux') {
+      steps {
+        dir('image-archive/') {
           sh 'npm install'
           sh 'npm run dev &'
           sh """bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:3000`" != "200" ]]; do echo "trying again"; sleep 5; done; curl localhost:3000; echo "ReactiveSearch UP"'"""
