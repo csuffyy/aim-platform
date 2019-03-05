@@ -72,6 +72,7 @@ pipeline {
     CI = 'true'
     MASTER_IP = "${InetAddress.localHost.hostAddress}"
     HOST_IP = "localhost"
+    WORKSPACE = pwd()
     // BRANCH_NAME2 = "${env.BRANCH_NAME == 'trunk' ? '': env.BRANCH_NAME}"
   }
   stages {
@@ -130,7 +131,7 @@ pipeline {
     stage('Start Tmux') {
       steps {
         dir('image-archive/') {
-          sh 'mux'
+          sh "tmuxinator"
         }
       }
     }

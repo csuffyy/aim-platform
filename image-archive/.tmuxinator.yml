@@ -5,36 +5,36 @@ windows:
   -  DAN: ''
   -  elastic: 
       layout: tiled
-      root: image-archive/elastic-search
+      root: <%= ENV["WORKSPACE"] %>/elastic-search
       panes:
         - sudo docker logs -f elasticsearch
         - curl -H 'Content-Type: application/json' -v http://192.168.136.148:9200/movieappfinal/_search?scroll=5m -d '{"query":{"match_all":{}}}' | jq
   - dejavu: 
       layout: tiled
-      root: image-archive/elastic-search
+      root: <%= ENV["WORKSPACE"] %>/elastic-search
       panes:
         - echo 'sudo docker run -p 1358:1358 -d appbaseio/dejavu'
         - echo 'http://localhost:1358/'
   - dwv:
-      root: image-archive/dwv
+      root: <%= ENV["WORKSPACE"] %>/dwv
       layout: tiled
       panes:
         - yarn run start
         - echo 'http://192.168.136.148:8080/index.html?input=http://192.168.136.148:3000/static/92939506.dcm'
   - react:
-      root: image-archive/reactive-search
+      root: <%= ENV["WORKSPACE"] %>/reactive-search
       layout: tiled
       panes:
         - npm run dev
         - echo 'http://localhost:3000'
   - funnel:
-      root: image-archive/de-id
+      root: <%= ENV["WORKSPACE"] %>/de-id
       layout: tiled
       panes:
         - . activate; "#python load_elastic.py"
         - . activate;
   - python:
-      root: image-archive/de-id
+      root: <%= ENV["WORKSPACE"] %>/de-id
       layout: tiled
       panes:
         - . activate; python3

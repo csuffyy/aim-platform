@@ -28,7 +28,7 @@ from matplotlib import pyplot as plt
 # matplotlib.use('TkAgg')
 
 index_name = 'movie7'
-input_folder = '/home/dan/MovieSearch/static/dicom'
+input_folder = '/home/dan/MovieSearch/static/dicom' # TODO(Chris): Take path as parameter, so that it can be passed by subjobs.py
 
 
 logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
@@ -37,9 +37,10 @@ logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
 log = logging.getLogger('main')
 log.info('Dater')
 
-es = Elasticsearch()
+es = Elasticsearch() # TODO(Daniel): Connect to remote elastic search
 
 def save_thumbnail_of_dicom(dicom, filepath):
+# def save_thumbnail_of_dicom(dicom, filepath, output_path): # TODO(Chris): Implement new parameter output_path, your home directory is OK.
   # DICOM Metadata
   if not 'pixel_array' in dicom or not 'PatientName' in dicom or not 'PatientID' in dicom:
     img = dicom.pixel_array
