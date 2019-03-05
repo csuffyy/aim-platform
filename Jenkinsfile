@@ -77,20 +77,15 @@ pipeline {
   stages {
     stage('Start') {
       when {
-        sh 'true'
+        expression { // Skip if elasticsearch container already exists
+          sh (
+            script: "docker ps | grep elasticsearch",
+            returnStatus: true
+          ) != 0
+        }
       }
       steps {
         echo "${params.Greeting} World! ${env.HOST_IP}"
-        if (true) {
-          return
-        }
-      }
-    }
-    stage('Nope') {
-      steps {
-        if (true) {
-          return
-        }
       }
     }
     stage('Install Docker') {
