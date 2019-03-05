@@ -130,9 +130,7 @@ pipeline {
     stage('Start Tmux') {
       steps {
         dir('image-archive/') {
-          sh 'npm install'
-          sh 'npm run dev &'
-          sh """bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:3000`" != "200" ]]; do echo "trying again"; sleep 5; done; curl localhost:3000; echo "ReactiveSearch UP"'"""
+          sh 'mux'
         }
       }
     }
