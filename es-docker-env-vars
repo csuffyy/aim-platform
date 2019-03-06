@@ -1,0 +1,2 @@
+ES_JAVA_OPTS="-Xms16g -Xmx16g"
+discovery.type=single-node
