@@ -73,7 +73,7 @@ pipeline {
     MASTER_IP = "${InetAddress.localHost.hostAddress}"
     HOST_IP = "localhost"
     ES_DATA_DIR = '/home/ubuntu/esdata'
-    WORKSPACE = pwd() + '/image-archive/'
+    WORKSPACE = [pwd(), '/image-archive/'].join()
     // BRANCH_NAME2 = "${env.BRANCH_NAME == 'trunk' ? '': env.BRANCH_NAME}"
   }
   stages {
