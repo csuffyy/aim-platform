@@ -76,11 +76,11 @@ pipeline {
     // BRANCH_NAME2 = "${env.BRANCH_NAME == 'trunk' ? '': env.BRANCH_NAME}"
   }
   stages {
-    stage('Start') {
-      steps {
-        echo "${params.Greeting} World! ${env.HOST_IP}"
-      }
-    }
+    // stage('Start') {
+    //   steps {
+    //     echo "${params.Greeting} World! ${env.HOST_IP}"
+    //   }
+    // }
     stage('Stop Tmuxinator') {
       when {
         expression { // Tmuxinator if it is already running
