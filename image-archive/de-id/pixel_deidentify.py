@@ -12,7 +12,6 @@ import pytesseract
 import collections
 import numpy as np
 import pandas as pd
-import seaborn as sns
 
 from IPython import embed
 from fuzzywuzzy import fuzz
