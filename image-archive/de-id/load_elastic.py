@@ -35,21 +35,20 @@ logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
                     datefmt='%H:%M:%S',
                     level=logging.INFO)
 log = logging.getLogger('main')
-log.info('Dater')
 
 es = Elasticsearch() # TODO(Daniel): Connect to remote elastic search
 
 def save_thumbnail_of_dicom(dicom, filepath):
 # def save_thumbnail_of_dicom(dicom, filepath, output_path): # TODO(Chris): Implement new parameter output_path, your home directory is OK.
-  # DICOM Metadata
-  if 'pixel_array' in dicom:
-    if 'TransferSyntaxUID' not in dicom.file_meta:
-      ds.file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian  # 1.2.840.10008.1.2
-    img = dicom.pixel_array
-  else:
-    log.warning('Required data not found in DICOM: %s' % filepath)
+  if 'pixel_array' not in dicom:
+    log.warning('Pixel data not found in DICOM: %s' % filepath)
     # copyfile(filepath, '%s_%s' % (output_path, filepath))
     return
+
+  if 'TransferSyntaxUID' not in dicom.file_meta:
+    ds.file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian  # 1.2.840.10008.1.2
+
+  img = dicom.pixel_array
 
   # Image shape
   if img.shape == 0:
@@ -175,6 +174,9 @@ try:
       dicom_metadata['PatientAgeInt'] = random.randint(1,20)
 
     thumbnail_filepath = save_thumbnail_of_dicom(dicom, filepath)
+    if not thumbnail_filepath:
+      log.warning('Skipping this dicom. Could not generate thumbnail.')
+      continue
 
     dicom_metadata['dicom_filepath'] = filepath
     dicom_metadata['dicom_filename'] = os.path.basename(filepath)
