@@ -128,6 +128,13 @@ pipeline {
         }
       }
     }
+    stage('Load Sample Images') {
+      steps {
+        dir('image-archive/de-id/') {
+          sh 'npm install'
+        }
+      }
+    }
     stage('Start Tmux') {
       steps {
         dir('image-archive/') {
