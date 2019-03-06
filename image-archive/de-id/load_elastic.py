@@ -14,6 +14,7 @@ import glob
 import random
 import pydicom
 import logging
+import traceback
 import numpy as np
 
 from IPython import embed
@@ -48,7 +49,12 @@ def save_thumbnail_of_dicom(dicom, filepath):
   if 'TransferSyntaxUID' not in dicom.file_meta:
     dicom.file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian  # 1.2.840.10008.1.2
 
-  img = dicom.pixel_array
+  try:  
+    img = dicom.pixel_array
+  except Exception as e:
+    traceback.print_exc()
+    print('Skipping this image')
+    return
 
   # Image shape
   if img.shape == 0:
