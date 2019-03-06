@@ -42,7 +42,9 @@ es = Elasticsearch() # TODO(Daniel): Connect to remote elastic search
 def save_thumbnail_of_dicom(dicom, filepath):
 # def save_thumbnail_of_dicom(dicom, filepath, output_path): # TODO(Chris): Implement new parameter output_path, your home directory is OK.
   # DICOM Metadata
-  if not 'pixel_array' in dicom or not 'PatientName' in dicom or not 'PatientID' in dicom:
+  if 'pixel_array' in dicom:
+    if 'TransferSyntaxUID' not in dicom.file_meta:
+      ds.file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian  # 1.2.840.10008.1.2
     img = dicom.pixel_array
   else:
     log.warning('Required data not found in DICOM: %s' % filepath)
