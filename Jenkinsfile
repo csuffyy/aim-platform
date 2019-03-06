@@ -81,6 +81,19 @@ pipeline {
         echo "${params.Greeting} World! ${env.HOST_IP}"
       }
     }
+    stage('Stop Tmuxinator') {
+      when {
+        expression { // Tmuxinator if it is already running
+          sh (
+            script: "tmux ls | grep AIM",
+            returnStatus: true
+          ) == 0
+        }
+      }
+      steps {
+        sh "tmux kill-session -t AIM"
+      }
+    }
     stage('Install Docker') {
       steps {
         sh "sudo jenkins/install_docker.sh"
@@ -131,7 +144,7 @@ pipeline {
     stage('Load Sample Images') {
       steps {
         dir('image-archive/de-id/') {
-          sh 'npm install'
+          sh 'python3.7 load_elastic.py #INPUT_FILES #OUTPUT_FILES #ELASTIC_URL'
         }
       }
     }

@@ -28,7 +28,7 @@ from matplotlib import pyplot as plt
 # matplotlib.use('TkAgg')
 
 index_name = 'movie7'
-input_folder = '/home/dan/MovieSearch/static/dicom' # TODO(Chris): Take path as parameter, so that it can be passed by subjobs.py
+input_folder = '../images/sample-dicom/' # TODO(Chris): Take path as parameter, so that it can be passed by subjobs.py
 
 
 logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
