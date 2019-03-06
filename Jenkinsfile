@@ -45,7 +45,6 @@ showChangeLogs()
 // https://plugins.jenkins.io/last-changes
 
 def masterIP = InetAddress.localHost.hostAddress
-def mydir = [pwd(), '/image-archive/'].join()
 println "Master located at ${masterIP}"
 
 // echo vm.max_map_count=262144 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p    # for Elastic Compute
@@ -74,7 +73,8 @@ pipeline {
     MASTER_IP = "${InetAddress.localHost.hostAddress}"
     HOST_IP = "localhost"
     ES_DATA_DIR = '/home/ubuntu/esdata'
-    WORKSPACE = "${mydir}"
+    PWDD = pwd()
+    WORKSPACE = "${env.PWDD}/image-archive/"
     // BRANCH_NAME2 = "${env.BRANCH_NAME == 'trunk' ? '': env.BRANCH_NAME}"
   }
   stages {
