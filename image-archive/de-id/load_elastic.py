@@ -53,7 +53,7 @@ def save_thumbnail_of_dicom(dicom, filepath):
     img = dicom.pixel_array
   except Exception as e:
     traceback.print_exc()
-    print('Skipping this image')
+    print('Skipping this image because error occured when reading pixel_array')
     return
 
   # Image shape
@@ -61,12 +61,16 @@ def save_thumbnail_of_dicom(dicom, filepath):
     log.warning('Image size is 0: %s' % filepath)
     # copyfile(filepath, '%s_%s' % (output_path, filepath))
     return
+  # Handle greyscale Z stacks
+  if len(img.shape) == 3 and img.shape[0] > 3:
+    img = img[int(img.shape[0]/2),:,:]
+  # Handle rgbd Z stacks
+  if len(img.shape) == 4 and img.shape[0] > 3:
+    img = img[int(img.shape[0]/2),:,:,:]
   if len(img.shape) not in [2,3]:
-    # TODO: Support 3rd physical dimension, z-slices. Assuming dimenions x,y,[color] from here on.
-    log.warning('Image shape is not 2d-grey or rgb: %s' % filepath)
-    # copyfile(filepath, '%s_%s' % (output_path, filepath))
+    log.warning('Image shape is not supported: %s' % filepath)
     return
-
+      
   # Colorspace
   if 'PhotometricInterpretation' in dicom and 'YBR' in dicom.PhotometricInterpretation:
     # Convert from YBR to RGB
