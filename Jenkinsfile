@@ -45,7 +45,6 @@ showChangeLogs()
 // https://plugins.jenkins.io/last-changes
 
 def masterIP = InetAddress.localHost.hostAddress
-def ES_DATA_DIR = '/home/ubuntu/esdata'
 println "Master located at ${masterIP}"
 
 // echo vm.max_map_count=262144 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p    # for Elastic Compute
@@ -73,6 +72,7 @@ pipeline {
     CI = 'true'
     MASTER_IP = "${InetAddress.localHost.hostAddress}"
     HOST_IP = "localhost"
+    ES_DATA_DIR = '/home/ubuntu/esdata'
     WORKSPACE = pwd()
     // BRANCH_NAME2 = "${env.BRANCH_NAME == 'trunk' ? '': env.BRANCH_NAME}"
   }
@@ -111,7 +111,7 @@ pipeline {
       }
       steps {
         dir('image-archive/elastic-search/') {
-          sh 'sudo docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -e ES_JAVA_OPTS="-Xms16g -Xmx16g" -v `pwd`/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml -v ${ES_DATA_DIR}:/usr/share/elasticsearch/data docker.elastic.co/elasticsearch/elasticsearch:6.6.0'
+          sh 'sudo docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -e ES_JAVA_OPTS="-Xms16g -Xmx16g" -v `pwd`/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml -v ${env.ES_DATA_DIR}:/usr/share/elasticsearch/data docker.elastic.co/elasticsearch/elasticsearch:6.6.0'
           sh """bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:9200`" != "200" ]]; do echo "trying again"; sleep 5; done; curl localhost:9200; echo "ELASTIC UP"'"""
           sh 'sudo docker logs elasticsearch'
           sh './init_elastic.sh'
@@ -152,7 +152,7 @@ pipeline {
     stage('Start Tmux') {
       steps {
         dir('image-archive/') {
-          sh "WORKSPACE=${WORKSPACE} tmuxinator WORKSPACE=${WORKSPACE} &"
+          sh "echo $PWD; cd ${WORKSPACE}/image-archive; export WORKSPACE=${WORKSPACE}; tmuxinator &"
         }
       }
     }
