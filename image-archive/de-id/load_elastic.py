@@ -126,7 +126,10 @@ try:
         dicom_metadata[key] = dicom_metadata[key].original_string
       if isinstance(dicom_metadata[key], bytes):
         # Fix for error: TypeError("Unable to serialize b'FOONAME^BARNAM' (type: <class 'bytes'>)")
-        dicom_metadata[key] = dicom_metadata[key].decode("utf-8")
+        try:
+          dicom_metadata[key] = dicom_metadata[key].decode("utf-8")
+        except UnicodeDecodeError as e:
+          pass
       # if key in ['RequestAttributesSequence', 'SequenceOfUltrasoundRegions', 'ProcedureCodeSequence', 'IconImageSequence', 'ReferencedPerformedProcedureStepSequence', 'ReferencedStudySequence', 'RequestedProcedureCodeSequence', 'RadiopharmaceuticalInformationSequence','ReferencedStudySequence', 'ReferencedStudySequence', 'DetectorInformationSequence', 'EnergyWindowInformationSequence', 'PatientGantryRelationshipCodeSequence', 'PatientOrientationCodeSequence', 'RadiopharmaceuticalInformationSequence','ReferencedStudySequence','RequestAttributesSequence', 'SourceImageSequence','CTExposureSequence','ProcedureCodeSequence','ReferencedImageSequence','ReferencedPatientSequence','ReferencedPerformedProcedureStepSequence','ReferencedStudySequence','RequestAttributesSequence','AnatomicRegionSequence']:
       if isinstance(dicom_metadata[key], list):
         if len(dicom_metadata[key])>0 and type(dicom_metadata[key][0]) is pydicom.dataset.Dataset:
