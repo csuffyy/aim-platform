@@ -3,7 +3,6 @@ set -x
 set -e
 
 sudo apt-get install -y python3-tk # for matplotlib
-sudo apt-get install -y python3-opencv
 sudo apt-get install -y python3.7-dev libpython3.7-dev python3-pip
 # sudo pip3 install virtualenv
 # virtualenv -p python3.7 venv
