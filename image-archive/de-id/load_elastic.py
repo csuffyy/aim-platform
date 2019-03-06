@@ -40,10 +40,10 @@ es = Elasticsearch() # TODO(Daniel): Connect to remote elastic search
 
 def save_thumbnail_of_dicom(dicom, filepath):
 # def save_thumbnail_of_dicom(dicom, filepath, output_path): # TODO(Chris): Implement new parameter output_path, your home directory is OK.
-  if 'pixel_array' not in dicom:
-    log.warning('Pixel data not found in DICOM: %s' % filepath)
-    # copyfile(filepath, '%s_%s' % (output_path, filepath))
-    return
+  # if 'pixel_array' not in dicom:
+  #   log.warning('Pixel data not found in DICOM: %s' % filepath)
+  #   # copyfile(filepath, '%s_%s' % (output_path, filepath))
+  #   return
 
   if 'TransferSyntaxUID' not in dicom.file_meta:
     ds.file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian  # 1.2.840.10008.1.2
@@ -161,7 +161,7 @@ try:
       age = int(age.days / 365) # age in years
       dicom_metadata['PatientAgeInt'] = age
     except:
-      log.warning('Didn\'t understand value here')
+      log.warning('Falling back for PatientAge')
     # PatientAgeInt (Method 2: str to int)
     try:
       if 'PatientAge' in dicom_metadata:

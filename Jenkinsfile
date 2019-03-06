@@ -152,7 +152,7 @@ pipeline {
     stage('Start Tmux') {
       steps {
         dir('image-archive/') {
-          sh "tmuxinator &"
+          sh "WORKSPACE=${WORKSPACE} tmuxinator WORKSPACE=${WORKSPACE} &"
         }
       }
     }
