@@ -13,6 +13,7 @@ import "./index.css";
 import getConfig from 'next/config'
 const {publicRuntimeConfig} = getConfig()
 const {PUBLIC_IP} = publicRuntimeConfig
+const {ELASTIC_IP} = publicRuntimeConfig
 const {ELASTIC_INDEX} = publicRuntimeConfig
 
 const components = {
