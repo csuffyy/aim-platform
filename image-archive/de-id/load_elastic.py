@@ -192,7 +192,6 @@ for filepath in glob.iglob('%s/**/*.dcm' % input_folder, recursive=True):
   dicom_metadata.clear()
   dicom_metadata.update(filtered)
 
-  thumbnail_filepath = 
   thumbnail_filepath = save_thumbnail_of_dicom(dicom, filepath, thumbnail_filepath)
   if not thumbnail_filepath:
     log.warning('Skipping this dicom. Could not generate thumbnail.')
