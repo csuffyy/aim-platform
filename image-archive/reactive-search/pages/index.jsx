@@ -10,10 +10,15 @@ import Leftbar from "./Leftbar.js";
 import initReactivesearch from "@appbaseio/reactivesearch/lib/server";
 import "./index.css";
 
+import getConfig from 'next/config'
+const {publicRuntimeConfig} = getConfig()
+const {PUBLIC_IP} = publicRuntimeConfig
+const {ELASTIC_INDEX} = publicRuntimeConfig
+
 const components = {
   settings: {
-    app: "movie7",
-    url: "http://localhost:9200/",
+    app: ELASTIC_INDEX,
+    url: "http://" + PUBLIC_IP + ":9200/",
     theme: {
       typography: {
         fontFamily:
@@ -109,8 +114,10 @@ const components = {
             <a
               target="#"
               href={
-                "http://172.20.4.85:8080/index.html?input=http://172.20.4.85:3000/static/dicom/" +
-                res.dicom_filename
+                "http://" + PUBLIC_IP + 
+                ":8080/index.html?input=http://" + PUBLIC_IP +
+                ":3000/static/dicom/" +
+                res.dicom_filename 
               }
             >
               <div className="img">
@@ -189,8 +196,10 @@ const components = {
         </div>
       ),
       url:
-        "http://172.20.4.85:8080/index.html?input=http://172.20.4.85:3000/static/dicom/" +
-        res.dicom_filename
+        "http://" + PUBLIC_IP + 
+        ":8080/index.html?input=http://" + PUBLIC_IP +
+        ":3000/static/dicom/" +
+        res.dicom_filename 
     }),
     innerClass: {
       title: "result-title",
