@@ -109,13 +109,13 @@ const components = {
             <a
               target="#"
               href={
-                "http://localhost:8080/index.html?input=http://localhost:3000/static/dicom/" +
+                "http://172.20.4.85:8080/index.html?input=http://172.20.4.85:3000/static/dicom/" +
                 res.dicom_filename
               }
             >
               <div className="img">
                 <img
-                  src={"static/" + res.thumbnail_filename}
+                  src={"static/thumbnails" + res.thumbnail_filename}
                   alt={res.original_title}
                   className="result-image"
                 />
@@ -189,7 +189,7 @@ const components = {
         </div>
       ),
       url:
-        "http://localhost:8080/index.html?input=http://localhost:3000/static/dicom/" +
+        "http://172.20.4.85:8080/index.html?input=http://172.20.4.85:3000/static/dicom/" +
         res.dicom_filename
     }),
     innerClass: {

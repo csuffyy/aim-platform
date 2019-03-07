@@ -30,6 +30,7 @@ from matplotlib import pyplot as plt
 
 index_name = 'movie7'
 input_folder = '../images/sample-dicom/' # TODO(Chris): Take path as parameter, so that it can be passed by subjobs.py
+output_path = '../reactive-search/static/thumbnails/' # TODO(Chris): Take path as parameter, so that it can be passed by subjobs.py
 
 
 logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
@@ -109,7 +110,7 @@ def save_thumbnail_of_dicom(dicom, filepath):
   im_resized = np.interp(im_resized, (im_resized.min(), im_resized.max()), (0, 255))
   filename = os.path.basename(filepath)
   thumbnail_filename = '%s.png' % filename
-  thumbnail_filepath = os.path.join('/home/dan/MovieSearch/static', thumbnail_filename)
+  thumbnail_filepath = os.path.join(output_path, thumbnail_filename)
   cv2.imwrite(thumbnail_filepath, im_resized);
   # plt.imshow(im_resized, cmap='gray')
   # plt.show()
@@ -191,7 +192,8 @@ for filepath in glob.iglob('%s/**/*.dcm' % input_folder, recursive=True):
   dicom_metadata.clear()
   dicom_metadata.update(filtered)
 
-  thumbnail_filepath = save_thumbnail_of_dicom(dicom, filepath)
+  thumbnail_filepath = 
+  thumbnail_filepath = save_thumbnail_of_dicom(dicom, filepath, thumbnail_filepath)
   if not thumbnail_filepath:
     log.warning('Skipping this dicom. Could not generate thumbnail.')
     continue
