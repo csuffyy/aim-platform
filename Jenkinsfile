@@ -147,6 +147,7 @@ pipeline {
       steps {
         dir('image-archive/de-id/') {
           sh 'python3 load_elastic.py #INPUT_FILES #OUTPUT_FILES #ELASTIC_URL'
+          sh 'cp ../images/sample-dicom/*.dcm ../reactive-search/static/dicom/'
         }
       }
     }
