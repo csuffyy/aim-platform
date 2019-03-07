@@ -18,7 +18,7 @@ const {ELASTIC_INDEX} = publicRuntimeConfig
 const components = {
   settings: {
     app: ELASTIC_INDEX,
-    url: "http://" + PUBLIC_IP + ":9200/",
+    url: "http://" + ELASTIC_IP + ":9200/",
     theme: {
       typography: {
         fontFamily:
