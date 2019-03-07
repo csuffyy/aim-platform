@@ -1,16 +1,16 @@
-// def changeLogSets = currentBuild.changeSets
-// for (int i = 0; i < changeLogSets.size(); i++) {
-//   def entries = changeLogSets[i].items
-//   for (int j = 0; j < entries.length; j++) {
-//     def entry = entries[j]
-//     def files = new ArrayList(entry.affectedFiles)
-//     for (int k = 0; k < files.size(); k++) {
-//       def file = files[k]
-//       println file.path
-//       println "file.path"
-//     }
-//   }
-// }
+def changeLogSets = currentBuild.changeSets
+for (int i = 0; i < changeLogSets.size(); i++) {
+  def entries = changeLogSets[i].items
+  for (int j = 0; j < entries.length; j++) {
+    def entry = entries[j]
+    def files = new ArrayList(entry.affectedFiles)
+    for (int k = 0; k < files.size(); k++) {
+      def file = files[k]
+      println file.path
+      println "LOGSETZ file.path"
+    }
+  }
+}
 
 
 
@@ -34,18 +34,7 @@ def showChangeLogs() {
 
 showChangeLogs()
 
-// @NonCPS
-// def branchForBuild( build ) {
-//   def scmAction = build?.actions.find { action -> action instanceof jenkins.scm.api.SCMRevisionAction }
-//   println scmAction?.revision?.head?.getName()
-//   return scmAction?.revision?.head?.getName()
-// }
-
-// lastChanges() //will use defaults
-// https://plugins.jenkins.io/last-changes
-
-def masterIP = InetAddress.localHost.hostAddress
-println "Master located at ${masterIP}"
+// SETUP OF JENKINS AGENT WORKER
 
 // echo vm.max_map_count=262144 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p    # for Elastic Compute
 // echo fs.inotify.max_user_watches=582222 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p    # for NodeJS to watch more files
@@ -61,6 +50,10 @@ println "Master located at ${masterIP}"
 
 // sudo apt install tmuxinator tmux
 
+// Install de-id requirements
+
+// Install Jenkins on host
+
 pipeline {
   agent {
     label "development"
@@ -70,19 +63,25 @@ pipeline {
   }
   environment {
     CI = 'true'
-    MASTER_IP = "${InetAddress.localHost.hostAddress}"
-    HOST_IP = "localhost"
-    ES_DATA_DIR = '/home/ubuntu/esdata'
     PWDD = pwd()
     WORKSPACE = "${env.PWDD}/image-archive/"
-    // BRANCH_NAME2 = "${env.BRANCH_NAME == 'trunk' ? '': env.BRANCH_NAME}"
+    ES_DATA_DIR = '/home/ubuntu/esdata'
   }
   stages {
-    // stage('Start') {
-    //   steps {
-    //     echo "${params.Greeting} World! ${env.HOST_IP}"
-    //   }
-    // }
+    stage('Start') {
+      steps {
+        load "jenkins/env-vars-development.groovy"
+        echo "${params.Greeting} World!"
+        echo "PUBILC_IP: ${env.PUBILC_IP}"
+      }
+    }
+    stage('Start2') {
+      steps {
+        echo "${params.Greeting} World!"
+        echo "PUBILC_IP: ${env.PUBILC_IP}"
+      }
+    }
+
     stage('Stop Tmuxinator') {
       when {
         expression { // Tmuxinator if it is already running
@@ -154,7 +153,7 @@ pipeline {
     stage('Start Tmux') {
       steps {
         dir('image-archive/') {
-          sh "echo ${env.WORKSPACE}; echo $PWD; pwd; export WORKSPACE=${env.WORKSPACE}; WORKSPACE=${env.WORKSPACE} tmuxinator &"
+          sh "tmuxinator &"
         }
       }
     }
