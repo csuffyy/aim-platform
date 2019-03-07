@@ -1,0 +1,36 @@
+# sudo apt install tmuxinator
+# tmuxinator --project-config=.tmuxinator.local.yml
+
+name: AIM
+root: ../../
+windows:
+  -  LOCAL: ''
+  -  elastic:
+      root: ../../elastic-search
+      layout: tiled
+      panes:
+        - sudo docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 --env-file `pwd`/es-docker-env-vars -v `pwd`/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml -v /usr/share/elasticsearch/data docker.elastic.co/elasticsearch/elasticsearch:6.6.0 && sleep 15 && ./init_elastic.sh
+        # - sleep 15 && curl -H 'Content-Type: application/json' -v http://192.168.136.148:9200/movieappfinal/_search?scroll=5m -d '{"query":{"match_all":{}}}' | jq
+  - dejavu: 
+      layout: tiled
+      panes:
+        - sudo docker run -p 1358:1358 -d appbaseio/dejavu
+        - echo 'http://localhost:1358/'
+  - dwv:
+      root: ../../dwv/
+      layout: tiled
+      panes:
+        - yarn install && yarn run start
+        # - echo "http://192.168.136.148:8080/index.html?input=http://192.168.136.148:3000/static/92939506.dcm"
+  - react:
+      root: ../../reactive-search/
+      layout: tiled
+      panes:
+        - npm install && npm run dev
+        - echo "http://localhost:3000"
+  - load:
+      root: ../../de-id/
+      layout: tiled
+      panes:
+        - . activate && python3 load_elastic.py
+        - cp ../images/sample-dicom/*.dcm ../reactive-search/static/dicom/

@@ -1,16 +1,15 @@
 #!/bin/bash
 
-# HOST_IP=192.168.136.128
 HOST_IP="${HOST_IP:-localhost}"
-echo $HOST_IP
-ES_PORT=9200
-INDEX_NAME=movie7
+ELASTIC_PORT="${ELASTIC_PORT:-9200}"
+ELASTIC_INDEX="${ELASTIC_INDEX:-image}"
+ELASTIC_DOC_TYPE="${ELASTIC_DOC_TYPE:-image}"
 
 # Create index
-curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ES_PORT/$INDEX_NAME -w "\n" -d  @- << EOF
+curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX -w "\n" -d  @- << EOF
 {
   "mappings": {
-    "tweet": {
+    "$ELASTIC_DOC_TYPE": {
       "properties": {
         "descriptions": {
           "type": "text",
@@ -121,10 +120,10 @@ curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ES_PORT/$IND
 }
 EOF
 
-curl -s -X POST http://$HOST_IP:$ES_PORT/$INDEX_NAME/_close -w "\n"
+curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_close -w "\n"
 
 # followed by the actual addition of analyzers with:
-curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ES_PORT/$INDEX_NAME/_settings -w "\n" -d  @- << EOF
+curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -w "\n" -d  @- << EOF
 {
   "analysis" : {
     "analyzer":{
@@ -176,9 +175,9 @@ curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ES_PORT/$IND
 EOF
 
 # followed by opening of the index. It is important to open the index up for any indexing and search operations to occur.
-curl -s -X POST http://$HOST_IP:$ES_PORT/$INDEX_NAME/_open -w "\n"
+curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
 
-# curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ES_PORT/$INDEX_NAME/_mapping/tweet -w "\n" -d  @- << EOF
+# curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_mapping/$ELASTIC_DOC_TYPE -w "\n" -d  @- << EOF
 # {
 #   "properties": {
 #     "Modality": {
@@ -196,7 +195,7 @@ curl -s -X POST http://$HOST_IP:$ES_PORT/$INDEX_NAME/_open -w "\n"
 # EOF
 
 sleep 2
-curl -s -X GET http://$HOST_IP:$ES_PORT/$INDEX_NAME 
-# curl -s -X GET http://$HOST_IP:$ES_PORT/$INDEX_NAME | jq
+curl -s -X GET http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX 
+# curl -s -X GET http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX | jq
 
 

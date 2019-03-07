@@ -28,7 +28,8 @@ import matplotlib
 from matplotlib import pyplot as plt
 # matplotlib.use('TkAgg')
 
-index_name = 'movie7'
+index_name = os.environ['ELASTIC_INDEX']
+doc_type = os.environ['ELASTIC_DOC_TYPE']
 input_folder = '../images/sample-dicom/' # TODO(Chris): Take path as parameter, so that it can be passed by subjobs.py
 output_path = '../reactive-search/static/thumbnails/' # TODO(Chris): Take path as parameter, so that it can be passed by subjobs.py
 
@@ -203,7 +204,7 @@ for filepath in glob.iglob('%s/**/*.dcm' % input_folder, recursive=True):
   dicom_metadata['thumbnail_filepath'] = thumbnail_filepath
   dicom_metadata['thumbnail_filename'] = os.path.basename(thumbnail_filepath)
   dicom_metadata['original_title'] = 'Dicom'
-  res = es.index(index=index_name, doc_type='tweet', body=dicom_metadata)
+  res = es.index(index=index_name, doc_type=doc_type, body=dicom_metadata)
   print(res['result'])
 
 # Update Index

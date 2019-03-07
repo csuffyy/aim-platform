@@ -15,7 +15,7 @@ pipeline {
     stage('Start') {
       steps {
         showChangeLogs()
-        load "jenkins/env-vars-development.groovy"
+        load "image-archive/environments/development/env.groovy"
         // echo "${params.Greeting} World!"
         echo "PUBILC_IP: ${env.PUBILC_IP}"
       }
@@ -90,7 +90,7 @@ pipeline {
     }
     stage('Start Tmux') {
       steps {
-        dir('image-archive/') {
+        dir('image-archive/environments/development/') {
           sh "tmuxinator &"
         }
       }
