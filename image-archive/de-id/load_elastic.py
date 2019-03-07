@@ -52,8 +52,8 @@ def save_thumbnail_of_dicom(dicom, filepath):
   try:  
     img = dicom.pixel_array
   except Exception as e:
-    traceback.print_exc()
-    print('Skipping this image because error occured when reading pixel_array')
+    print(traceback.format_exc())
+    log.warning('Skipping this image because error occured when reading pixel_array')
     return
 
   # Image shape
@@ -185,6 +185,11 @@ for filepath in glob.iglob('%s/**/*.dcm' % input_folder, recursive=True):
   # DEMO ONLY!!!! Add random age
   if 'PatientAgeInt' not in dicom_metadata:
     dicom_metadata['PatientAgeInt'] = random.randint(1,20)
+
+  # Remove bytes datatype from metadata because it can't be serialized for sending to elasticsearch
+  filtered = {k: v for k, v in dicom_metadata.items() if type(v) is not bytes}
+  dicom_metadata.clear()
+  dicom_metadata.update(filtered)
 
   thumbnail_filepath = save_thumbnail_of_dicom(dicom, filepath)
   if not thumbnail_filepath:
