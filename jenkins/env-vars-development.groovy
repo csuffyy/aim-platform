@@ -1,0 +1,5 @@
+env.PUBILC_IP='172.20.4.85'
+env.ELASTIC_IP='localhost'
+env.ELASTIC_PORT=9200
+env.ELASTIC_INDEX='movie7'
+env.ELASTIC_DOC_TYPE='tweet'
