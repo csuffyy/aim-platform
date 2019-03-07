@@ -115,7 +115,7 @@ const components = {
             >
               <div className="img">
                 <img
-                  src={"static/thumbnails" + res.thumbnail_filename}
+                  src={"static/thumbnails/" + res.thumbnail_filename}
                   alt={res.original_title}
                   className="result-image"
                 />
