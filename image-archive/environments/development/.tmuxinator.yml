@@ -19,13 +19,13 @@ windows:
       root: <%= ENV["WORKSPACE"] %>/dwv
       layout: tiled
       panes:
-        - source ../environments/development/env.sh && yarn run start
+        - yarn run start
         - echo 'http://192.168.136.148:8080/index.html?input=http://192.168.136.148:3000/static/92939506.dcm'
   - react:
       root: <%= ENV["WORKSPACE"] %>/reactive-search
       layout: tiled
       panes:
-        - npm run dev
+        - source ../environments/development/env.sh && npm run dev
         - echo 'http://localhost:3000'
   - funnel:
       root: <%= ENV["WORKSPACE"] %>/de-id
