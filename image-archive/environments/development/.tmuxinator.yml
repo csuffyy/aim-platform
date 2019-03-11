@@ -19,7 +19,7 @@ windows:
       root: <%= ENV["WORKSPACE"] %>/dwv
       layout: tiled
       panes:
-        - yarn run start
+        - source ../environments/development/env.sh && yarn run start
         - echo 'http://192.168.136.148:8080/index.html?input=http://192.168.136.148:3000/static/92939506.dcm'
   - react:
       root: <%= ENV["WORKSPACE"] %>/reactive-search
