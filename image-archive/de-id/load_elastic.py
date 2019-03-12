@@ -19,8 +19,10 @@ import matplotlib
 from matplotlib import pyplot as plt
 # matplotlib.use('TkAgg')
 
-index_name = os.environ['ELASTIC_INDEX']
-doc_type = os.environ['ELASTIC_DOC_TYPE']
+ELASTIC_IP = os.environ['ELASTIC_IP']
+ELASTIC_PORT = os.environ['ELASTIC_PORT']
+INDEX_NAME = os.environ['ELASTIC_INDEX']
+DOC_TYPE = os.environ['ELASTIC_DOC_TYPE']
 input_folder = '../images/sample-dicom/' # TODO(Chris): Take path as parameter, so that it can be passed by subjobs.py
 output_path = '../reactive-search/static/thumbnails/' # TODO(Chris): Take path as parameter, so that it can be passed by subjobs.py
 
@@ -31,7 +33,7 @@ logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
                     # level=logging.DEBUG)
 log = logging.getLogger('main')
 
-es = Elasticsearch() # TODO(Daniel): Connect to remote elastic search
+es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
 
 def save_thumbnail_of_dicom(dicom, filepath):
 # def save_thumbnail_of_dicom(dicom, filepath, output_path): # TODO(Chris): Implement new parameter output_path, your home directory is OK.
@@ -181,8 +183,8 @@ def load_images():
     dicom_metadata['thumbnail_filepath'] = thumbnail_filepath
     dicom_metadata['thumbnail_filename'] = os.path.basename(thumbnail_filepath)
     dicom_metadata['original_title'] = 'Dicom'
-    dicom_metadata['_index'] = index_name
-    dicom_metadata['_type'] = doc_type
+    dicom_metadata['_index'] = INDEX_NAME
+    dicom_metadata['_type'] = DOC_TYPE
     yield dicom_metadata
 
 
@@ -191,9 +193,9 @@ def main():
   res = helpers.bulk(es, load_images())
   log.info('Bulk insert result: %s, %s' % (res[0], res[1]))
   # Update Index
-  es.indices.refresh(index=index_name)
+  es.indices.refresh(index=INDEX_NAME)
   # Print Summary
-  res = es.search(index=index_name, body={"query": {"match_all": {}}})
+  res = es.search(index=INDEX_NAME, body={"query": {"match_all": {}}})
   log.info("Number of Search Hits: %d" % res['hits']['total'])
   log.info('Finished.')
 
