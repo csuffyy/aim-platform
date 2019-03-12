@@ -23,8 +23,8 @@ ELASTIC_IP = os.environ['ELASTIC_IP']
 ELASTIC_PORT = os.environ['ELASTIC_PORT']
 INDEX_NAME = os.environ['ELASTIC_INDEX']
 DOC_TYPE = os.environ['ELASTIC_DOC_TYPE']
-input_folder = '../images/sample-dicom/' # TODO(Chris): Take path as parameter, so that it can be passed by subjobs.py
-output_path = '../reactive-search/static/thumbnails/' # TODO(Chris): Take path as parameter, so that it can be passed by subjobs.py
+input_folder = '../images/sample-dicom/' # TODO(Chris): Rather than an input folder, change this to be a file containing a list of dicom files (created by subjobs.py?)
+output_path = '../reactive-search/static/thumbnails/' # TODO(Chris): Set to "/hpf/largeprojects/diagimage_common/shared/thumbnails" but fist create this folder yourself
 
 
 logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
@@ -36,7 +36,6 @@ log = logging.getLogger('main')
 es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
 
 def save_thumbnail_of_dicom(dicom, filepath):
-# def save_thumbnail_of_dicom(dicom, filepath, output_path): # TODO(Chris): Implement new parameter output_path, your home directory is OK.
   try:
     img = dicom.pixel_array
   except Exception as e:
@@ -61,7 +60,6 @@ def save_thumbnail_of_dicom(dicom, filepath):
   # Colorspace
   if 'PhotometricInterpretation' in dicom and 'YBR' in dicom.PhotometricInterpretation:
     # Convert from YBR to RGB
-    # TODO: Is there a more efficient way?
     image = Image.fromarray(img,'YCbCr')
     image = image.convert('RGB')
     img = np.array(image)
@@ -165,8 +163,8 @@ def load_images():
     except:
       log.warning('Didn\'t understand value: %s = \'%s\'' % ('PatientAge', dicom_metadata['PatientAge']))
     # DEMO ONLY!!!! Add random age
-    if 'PatientAgeInt' not in dicom_metadata:
-      dicom_metadata['PatientAgeInt'] = random.randint(1,20)
+    # if 'PatientAgeInt' not in dicom_metadata:
+    #   dicom_metadata['PatientAgeInt'] = random.randint(1,20)
 
     # Remove bytes datatype from metadata because it can't be serialized for sending to elasticsearch
     filtered = {k: v for k, v in dicom_metadata.items() if type(v) is not bytes}
