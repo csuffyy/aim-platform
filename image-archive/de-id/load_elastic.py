@@ -176,7 +176,7 @@ def load_images():
 
 def main(txt_fn):
   # Bulk load elastic
-  res = helpers.bulk(es, load_images(), chunk_size=1, max_chunk_bytes=10000000, max_retries=3) # 10 MB
+  res = helpers.bulk(es, load_images(), chunk_size=500, max_chunk_bytes=100000000, max_retries=3) # 100 MB
   log.info('Bulk insert result: %s, %s' % (res[0], res[1]))
   # Update Index
   es.indices.refresh(index=INDEX_NAME)
