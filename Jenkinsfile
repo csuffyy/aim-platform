@@ -50,7 +50,7 @@ pipeline {
       steps {
         dir('image-archive/elastic-search/') {
           sh "sudo docker rm -f elasticsearch || true"
-          sh "sudo docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e ES_JAVA_OPTS=${env.ES_JAVA_OPTS} -v `pwd`/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml -v ${env.ES_DATA_DIR}:/usr/share/elasticsearch/data docker.elastic.co/elasticsearch/elasticsearch:6.6.0"
+          sh "start_docker.sh"
           sh """bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:9200`" != "200" ]]; do echo "trying again"; sleep 5; done; curl localhost:9200; echo "ELASTIC UP"'"""
           sh "sudo docker logs elasticsearch"
           sh "./init_elastic.sh"
