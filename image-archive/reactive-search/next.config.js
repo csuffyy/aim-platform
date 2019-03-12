@@ -8,6 +8,7 @@ if (typeof require !== "undefined") {
 module.exports = withCss();
 module.exports.publicRuntimeConfig = {
   PUBLIC_IP: process.env.PUBLIC_IP,
+  ELASTIC_PORT: process.env.ELASTIC_PORT,
   ELASTIC_IP: process.env.ELASTIC_IP,
   ELASTIC_INDEX: process.env.ELASTIC_INDEX
 }

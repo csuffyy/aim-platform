@@ -25,7 +25,7 @@ console.log('ELASTIC_INDEX: ' + ELASTIC_INDEX);
 const components = {
   settings: {
     app: ELASTIC_INDEX,
-    url: "http://" + ELASTIC_IP + ":" ELASTIC_PORT "/",
+    url: "http://" + ELASTIC_IP + ":" + ELASTIC_PORT + "/",
     theme: {
       typography: {
         fontFamily:
