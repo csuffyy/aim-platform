@@ -50,7 +50,7 @@ pipeline {
       steps {
         dir('image-archive/elastic-search/') {
           sh "sudo docker rm -f elasticsearch || true"
-          sh "start_docker.sh"
+          sh "./start_elastic.sh"
           sh """bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:9200`" != "200" ]]; do echo "trying again"; sleep 5; done; curl localhost:9200; echo "ELASTIC UP"'"""
           sh "sudo docker logs elasticsearch"
           sh "./init_elastic.sh"
