@@ -199,7 +199,7 @@ if __name__ == '__main__':
   DOC_TYPE = os.environ['ELASTIC_DOC_TYPE']
 
   # output_path = '/hpf/largeprojects/diagimage_common/shared/thumbnails'
-  output_path = '/home/chuynh/kiddata/jobs/thumbnails'
+  output_path = '/home/chuynh/aim-platform/image-archive/de-id/jobs/thumbnails'
   # Create out directory if it does not exist.
   if not os.path.isdir(output_path):
     os.makedirs(output_path)
