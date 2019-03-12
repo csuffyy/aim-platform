@@ -1,6 +1,6 @@
 #!/bin/python
 
-import os  
+import os 
 import cv2
 import glob
 import random
