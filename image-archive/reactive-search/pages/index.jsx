@@ -16,6 +16,10 @@ const {PUBLIC_IP} = publicRuntimeConfig;
 const {ELASTIC_IP} = publicRuntimeConfig;
 const {ELASTIC_INDEX} = publicRuntimeConfig;
 
+console.log('PUBLIC_IP: ' + PUBLIC_IP);
+console.log('ELASTIC_IP: ' + ELASTIC_IP);
+console.log('ELASTIC_INDEX: ' + ELASTIC_INDEX);
+
 const components = {
   settings: {
     app: ELASTIC_INDEX,

@@ -1,5 +1,5 @@
 env.PUBLIC_IP='172.20.4.85'
-env.ELASTIC_IP='127.0.0.1'
+env.ELASTIC_IP='172.20.4.85'
 env.ELASTIC_PORT=9200
-env.ELASTIC_INDEX='movie7'
-env.ELASTIC_DOC_TYPE='tweet'
+env.ELASTIC_INDEX='image'
+env.ELASTIC_DOC_TYPE='image'
