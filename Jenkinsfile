@@ -9,7 +9,6 @@ pipeline {
     CI = 'true'
     PWDD = pwd()
     WORKSPACE = "${env.PWDD}/image-archive/"
-    ES_DATA_DIR = '/home/ubuntu/esdata'
   }
   stages {
     stage('Start') {
