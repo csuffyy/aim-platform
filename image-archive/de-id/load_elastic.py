@@ -8,6 +8,8 @@ import pydicom
 import logging
 import traceback
 import numpy as np
+import argparse
+import pickle
 
 from IPython import embed
 from elasticsearch import Elasticsearch
@@ -19,21 +21,6 @@ import matplotlib
 from matplotlib import pyplot as plt
 # matplotlib.use('TkAgg')
 
-ELASTIC_IP = os.environ['ELASTIC_IP']
-ELASTIC_PORT = os.environ['ELASTIC_PORT']
-INDEX_NAME = os.environ['ELASTIC_INDEX']
-DOC_TYPE = os.environ['ELASTIC_DOC_TYPE']
-input_folder = '../images/sample-dicom/' # TODO(Chris): Rather than an input folder, change this to be a file containing a list of dicom files (created by subjobs.py?)
-output_path = '../reactive-search/static/thumbnails/' # TODO(Chris): Set to "/hpf/largeprojects/diagimage_common/shared/thumbnails" but fist create this folder yourself
-
-
-logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
-                    datefmt='%H:%M:%S',
-                    level=logging.INFO)
-                    # level=logging.DEBUG)
-log = logging.getLogger('main')
-
-es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
 
 def save_thumbnail_of_dicom(dicom, filepath):
   try:
@@ -94,7 +81,8 @@ def save_thumbnail_of_dicom(dicom, filepath):
 
 
 def load_images():
-  for filepath in glob.iglob('%s/**/*.dcm' % input_folder, recursive=True):
+  for file in files:
+    filepath = mll[file]
     # Load Image
     dicom = pydicom.dcmread(filepath, force=True)
     dicom_metadata = {}
@@ -186,7 +174,7 @@ def load_images():
     yield dicom_metadata
 
 
-def main():
+def main(txt_fn):
   # Bulk load elastic
   res = helpers.bulk(es, load_images())
   log.info('Bulk insert result: %s, %s' % (res[0], res[1]))
@@ -197,5 +185,45 @@ def main():
   log.info("Number of Search Hits: %d" % res['hits']['total'])
   log.info('Finished.')
 
-main()
+
+if __name__ == '__main__':
+  # Set up command line arguments
+  parser = argparse.ArgumentParser(description='Load dicoms to Elastic.')
+  parser.add_argument('txt_fn', help='File containing dicom file names.')
+  args = parser.parse_args()
+  txt_fn = args.txt_fn  # Includes full path
+
+  ELASTIC_IP = os.environ['ELASTIC_IP']
+  ELASTIC_PORT = os.environ['ELASTIC_PORT']
+  INDEX_NAME = os.environ['ELASTIC_INDEX']
+  DOC_TYPE = os.environ['ELASTIC_DOC_TYPE']
+
+  # output_path = '/hpf/largeprojects/diagimage_common/shared/thumbnails'
+  output_path = '/home/chuynh/kiddata/jobs/thumbnails'
+  # Create out directory if it does not exist.
+  if not os.path.isdir(output_path):
+    os.makedirs(output_path)
+
+  logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
+                      datefmt='%H:%M:%S',
+                      level=logging.INFO)
+                      # level=logging.DEBUG)
+  log = logging.getLogger('main')
+
+  es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
+
+  # Just going to add code here for now...
+  # Get the list of dicom files to be scanned
+  with open(txt_fn, 'r') as f:
+    files = f.read().split('\n')
+    del files[-1]  # Remove blank item
+
+  # Get master linking log (do we still need this? maybe not...)
+  fn = txt_fn.split('.')[0]
+  jobdir = os.path.dirname(fn)
+  mll_fn = os.path.join(jobdir, 'mll')
+  with open(mll_fn, 'rb') as h:
+    mll = pickle.load(h)
+
+  main(txt_fn)
 
