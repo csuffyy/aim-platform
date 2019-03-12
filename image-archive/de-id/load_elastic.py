@@ -1,12 +1,4 @@
 #!/bin/python
-# pip3 install elasticsearch
-# docs: https://elasticsearch-py.readthedocs.io/en/master/
-#
-# Tips:
-# curl -H 'Content-Type: application/json' -v http://192.168.136.128:9200/movieappfinal/_search?scroll=5m -d '{"query":{"match_all":{}}}' | jq
-#
-# TODO:
-# - bulk elastic insert, instead of 1 by 1
 
 import os
 import cv2
@@ -18,11 +10,8 @@ import traceback
 import numpy as np
 
 from IPython import embed
-from shutil import copyfile
-from datetime import datetime
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
-
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from datetime import datetime
 
@@ -39,21 +28,14 @@ output_path = '../reactive-search/static/thumbnails/' # TODO(Chris): Take path a
 logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
                     datefmt='%H:%M:%S',
                     level=logging.INFO)
+                    # level=logging.DEBUG)
 log = logging.getLogger('main')
 
 es = Elasticsearch() # TODO(Daniel): Connect to remote elastic search
 
 def save_thumbnail_of_dicom(dicom, filepath):
 # def save_thumbnail_of_dicom(dicom, filepath, output_path): # TODO(Chris): Implement new parameter output_path, your home directory is OK.
-  # if 'pixel_array' not in dicom:
-  #   log.warning('Pixel data not found in DICOM: %s' % filepath)
-  #   # copyfile(filepath, '%s_%s' % (output_path, filepath))
-  #   return
-
-  if 'TransferSyntaxUID' not in dicom.file_meta:
-    dicom.file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian  # 1.2.840.10008.1.2
-
-  try:  
+  try:
     img = dicom.pixel_array
   except Exception as e:
     print(traceback.format_exc())
@@ -63,7 +45,6 @@ def save_thumbnail_of_dicom(dicom, filepath):
   # Image shape
   if img.shape == 0:
     log.warning('Image size is 0: %s' % filepath)
-    # copyfile(filepath, '%s_%s' % (output_path, filepath))
     return
   # Handle greyscale Z stacks
   if len(img.shape) == 3 and img.shape[0] > 3:
@@ -87,15 +68,6 @@ def save_thumbnail_of_dicom(dicom, filepath):
     # More image modes: https://pillow.readthedocs.io/en/3.1.x/handbook/concepts.html#concept-modes
   if 'PhotometricInterpretation' in dicom and 'RGB' in dicom.PhotometricInterpretation:
     img = img[...,::-1]
-
-  # # Convert to greyscale
-  # if len(img.shape) == 3:
-  #   img_orig = img
-  #   image = Image.fromarray(img,'RGB')
-  #   image = image.convert('L')
-  #   img = np.array(image)
-  # else:
-  #   img_orig = img
 
   # Calculate thumnail size while retaining preportions
   max_height = 333
@@ -121,9 +93,6 @@ def save_thumbnail_of_dicom(dicom, filepath):
   return thumbnail_filepath
 
 
-  # try:
-  # Colour image: 96677981.dcm, 88132678.dcm
-  # Looks all white: 86512664.dcm
 def load_images():
   for filepath in glob.iglob('%s/**/*.dcm' % input_folder, recursive=True):
     # Load Image
@@ -131,7 +100,8 @@ def load_images():
     dicom_metadata = {}
     [dicom_metadata.__setitem__(key,dicom.get(key)) for key in dicom.dir() if key not in ['PixelData']]
 
-    log.info('\n\n\n%s' % filepath)
+    log.info('\n\n')
+    log.info('Processing: %s' % filepath)
     for key, value in dicom_metadata.items():
       if hasattr(dicom_metadata[key], '_list'):
         # Fix for error: TypeError("Unable to serialize ['ORIGINAL', 'SECONDARY'] (type: <class 'pydicom.multival.MultiValue'>)")
@@ -145,14 +115,19 @@ def load_images():
           dicom_metadata[key] = dicom_metadata[key].decode("utf-8")
         except UnicodeDecodeError as e:
           pass
-      # if key in ['RequestAttributesSequence', 'SequenceOfUltrasoundRegions', 'ProcedureCodeSequence', 'IconImageSequence', 'ReferencedPerformedProcedureStepSequence', 'ReferencedStudySequence', 'RequestedProcedureCodeSequence', 'RadiopharmaceuticalInformationSequence','ReferencedStudySequence', 'ReferencedStudySequence', 'DetectorInformationSequence', 'EnergyWindowInformationSequence', 'PatientGantryRelationshipCodeSequence', 'PatientOrientationCodeSequence', 'RadiopharmaceuticalInformationSequence','ReferencedStudySequence','RequestAttributesSequence', 'SourceImageSequence','CTExposureSequence','ProcedureCodeSequence','ReferencedImageSequence','ReferencedPatientSequence','ReferencedPerformedProcedureStepSequence','ReferencedStudySequence','RequestAttributesSequence','AnatomicRegionSequence']:
       if isinstance(dicom_metadata[key], list):
         if len(dicom_metadata[key])>0 and type(dicom_metadata[key][0]) is pydicom.dataset.Dataset:
           # Fix for error: TypeError("Unable to serialize 'ProcedureCodeSequence' (type: <class 'pydicom.dataset.Dataset'>)")")
           dicom_metadata[key] = dicom_metadata[key].__str__()
 
-      log.info('%s: %s' % (key, value))
+      log.debug('%s: %s' % (key, value))
 
+    if 'TransferSyntaxUID' not in dicom.file_meta:
+      # Guess a transfer syntax if none is available
+      dicom.file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian  # 1.2.840.10008.1.2
+      dicom.add_new(0x19100e, 'FD', [0,1,0]) # I have no idea what this last vector should actually be
+      dicom[0x19100e].value = 'Assumed TransferSyntaxUID'
+      log.warning('Assumed TransferSyntaxUID')
     # PatientBirthDatePretty
     try:
       if 'PatientBirthDate' in dicom_metadata:
@@ -203,7 +178,6 @@ def load_images():
 
     dicom_metadata['dicom_filepath'] = filepath
     dicom_metadata['dicom_filename'] = os.path.basename(filepath)
-    # dicom_metadata['dicom_url'] = 'http://192.168.136.128:3000/static/dicom/%s' % os.path.basename(filepath)
     dicom_metadata['thumbnail_filepath'] = thumbnail_filepath
     dicom_metadata['thumbnail_filename'] = os.path.basename(thumbnail_filepath)
     dicom_metadata['original_title'] = 'Dicom'
@@ -221,15 +195,7 @@ def main():
   # Print Summary
   res = es.search(index=index_name, body={"query": {"match_all": {}}})
   log.info("Number of Search Hits: %d" % res['hits']['total'])
-  # for hit in res['hits']['hits']:
-  #     print("%(imdb_id)s %(original_title)s" % hit["_source"])
   log.info('Finished.')
 
 main()
-
-# except Exception as e:
-#   import traceback
-#   print(traceback.format_exc())
-#   from IPython import embed
-#   embed() # drop into an IPython session
 
