@@ -230,6 +230,8 @@ if __name__ == '__main__':
 
   t0 = time.time()
   main(txt_fn)
-  
-  print('in {:.2f} seconds.'.format(time.time() - t0))
+
+  elapsed_time = time.time() - t0
+  print('in {:.2f} seconds.'.format(elapsed_time))
+  print('Ingest rate (files/s): {:.2f}'.format(len(files) / elapsed_time))
 
