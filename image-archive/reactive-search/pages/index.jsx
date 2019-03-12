@@ -13,17 +13,19 @@ import "./index.css";
 import getConfig from 'next/config';
 const {publicRuntimeConfig} = getConfig();
 const {PUBLIC_IP} = publicRuntimeConfig;
+const {ELASTIC_PORT} = publicRuntimeConfig;
 const {ELASTIC_IP} = publicRuntimeConfig;
 const {ELASTIC_INDEX} = publicRuntimeConfig;
 
 console.log('PUBLIC_IP: ' + PUBLIC_IP);
+console.log('ELASTIC_PORT: ' + ELASTIC_PORT);
 console.log('ELASTIC_IP: ' + ELASTIC_IP);
 console.log('ELASTIC_INDEX: ' + ELASTIC_INDEX);
 
 const components = {
   settings: {
     app: ELASTIC_INDEX,
-    url: "http://" + ELASTIC_IP + ":9200/",
+    url: "http://" + ELASTIC_IP + ":" ELASTIC_PORT "/",
     theme: {
       typography: {
         fontFamily:
