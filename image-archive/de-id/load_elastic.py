@@ -10,6 +10,7 @@ import traceback
 import numpy as np
 import argparse
 import pickle
+import time
 
 from IPython import embed
 from elasticsearch import Elasticsearch
@@ -225,5 +226,10 @@ if __name__ == '__main__':
   with open(mll_fn, 'rb') as h:
     mll = pickle.load(h)
 
+  print('{} files loaded to Elastic Search '.format(len(files)), end='')
+
+  t0 = time.time()
   main(txt_fn)
+  
+  print('in {:.2f} seconds.'.format(time.time() - t0))
 
