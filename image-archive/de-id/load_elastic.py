@@ -82,8 +82,9 @@ def save_thumbnail_of_dicom(dicom, filepath):
 
 
 def load_images():
-  for file in files:
-    filepath = mll[file]
+  for filepath in files:
+    # filepath = mll[file]
+
     # Load Image
     dicom = pydicom.dcmread(filepath, force=True)
     dicom_metadata = {}
@@ -178,9 +179,11 @@ def load_images():
 if __name__ == '__main__':
   # Set up command line arguments
   parser = argparse.ArgumentParser(description='Load dicoms to Elastic.')
-  parser.add_argument('txt_fn', help='File containing dicom file names.')
+  parser.add_argument('input_filenames', help='File containing dicom file names.')
+  parser.add_argument('output_path', help='File containing dicom file names.')
   args = parser.parse_args()
-  txt_fn = args.txt_fn  # Includes full path
+  input_filenames = args.input_filenames  # Includes full path
+  output_path = args.output_path
 
   ELASTIC_IP = os.environ['ELASTIC_IP']
   ELASTIC_PORT = os.environ['ELASTIC_PORT']
@@ -190,7 +193,7 @@ if __name__ == '__main__':
   DOC_TYPE = os.environ['ELASTIC_DOC_TYPE']
 
   # output_path = '/hpf/largeprojects/diagimage_common/shared/thumbnails'
-  output_path = '/home/chuynh/kiddata/jobs/thumbnails'
+  # output_path = '/home/chuynh/kiddata/jobs/thumbnails'
   # Create out directory if it does not exist.
   if not os.path.isdir(output_path):
     os.makedirs(output_path)
@@ -213,16 +216,16 @@ if __name__ == '__main__':
 
   # Just going to add code here for now...
   # Get the list of dicom files to be scanned
-  with open(txt_fn, 'r') as f:
+  with open(input_filenames, 'r') as f:
     files = f.read().split('\n')
     del files[-1]  # Remove blank item
 
-  # Get master linking log (do we still need this? maybe not...)
-  fn = txt_fn.split('.')[0]
-  jobdir = os.path.dirname(fn)
-  mll_fn = os.path.join(jobdir, 'mll')
-  with open(mll_fn, 'rb') as h:
-    mll = pickle.load(h)
+  # # Get master linking log (do we still need this? maybe not...)
+  # fn = input_filenames.split('.')[0]
+  # jobdir = os.path.dirname(fn)
+  # mll_fn = os.path.join(jobdir, 'mll')
+  # with open(mll_fn, 'rb') as h:
+  #   mll = pickle.load(h)
 
   # Bulk load elastic
   res = helpers.bulk(es, load_images(), chunk_size=500, max_chunk_bytes=100000000, max_retries=3) # 100 MB

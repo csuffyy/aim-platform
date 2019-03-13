@@ -83,7 +83,7 @@ pipeline {
     stage('Load Sample Images') {
       steps {
         dir('image-archive/de-id/') {
-          sh 'python3 load_elastic.py #INPUT_FILES #OUTPUT_FILES #ELASTIC_URL'
+          sh 'python3 load_elastic.py ../images/sample-dicom/image_list.txt ../reactive-search/static/thumbnails/'
           sh 'cp ../images/sample-dicom/*.dcm ../reactive-search/static/dicom/'
         }
       }
