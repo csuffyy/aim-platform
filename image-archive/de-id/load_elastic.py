@@ -11,6 +11,7 @@ import numpy as np
 import argparse
 import pickle
 import elasticsearch.exceptions
+import time
 
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
@@ -185,6 +186,7 @@ if __name__ == '__main__':
   input_filenames = args.input_filenames  # Includes full path
   output_path = args.output_path
 
+
   ELASTIC_IP = os.environ['ELASTIC_IP']
   ELASTIC_PORT = os.environ['ELASTIC_PORT']
   FALLBACK_ELASTIC_IP = os.environ['FALLBACK_ELASTIC_IP']
@@ -227,14 +229,19 @@ if __name__ == '__main__':
   # with open(mll_fn, 'rb') as h:
   #   mll = pickle.load(h)
 
+  t0 = time.time()
+  
   # Bulk load elastic
   res = helpers.bulk(es, load_images(), chunk_size=500, max_chunk_bytes=100000000, max_retries=3) # 100 MB
   log.info('Bulk insert result: %s, %s' % (res[0], res[1]))
+
   # Update Index
   es.indices.refresh(index=INDEX_NAME)
+
   # Print Summary
   res = es.search(index=INDEX_NAME, body={"query": {"match_all": {}}})
   log.info("Number of Search Hits: %d" % res['hits']['total'])
+  elapsed_time = time.time() - t0
+  log.info('{} files loaded to Elastic Search '.format(len(files)) + 'in {:.2f} seconds.'.format(elapsed_time))
+  log.info('Ingest rate (files/s): {:.2f}'.format(len(files) / elapsed_time))
   log.info('Finished.')
-
-
