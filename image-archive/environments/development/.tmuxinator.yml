@@ -1,5 +1,8 @@
 # sudo apt install tmuxinator
 # place this file in ".tmuxinatior.yml" then from that directory enter the command "mux"
+
+# export WORKSPACE=/home/ubuntu/workspace/aim-platform_master/image-archive/
+
 name: AIM
 windows:
   -  DAN: ''

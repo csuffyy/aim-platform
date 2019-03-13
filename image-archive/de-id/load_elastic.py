@@ -10,12 +10,13 @@ import traceback
 import numpy as np
 import argparse
 import pickle
+import elasticsearch.exceptions
 
-from IPython import embed
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from datetime import datetime
+from IPython import embed
 
 import matplotlib
 from matplotlib import pyplot as plt
@@ -174,18 +175,6 @@ def load_images():
     yield dicom_metadata
 
 
-def main(txt_fn):
-  # Bulk load elastic
-  res = helpers.bulk(es, load_images(), chunk_size=500, max_chunk_bytes=100000000, max_retries=3) # 100 MB
-  log.info('Bulk insert result: %s, %s' % (res[0], res[1]))
-  # Update Index
-  es.indices.refresh(index=INDEX_NAME)
-  # Print Summary
-  res = es.search(index=INDEX_NAME, body={"query": {"match_all": {}}})
-  log.info("Number of Search Hits: %d" % res['hits']['total'])
-  log.info('Finished.')
-
-
 if __name__ == '__main__':
   # Set up command line arguments
   parser = argparse.ArgumentParser(description='Load dicoms to Elastic.')
@@ -195,6 +184,8 @@ if __name__ == '__main__':
 
   ELASTIC_IP = os.environ['ELASTIC_IP']
   ELASTIC_PORT = os.environ['ELASTIC_PORT']
+  FALLBACK_ELASTIC_IP = os.environ['FALLBACK_ELASTIC_IP']
+  FALLBACK_ELASTIC_PORT = os.environ['FALLBACK_ELASTIC_PORT']
   INDEX_NAME = os.environ['ELASTIC_INDEX']
   DOC_TYPE = os.environ['ELASTIC_DOC_TYPE']
 
@@ -212,6 +203,14 @@ if __name__ == '__main__':
 
   es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
 
+  # Test ElasticSearch connection and fallback if it fails
+  try:
+    es.indices.refresh(index=INDEX_NAME)
+  except elasticsearch.exceptions.ConnectionError as e:
+    log.warning('Trying Fallback ElasticSearch IP')
+    es = Elasticsearch([{'host': FALLBACK_ELASTIC_IP, 'port': FALLBACK_ELASTIC_PORT}])
+    es.indices.refresh(index=INDEX_NAME)
+
   # Just going to add code here for now...
   # Get the list of dicom files to be scanned
   with open(txt_fn, 'r') as f:
@@ -225,5 +224,14 @@ if __name__ == '__main__':
   with open(mll_fn, 'rb') as h:
     mll = pickle.load(h)
 
-  main(txt_fn)
+  # Bulk load elastic
+  res = helpers.bulk(es, load_images(), chunk_size=500, max_chunk_bytes=100000000, max_retries=3) # 100 MB
+  log.info('Bulk insert result: %s, %s' % (res[0], res[1]))
+  # Update Index
+  es.indices.refresh(index=INDEX_NAME)
+  # Print Summary
+  res = es.search(index=INDEX_NAME, body={"query": {"match_all": {}}})
+  log.info("Number of Search Hits: %d" % res['hits']['total'])
+  log.info('Finished.')
+
 
