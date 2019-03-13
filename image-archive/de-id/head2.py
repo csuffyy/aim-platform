@@ -17,11 +17,11 @@ import pickle
 import time
 
 
-def create_sub_sh(jobdir, ng):
+def create_sub_sh(jobdir, num_groups):
     """Create shell script that will submit the other shell scripts.
     """
     with open(os.path.join(jobdir, 'subjobs.sh'), 'w') as f:
-        for i in range(ng):
+        for i in range(num_groups):
             fn = 'dcmfiles_{:05d}'.format(i)
             fn = os.path.join(jobdir, fn)
             f.write('qsub {}\n'.format(fn))
@@ -57,8 +57,9 @@ def create_job_sh(fn, jobdir):
         f.write("export ELASTIC_DOC_TYPE='image'\n")
         f.write('\n')
         call_this = 'python /home/chuynh/kiddata/load_elastic.py'
-        with_this_arg = ' {}\n'.format(fn + '.txt')
-        f.write(call_this + with_this_arg)
+        input_filenames = ' {}'.format(fn + '.txt')
+        output_thumbnail_path = ' /hpf/largeprojects/diagimage_common/shared/thumbnails\n'
+        f.write(call_this + input_filenames + output_thumbnail_path)
     return
 
 
