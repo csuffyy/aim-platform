@@ -17,6 +17,7 @@ pipeline {
         load "image-archive/environments/development/env.groovy"
         // echo "${params.Greeting} World!"
         echo "PUBILC_IP: ${env.PUBILC_IP}"
+        sh "env"
       }
     }
     stage('Stop Tmuxinator') {
