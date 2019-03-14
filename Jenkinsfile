@@ -92,7 +92,7 @@ pipeline {
     stage('Start Tmux') {
       steps {
         dir('image-archive/environments/development/') {
-          sh "tmuxinator &"
+          sh "export WORKSPACE=${env.WORKSPACE} && nohup tmuxinator &"
         }
       }
     }
