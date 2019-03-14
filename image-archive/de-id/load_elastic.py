@@ -1,4 +1,8 @@
 #!/bin/python
+#
+# Usage:
+# source ../environments/local/env.sh
+# python3 load_elastic.py ../images/sample-dicom/image_list.txt ../reactive-search/static/thumbnails/
 
 import os 
 import cv2
@@ -10,13 +14,14 @@ import traceback
 import numpy as np
 import argparse
 import pickle
+import elasticsearch.exceptions
 import time
 
-from IPython import embed
 from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from datetime import datetime
+from IPython import embed
 
 import matplotlib
 from matplotlib import pyplot as plt
@@ -82,8 +87,9 @@ def save_thumbnail_of_dicom(dicom, filepath):
 
 
 def load_images():
-  for file in files:
-    filepath = mll[file]
+  for filepath in files:
+    # filepath = mll[file]
+
     # Load Image
     dicom = pydicom.dcmread(filepath, force=True)
     dicom_metadata = {}
@@ -165,39 +171,48 @@ def load_images():
       log.warning('Skipping this dicom. Could not generate thumbnail.')
       continue
 
-    dicom_metadata['dicom_filepath'] = filepath
-    dicom_metadata['dicom_filename'] = os.path.basename(filepath)
-    dicom_metadata['thumbnail_filepath'] = thumbnail_filepath
-    dicom_metadata['thumbnail_filename'] = os.path.basename(thumbnail_filepath)
+    # Save Path of DICOM
+    # Example: 172.20.4.85:8000/static/dicom/OT-MONO2-8-hip.dcm-0TO0-771100.dcm
+    dicom_filename = os.path.basename(filepath)
+    dicom_token = FILESERVER_TOKEN
+    if FILESERVER_TOKEN != '': # when using a token, add .dcm to the end of the URL so that DWV will accept the file
+      dicom_token = FILESERVER_TOKEN + '.dcm'
+    dicom_metadata['dicom_filename'] = dicom_filename
+    dicom_metadata['dicom_filepath'] = '{ip}:{port}/{path}/{filename}{token}'.format(ip=FILESERVER_IP, port=FILESERVER_PORT, path=FILESERVER_DICOM_PATH, filename=dicom_filename, token=dicom_token)
+
+    # Save Path of Thumbnail
+    # Example: http://172.20.4.85:8000/static/thumbnails/testplot.png-0TO0-771100
+    thumbnail_filename = os.path.basename(thumbnail_filepath)
+    dicom_metadata['thumbnail_filename'] = thumbnail_filename
+    dicom_metadata['thumbnail_filepath'] = 'http://{ip}:{port}/{path}/{filename}{token}'.format(ip=FILESERVER_IP, port=FILESERVER_PORT, path=FILESERVER_THUMBNAIL_PATH, filename=thumbnail_filename, token=FILESERVER_TOKEN)
+
     dicom_metadata['original_title'] = 'Dicom'
     dicom_metadata['_index'] = INDEX_NAME
     dicom_metadata['_type'] = DOC_TYPE
     yield dicom_metadata
 
 
-def main(txt_fn):
-  # Bulk load elastic
-  res = helpers.bulk(es, load_images(), chunk_size=500, max_chunk_bytes=100000000, max_retries=3) # 100 MB
-  log.info('Bulk insert result: %s, %s' % (res[0], res[1]))
-  # Update Index
-  es.indices.refresh(index=INDEX_NAME)
-  # Print Summary
-  res = es.search(index=INDEX_NAME, body={"query": {"match_all": {}}})
-  log.info("Number of Search Hits: %d" % res['hits']['total'])
-  log.info('Finished.')
-
-
 if __name__ == '__main__':
   # Set up command line arguments
   parser = argparse.ArgumentParser(description='Load dicoms to Elastic.')
-  parser.add_argument('txt_fn', help='File containing dicom file names.')
+  parser.add_argument('input_filenames', help='File containing dicom file names.')
+  parser.add_argument('output_path', help='File containing dicom file names.')
   args = parser.parse_args()
-  txt_fn = args.txt_fn  # Includes full path
+  input_filenames = args.input_filenames  # Includes full path
+  output_path = args.output_path
+
 
   ELASTIC_IP = os.environ['ELASTIC_IP']
   ELASTIC_PORT = os.environ['ELASTIC_PORT']
+  FALLBACK_ELASTIC_IP = os.environ['FALLBACK_ELASTIC_IP']
+  FALLBACK_ELASTIC_PORT = os.environ['FALLBACK_ELASTIC_PORT']
   INDEX_NAME = os.environ['ELASTIC_INDEX']
   DOC_TYPE = os.environ['ELASTIC_DOC_TYPE']
+  FILESERVER_IP = os.environ['FILESERVER_IP']
+  FILESERVER_PORT = os.environ['FILESERVER_PORT']
+  FILESERVER_TOKEN = os.getenv('FILESERVER_TOKEN','')
+  FILESERVER_DICOM_PATH = os.environ['FILESERVER_DICOM_PATH']
+  FILESERVER_THUMBNAIL_PATH = os.environ['FILESERVER_THUMBNAIL_PATH']
 
   # output_path = '/hpf/largeprojects/diagimage_common/shared/thumbnails'
   output_path = '/home/chuynh/aim-platform/image-archive/de-id/jobs/thumbnails'
@@ -213,25 +228,40 @@ if __name__ == '__main__':
 
   es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
 
+  # Test ElasticSearch connection and fallback if it fails
+  try:
+    es.indices.refresh(index=INDEX_NAME)
+  except elasticsearch.exceptions.ConnectionError as e:
+    log.warning('Trying Fallback ElasticSearch IP')
+    es = Elasticsearch([{'host': FALLBACK_ELASTIC_IP, 'port': FALLBACK_ELASTIC_PORT}])
+    es.indices.refresh(index=INDEX_NAME)
+
   # Just going to add code here for now...
   # Get the list of dicom files to be scanned
-  with open(txt_fn, 'r') as f:
+  with open(input_filenames, 'r') as f:
     files = f.read().split('\n')
     del files[-1]  # Remove blank item
 
-  # Get master linking log (do we still need this? maybe not...)
-  fn = txt_fn.split('.')[0]
-  jobdir = os.path.dirname(fn)
-  mll_fn = os.path.join(jobdir, 'mll')
-  with open(mll_fn, 'rb') as h:
-    mll = pickle.load(h)
-
-  print('{} files loaded to Elastic Search '.format(len(files)), end='')
+  # # Get master linking log (do we still need this? maybe not...)
+  # fn = input_filenames.split('.')[0]
+  # jobdir = os.path.dirname(fn)
+  # mll_fn = os.path.join(jobdir, 'mll')
+  # with open(mll_fn, 'rb') as h:
+  #   mll = pickle.load(h)
 
   t0 = time.time()
-  main(txt_fn)
+  
+  # Bulk load elastic
+  res = helpers.bulk(es, load_images(), chunk_size=500, max_chunk_bytes=100000000, max_retries=3) # 100 MB
+  log.info('Bulk insert result: %s, %s' % (res[0], res[1]))
 
+  # Update Index
+  es.indices.refresh(index=INDEX_NAME)
+
+  # Print Summary
+  res = es.search(index=INDEX_NAME, body={"query": {"match_all": {}}})
+  log.info("Number of Search Hits: %d" % res['hits']['total'])
   elapsed_time = time.time() - t0
-  print('in {:.2f} seconds.'.format(elapsed_time))
-  print('Ingest rate (files/s): {:.2f}'.format(len(files) / elapsed_time))
-
+  log.info('{} files loaded to Elastic Search '.format(len(files)) + 'in {:.2f} seconds.'.format(elapsed_time))
+  log.info('Ingest rate (files/s): {:.2f}'.format(len(files) / elapsed_time))
+  log.info('Finished.')

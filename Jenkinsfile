@@ -17,6 +17,7 @@ pipeline {
         load "image-archive/environments/development/env.groovy"
         // echo "${params.Greeting} World!"
         echo "PUBILC_IP: ${env.PUBILC_IP}"
+        sh "env"
       }
     }
     stage('Stop Tmuxinator') {
@@ -83,7 +84,7 @@ pipeline {
     stage('Load Sample Images') {
       steps {
         dir('image-archive/de-id/') {
-          sh 'python3 load_elastic.py #INPUT_FILES #OUTPUT_FILES #ELASTIC_URL'
+          sh 'python3 load_elastic.py ../images/sample-dicom/image_list.txt ../reactive-search/static/thumbnails/'
           sh 'cp ../images/sample-dicom/*.dcm ../reactive-search/static/dicom/'
         }
       }
@@ -91,7 +92,7 @@ pipeline {
     stage('Start Tmux') {
       steps {
         dir('image-archive/environments/development/') {
-          sh "tmuxinator &"
+          sh "export WORKSPACE=${env.WORKSPACE} && nohup tmuxinator &"
         }
       }
     }
@@ -135,6 +136,7 @@ pipeline {
 
 @NonCPS
 def showChangeLogs() {
+  // This has definitely worked
   echo "CHANGEZ"
   def changeLogSets = currentBuild.rawBuild.changeSets
   for (int i = 0; i < changeLogSets.size(); i++) {

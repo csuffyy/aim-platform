@@ -237,22 +237,25 @@ class Leftbar extends Component {
 
         <hr className="blue" />
 
+        {/*
         <div className="filter-heading center">
           <b>
             <i className="fa fa-address-card" /> Patient Age
           </b>
         </div>
 
-        {/*<div>
+
+        <div>
            <input type="checkbox" onChange={ this.handleChecked }/>
            <p>This box is {show_rangeSliderAge}</p>
         </div>
         {show_rangeSliderAge === 'checked' &&
           <RangeSlider {...components.rangeSliderAge} />
-        }*/}
+        }
         <RangeSlider {...components.rangeSliderAge} />
-
         <hr className="blue" />
+        */}
+
 
         <div className="filter-heading center">
           <b>

@@ -20,7 +20,7 @@ openstack server add floating ip $INSTANCE_NAME $FLOATING_IP
 INSTANCE_NAME='AIM-Elastic-Dev'
 FLOATING_IP='172.20.4.85'
 
-openstack server create --flavor plaussenlab-ws --image Ubuntu-Server-18.04-2018Sep19 --security-group 9200 --security-group default --security-group ssh_22 --key-name Daniel-CCM --network test_network $INSTANCE_NAME
+openstack server create --flavor plaussenlab-ws --image Ubuntu-Server-18.04-2018Sep19 --security-group 9200 --security-group default --security-group ssh_22 --security-group 8080 --security-group 8000 --key-name Daniel-CCM --network test_network $INSTANCE_NAME
 # Wait for instance to get an internal IP before adding a float
 openstack server add floating ip $INSTANCE_NAME $FLOATING_IP
 
@@ -65,3 +65,4 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
 sudo apt-get update
 sudo apt-get install -y docker-ce
+

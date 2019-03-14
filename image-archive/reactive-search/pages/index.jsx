@@ -122,14 +122,12 @@ const components = {
               target="#"
               href={
                 "http://" + PUBLIC_IP + 
-                ":8080/index.html?input=http://" + PUBLIC_IP +
-                ":3000/static/dicom/" +
-                res.dicom_filename 
+                ":8080/index.html?input=http://" + res.dicom_filepath
               }
             >
               <div className="img">
                 <img
-                  src={"static/thumbnails/" + res.thumbnail_filename}
+                  src={res.thumbnail_filepath}
                   alt={res.original_title}
                   className="result-image"
                 />
@@ -204,9 +202,7 @@ const components = {
       ),
       url:
         "http://" + PUBLIC_IP + 
-        ":8080/index.html?input=http://" + PUBLIC_IP +
-        ":3000/static/dicom/" +
-        res.dicom_filename 
+        ":8080/index.html?input=" + res.dicom_filepath 
     }),
     innerClass: {
       title: "result-title",

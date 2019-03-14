@@ -17,11 +17,11 @@ import pickle
 import time
 
 
-def create_sub_sh(jobdir, ng):
+def create_sub_sh(jobdir, num_groups):
     """Create shell script that will submit the other shell scripts.
     """
     with open(os.path.join(jobdir, 'subjobs.sh'), 'w') as f:
-        for i in range(ng):
+        for i in range(num_groups):
             fn = 'dcmfiles_{:05d}'.format(i)
             fn = os.path.join(jobdir, fn)
             f.write('qsub {}\n'.format(fn))
@@ -49,15 +49,12 @@ def create_job_sh(fn, jobdir):
         f.write('module load python/3.7.1_GDCM\n')
         # f.write('module load dcmtk/3.6.0\n')
         f.write('\n')
-        # f.write("export ELASTIC_IP='172.20.4.85'\n")
-        f.write("export ELASTIC_IP='192.168.100.51'\n")
-        f.write("export ELASTIC_PORT=9200\n")
-        f.write("export ELASTIC_INDEX='image'\n")
-        f.write("export ELASTIC_DOC_TYPE='image'\n")
+        f.write('source /home/chuynh/aim-platform/image-archive/environments/hpf/env.sh\n')
+        f.write('source /home/chuynh/secrets.sh\n')
         f.write('\n')
-        call_this = 'python /home/chuynh/kiddata/load_elastic.py'
-        with_this_arg = ' {}\n'.format(fn + '.txt')
-        f.write(call_this + with_this_arg)
+        f.write('python /home/chuynh/aim-platform/image-archive/de-id/load_elastic.py '
+            + fn + '.txt /hpf/largeprojects/diagimage_common/shared/thumbnails\n')
+        f.write('\n')
     return
 
 

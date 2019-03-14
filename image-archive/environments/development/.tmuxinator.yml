@@ -1,8 +1,11 @@
 # sudo apt install tmuxinator
 # place this file in ".tmuxinatior.yml" then from that directory enter the command "mux"
-name: AIM
+
+# export WORKSPACE=/home/ubuntu/workspace/aim-platform_master/image-archive/
+
+name: AIM-DEV
 windows:
-  -  DAN: ''
+  -  bash: ''
   -  elastic: 
       layout: tiled
       root: <%= ENV["WORKSPACE"] %>/elastic-search

@@ -1,10 +1,10 @@
 # sudo apt install tmuxinator
 # tmuxinator --project-config=.tmuxinator.local.yml
 
-name: AIM
+name: AIM-LOCAL
 root: ../../
 windows:
-  -  LOCAL: ''
+  -  bash: ''
   -  elastic:
       root: ../../elastic-search
       layout: tiled
