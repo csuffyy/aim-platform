@@ -8,6 +8,6 @@ env.ELASTIC_DOC_TYPE='image'
 env.ES_JAVA_OPTS='-Xms16g -Xmx16g'
 env.FILESERVER_IP='172.20.4.85'
 env.FILESERVER_PORT='3000'
-env.FILESERVER_TOKEN=''
+env.FILESERVER_TOKEN='' // NOTE: groovy load sucks and doesn't want to set an empty environment variable, it would rather the variable not exist :-X
 env.FILESERVER_DICOM_PATH='static/dicom'
 env.FILESERVER_THUMBNAIL_PATH='static/thumbnails'
