@@ -3,9 +3,9 @@
 
 # export WORKSPACE=/home/ubuntu/workspace/aim-platform_master/image-archive/
 
-name: AIM
+name: AIM-DEV
 windows:
-  -  DAN: ''
+  -  bash: ''
   -  elastic: 
       layout: tiled
       root: <%= ENV["WORKSPACE"] %>/elastic-search

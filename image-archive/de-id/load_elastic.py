@@ -1,4 +1,8 @@
 #!/bin/python
+#
+# Usage:
+# source ../environments/local/env.sh
+# python3 load_elastic.py ../images/sample-dicom/image_list.txt ../reactive-search/static/thumbnails/
 
 import os 
 import cv2
@@ -167,10 +171,21 @@ def load_images():
       log.warning('Skipping this dicom. Could not generate thumbnail.')
       continue
 
-    dicom_metadata['dicom_filepath'] = filepath
-    dicom_metadata['dicom_filename'] = os.path.basename(filepath)
-    dicom_metadata['thumbnail_filepath'] = thumbnail_filepath
-    dicom_metadata['thumbnail_filename'] = os.path.basename(thumbnail_filepath)
+    # Save Path of DICOM
+    # Example: 172.20.4.85:8000/static/dicom/OT-MONO2-8-hip.dcm-0TO0-771100.dcm
+    dicom_filename = os.path.basename(filepath)
+    dicom_token = FILESERVER_TOKEN
+    if FILESERVER_TOKEN != '': # when using a token, add .dcm to the end of the URL so that DWV will accept the file
+      dicom_token = FILESERVER_TOKEN + '.dcm'
+    dicom_metadata['dicom_filename'] = dicom_filename
+    dicom_metadata['dicom_filepath'] = '{ip}:{port}/{path}/{filename}{token}'.format(ip=FILESERVER_IP, port=FILESERVER_PORT, path=FILESERVER_DICOM_PATH, filename=dicom_filename, token=dicom_token)
+
+    # Save Path of Thumbnail
+    # Example: http://172.20.4.85:8000/static/thumbnails/testplot.png-0TO0-771100
+    thumbnail_filename = os.path.basename(thumbnail_filepath)
+    dicom_metadata['thumbnail_filename'] = thumbnail_filename
+    dicom_metadata['thumbnail_filepath'] = 'http://{ip}:{port}/{path}/{filename}{token}'.format(ip=FILESERVER_IP, port=FILESERVER_PORT, path=FILESERVER_THUMBNAIL_PATH, filename=thumbnail_filename, token=FILESERVER_TOKEN)
+
     dicom_metadata['original_title'] = 'Dicom'
     dicom_metadata['_index'] = INDEX_NAME
     dicom_metadata['_type'] = DOC_TYPE
@@ -193,6 +208,11 @@ if __name__ == '__main__':
   FALLBACK_ELASTIC_PORT = os.environ['FALLBACK_ELASTIC_PORT']
   INDEX_NAME = os.environ['ELASTIC_INDEX']
   DOC_TYPE = os.environ['ELASTIC_DOC_TYPE']
+  FILESERVER_IP = os.environ['FILESERVER_IP']
+  FILESERVER_PORT = os.environ['FILESERVER_PORT']
+  FILESERVER_TOKEN = os.environ['FILESERVER_TOKEN']
+  FILESERVER_DICOM_PATH = os.environ['FILESERVER_DICOM_PATH']
+  FILESERVER_THUMBNAIL_PATH = os.environ['FILESERVER_THUMBNAIL_PATH']
 
   # output_path = '/hpf/largeprojects/diagimage_common/shared/thumbnails'
   # output_path = '/home/chuynh/kiddata/jobs/thumbnails'

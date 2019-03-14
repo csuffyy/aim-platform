@@ -49,17 +49,12 @@ def create_job_sh(fn, jobdir):
         f.write('module load python/3.7.1_GDCM\n')
         # f.write('module load dcmtk/3.6.0\n')
         f.write('\n')
-        f.write("export ELASTIC_IP='192.168.100.61'\n")
-        f.write("export ELASTIC_PORT=9200\n")
-        f.write("export FALLBACK_ELASTIC_IP='172.20.4.85'\n")
-        f.write("export FALLBACK_ELASTIC_PORT=9200\n")
-        f.write("export ELASTIC_INDEX='image'\n")
-        f.write("export ELASTIC_DOC_TYPE='image'\n")
+        f.write('source /home/chuynh/aim-platform/image-archive/environments/hpf/env.sh\n')
+        f.write('source /home/chuynh/secrets.sh\n')
         f.write('\n')
-        call_this = 'python /home/chuynh/kiddata/load_elastic.py'
-        input_filenames = ' {}'.format(fn + '.txt')
-        output_thumbnail_path = ' /hpf/largeprojects/diagimage_common/shared/thumbnails\n'
-        f.write(call_this + input_filenames + output_thumbnail_path)
+        f.write('python /home/chuynh/aim-platform/image-archive/de-id/load_elastic.py '
+            + fn + '.txt /hpf/largeprojects/diagimage_common/shared/thumbnails\n')
+        f.write('\n')
     return
 
 

@@ -65,7 +65,9 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         """
         path = self.translate_path(self.path)
-        path_parts = self.path.split('?q=')
+        path_parts = path.split('-0TO0-')
+        path = path_parts[0]
+        path_parts = [item.strip('.dcm') for item in path_parts]
         if TOKEN not in path_parts:
             self.send_error(401)
             return None
@@ -98,6 +100,11 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         fs = os.fstat(f.fileno())
         self.send_header("Content-Length", str(fs[6]))
         self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
+        # Enable CORS
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+        self.send_header("Access-Control-Allow-Headers", "X-Requested-With")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
         return f
 
