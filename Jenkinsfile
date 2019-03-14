@@ -7,6 +7,7 @@ pipeline {
   // }
   environment {
     CI = 'true'
+    FILESERVER_TOKEN = '' // Special env variable not coming from env.groovy file because groovy load sucks and doesn't want to set an empty variable, it would rather the variable not exist :-X
     PWDD = pwd()
     WORKSPACE = "${env.PWDD}/image-archive/"
   }
@@ -136,6 +137,7 @@ pipeline {
 
 @NonCPS
 def showChangeLogs() {
+  // This has definitely worked
   echo "CHANGEZ"
   def changeLogSets = currentBuild.rawBuild.changeSets
   for (int i = 0; i < changeLogSets.size(); i++) {
