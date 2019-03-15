@@ -7,7 +7,11 @@ export default class MyDocument extends Document {
     // for emotion-js
     const page = renderPage();
     const styles = extractCritical(page.html);
-    return { ...page, ...styles };
+    const headers = {
+      'FOO': 'BAR',
+    };
+
+    return { ...page, ...styles, ...headers };
   }
 
   constructor(props) {

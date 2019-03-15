@@ -5,6 +5,7 @@ import {
   SelectedFilters,
   ResultCard
 } from "@appbaseio/reactivesearch";
+var cookie = require('cookie');
 import Navbar from "./Navbar.js";
 import Leftbar from "./Leftbar.js";
 import initReactivesearch from "@appbaseio/reactivesearch/lib/server";
@@ -16,16 +17,27 @@ const {PUBLIC_IP} = publicRuntimeConfig;
 const {ELASTIC_PORT} = publicRuntimeConfig;
 const {ELASTIC_IP} = publicRuntimeConfig;
 const {ELASTIC_INDEX} = publicRuntimeConfig;
+const {AUTH_TOKEN} = publicRuntimeConfig;
 
 console.log('PUBLIC_IP: ' + PUBLIC_IP);
 console.log('ELASTIC_PORT: ' + ELASTIC_PORT);
 console.log('ELASTIC_IP: ' + ELASTIC_IP);
 console.log('ELASTIC_INDEX: ' + ELASTIC_INDEX);
+console.log('AUTH_TOKEN: ' + AUTH_TOKEN);
+if (AUTH_TOKEN === undefined) {
+  throw new Error('AUTH_TOKEN is undefined');
+}
+
 
 const components = {
   settings: {
     app: ELASTIC_INDEX,
     url: "http://" + ELASTIC_IP + ":" + ELASTIC_PORT + "/",
+    // credentials: "abcdef123:abcdef12-ab12-ab12-ab12-abcdef123456",
+    headers: {
+        // secret: 'reactivesearch-is-awesome',
+        'X-Requested-With': 'bar' // Not arbitrary headers are not allowed see whitelist in elasticsearch.yml
+    },
     theme: {
       typography: {
         fontFamily:
@@ -118,6 +130,7 @@ const components = {
       description: (
         <div className="main-description">
           <div className="ih-item square effect6 top_to_bottom">
+
             <a
               target="#"
               href={
@@ -238,11 +251,31 @@ class Main extends Component {
     console.log(this);
     this.setState({
       isClicked: !this.state.isClicked,
-      message: this.state.isClicked ? "🔬 Show Filters" : "🎬 Show Movies"
+      message: this.state.isClicked ? "🔬 Show Filters" : "🎬 Show Images"
     });
   }
 
-  static async getInitialProps() {
+  static async getInitialProps({res, req}) {
+    // Parse the cookies on the request
+    var cookies = cookie.parse(req.headers.cookie || '');
+    
+    // Get the visitor name set in the cookie
+    var token = cookies.token;
+    console.log('token: ' + token);
+    console.log('AUTH_TOKEN: ' + AUTH_TOKEN);
+
+    // Set a header
+    // res.setHeader('X-Foo', 'bar');
+
+    // Redirect to login if no token
+    if (token !== AUTH_TOKEN) {
+      console.log('invalid token')
+      res.writeHead(302, {
+        Location: 'login'
+      })
+      res.end() // load nothing else
+    }
+
     return {
       store: await initReactivesearch(
         [
@@ -303,6 +336,7 @@ class Main extends Component {
             <TagCloud {...components.tagCloudDescription} />
           </div>
         </ReactiveBase>
+
       </div>
     );
   }
