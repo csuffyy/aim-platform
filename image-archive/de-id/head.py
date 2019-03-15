@@ -40,9 +40,9 @@ def create_job_sh(fn, jobdir):
     with open(fn, 'w') as f:
         f.write('#!/bin/bash\n')
         f.write('\n')
-        f.write('#PBS -l mem=1gb,vmem=1gb\n')
+        f.write('#PBS -l mem=8gb,vmem=8gb\n')
         f.write('#PBS -l nodes=1:ppn=1\n')
-        f.write('#PBS -l walltime=00:20:00\n')  # Depends on size of the group
+        f.write('#PBS -l walltime=00:40:00\n')  # Depends on size of the group
         f.write('#PBS -j oe\n')
         f.write('#PBS -o {}\n'.format(jobdir))
         f.write('\n')

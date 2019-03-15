@@ -215,7 +215,7 @@ if __name__ == '__main__':
   FILESERVER_THUMBNAIL_PATH = os.environ['FILESERVER_THUMBNAIL_PATH']
 
   # output_path = '/hpf/largeprojects/diagimage_common/shared/thumbnails'
-  # output_path = '/home/chuynh/kiddata/jobs/thumbnails'
+  output_path = '/home/chuynh/aim-platform/image-archive/de-id/jobs/thumbnails'
   # Create out directory if it does not exist.
   if not os.path.isdir(output_path):
     os.makedirs(output_path)
