@@ -163,7 +163,8 @@ def main(jobdir, datadir, num):
     # Assign dicom files to the groups. List of lists.
     groups = []
     for i in range(ng):
-        groups.append(new_fns[i*num:(i+1)*num])
+        # groups.append(new_fns[i*num:(i+1)*num])
+        groups.append(master_list[i*num:(i+1)*num])
 
     print('Putting dicom files into {} groups.'.format(ng), end='')
     print(' Creating job shell scripts... ', end='')
