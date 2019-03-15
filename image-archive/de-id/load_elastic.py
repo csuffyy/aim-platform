@@ -197,6 +197,8 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Load dicoms to Elastic.')
   parser.add_argument('input_filenames', help='File containing dicom file names.')
   parser.add_argument('output_path', help='File containing dicom file names.')
+  parser.add_argument('-n', '--num', type=int, default=500,
+                      help='Bulk chunksize.')
   args = parser.parse_args()
   input_filenames = args.input_filenames  # Includes full path
   output_path = args.output_path
@@ -215,7 +217,7 @@ if __name__ == '__main__':
   FILESERVER_THUMBNAIL_PATH = os.environ['FILESERVER_THUMBNAIL_PATH']
 
   # output_path = '/hpf/largeprojects/diagimage_common/shared/thumbnails'
-  output_path = '/home/chuynh/aim-platform/image-archive/de-id/jobs/thumbnails'
+  # output_path = '/home/chuynh/aim-platform/image-archive/de-id/jobs/thumbnails'
   # Create out directory if it does not exist.
   if not os.path.isdir(output_path):
     os.makedirs(output_path)
@@ -229,17 +231,21 @@ if __name__ == '__main__':
   es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
 
   # Test ElasticSearch connection and fallback if it fails
+  '''
   try:
     es.indices.refresh(index=INDEX_NAME)
-  except elasticsearch.exceptions.ConnectionError as e:
+  # except elasticsearch.exceptions.ConnectionError as e:
+  except Exception as e:
     log.warning('Trying Fallback ElasticSearch IP')
     es = Elasticsearch([{'host': FALLBACK_ELASTIC_IP, 'port': FALLBACK_ELASTIC_PORT}])
     es.indices.refresh(index=INDEX_NAME)
+  '''
 
   # Just going to add code here for now...
   # Get the list of dicom files to be scanned
   with open(input_filenames, 'r') as f:
     files = f.read().split('\n')
+    files = files[0:1000]
     del files[-1]  # Remove blank item
 
   # # Get master linking log (do we still need this? maybe not...)
@@ -252,7 +258,8 @@ if __name__ == '__main__':
   t0 = time.time()
   
   # Bulk load elastic
-  res = helpers.bulk(es, load_images(), chunk_size=500, max_chunk_bytes=100000000, max_retries=3) # 100 MB
+  print('Bulk chunk_size = {}'.format(args.num))
+  res = helpers.bulk(es, load_images(), chunk_size=args.num, max_chunk_bytes=100000000, max_retries=1) # 100 MB
   log.info('Bulk insert result: %s, %s' % (res[0], res[1]))
 
   # Update Index
@@ -262,6 +269,17 @@ if __name__ == '__main__':
   res = es.search(index=INDEX_NAME, body={"query": {"match_all": {}}})
   log.info("Number of Search Hits: %d" % res['hits']['total'])
   elapsed_time = time.time() - t0
+  ingest_rate = len(files) / elapsed_time
   log.info('{} files loaded to Elastic Search '.format(len(files)) + 'in {:.2f} seconds.'.format(elapsed_time))
-  log.info('Ingest rate (files/s): {:.2f}'.format(len(files) / elapsed_time))
+  log.info('Ingest rate (files/s): {:.2f}'.format(ingest_rate))
   log.info('Finished.')
+
+  # Write parameters
+  CPU = os.environ['CPU']
+  RAM = os.environ['RAM']
+  stats_filename = '/home/chuynh/kiddata/stats.csv'
+  with open(stats_filename, 'a') as file_handle:
+    file_handle.write(RAM + ',')
+    file_handle.write(CPU + ',')
+    file_handle.write(str(args.num) + ',')
+    file_handle.write(str(ingest_rate) + '\n')

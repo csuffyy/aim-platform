@@ -53,7 +53,7 @@ def create_job_sh(fn, jobdir):
         f.write('source /home/chuynh/secrets.sh\n')
         f.write('\n')
         f.write('python /home/chuynh/aim-platform/image-archive/de-id/load_elastic.py '
-            + fn + '.txt /hpf/largeprojects/diagimage_common/shared/thumbnails\n')
+            + fn + '.txt /home/chuynh/kiddata/jobs/thumbnails\n')
         f.write('\n')
     return
 
