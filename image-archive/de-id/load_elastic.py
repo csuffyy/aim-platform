@@ -1,8 +1,11 @@
+
 #!/bin/python
 #
 # Usage:
 # source ../environments/local/env.sh
 # python3 load_elastic.py ../images/sample-dicom/image_list.txt ../reactive-search/static/thumbnails/
+
+# module load python/3.7.1_GDCM
 
 import os 
 import cv2

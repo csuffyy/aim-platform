@@ -129,11 +129,11 @@ class Main extends Component {
                 <input className="login-field" type="text" value={this.state.password} onChange={this.handleChangePassword} placeholder=" Password"/>
               </label>
               <p/>
-              <input className="login-submit" type="submit" value="Login" />
+              <input className="login-submit btn btn-secondary" type="submit" value="Login" />
             </form>
           </div>
           <div className="login-footer">
-            <a className="login-footer-link" href="mailto:daniel.snider@sickkids.ca?subject=Diagnostic Image Archive Support" target="_blank">Support</a> Provided by <a className="login-footer-link" href="https://ccm.sickkids.ca/" target="_blank">CCM</a>
+            <a className="login-footer-link" href="mailto:daniel.snider@sickkids.ca?subject=Diagnostic Image Archive Support" target="_blank">Support</a> Provided by <a className="login-footer-link" href="https://ccm.sickkids.ca/" target="_blank">The CCM</a>
           </div>
         </div>
       </div>

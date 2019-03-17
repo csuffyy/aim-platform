@@ -98,29 +98,45 @@ class Navbar extends Component {
       <div className="navbar">
         <div class="wrapper">
           <aside class="aside aside-logo">
-            <div style={{float: "left"}}>
-              <img
-                className="app-logo"
-                src="/static/sickkids.png"
-                alt="ImageArchive"
-              />
+            <div class="container">
+              <div class="row">
+                <div style={{float: "left"}}>
+                  <img
+                    className="app-logo"
+                    src="/static/sickkids.png"
+                    alt="ImageArchive"
+                  />
+                </div>
+              </div>
+              <div class="row">
+                <h3 className="header-text">
+                  Diagnostic Image Archive
+                </h3>
+              </div>
             </div>
           </aside>
 
-          <article class="main">
-              <h3 className="header-text">
-                Diagnostic Image Archive
-              </h3>
-              <span className="header-support-text">
-                <a className="login-footer-link" href="mailto:daniel.snider@sickkids.ca?subject=Diagnostic Image Archive Support" target="_blank">Support</a> Provided by <a className="login-footer-link" href="https://ccm.sickkids.ca/" target="_blank">CCM</a>
-              </span>
-          </article>
+
+
 
           <aside class="aside aside-buttons">
-           
-              <button type="button" className="btn btn-secondary app-button">Collections</button>
-              <button type="button" className="btn btn-secondary app-button">Download</button>
+            <div class="btn-container">
+              <div class="row">
+                <div class="col-sm">
+              <div>
+                            <span className="header-support-text">
+                <a className="login-footer-link" href="mailto:daniel.snider@sickkids.ca?subject=Diagnostic Image Archive Support" target="_blank">Support</a> Provided by <a className="login-footer-link" href="https://ccm.sickkids.ca/" target="_blank">The Centre for Computational Medicine</a>
+              </span>
+              </div>
+                </div>
+              </div>
+              <div class="row btn-group">
+              <button type="button" className="btn btn-secondary app-button disabled">Collections</button>
+              <button type="button" className="btn btn-secondary app-button disabled">Download</button>
               <button type="button" className="btn btn-secondary app-button" onClick={this.LogOut}>Log Out</button>
+              </div>
+            </div>
+           
           </aside>
 
           <footer class="header-footer">
