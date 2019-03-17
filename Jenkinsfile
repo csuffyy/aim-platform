@@ -33,12 +33,59 @@ pipeline {
         sh "tmux kill-session -t AIM"
       }
     }
+    stage('Install Docker') {
+      steps {
+        sh "sudo jenkins/install_docker.sh"
+      }
+    }
+    stage('Install ElasticSearch') {
+      when {
+        expression { // Skip if elasticsearch container already exists
+          sh (
+            script: "sudo docker ps | grep elasticsearch",
+            returnStatus: true
+          ) != 0
+        }
+      }
+      steps {
+        dir('image-archive/elastic-search/') {
+          sh "sudo docker rm -f elasticsearch || true"
+          sh "./start_elastic.sh"
+          sh """bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:9200`" != "200" ]]; do echo "trying again"; sleep 5; done; curl localhost:9200; echo "ELASTIC UP"'"""
+          sh "sudo docker logs elasticsearch"
+          sh "./init_elastic.sh"
+          // sh "sudo docker run -p 1358:1358 -d appbaseio/dejavu"
+        }
+      }
+      // post {
+      //   failure {
+      //       sh "sudo docker rm -f elasticsearch"
+      //   }
+      // }
+    }
+    stage("Install DWV") {
+      steps {
+        dir("image-archive/dwv/") {
+          sh "yarn install"
+          sh "yarn run start &"
+          sh """bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:8080`" != "200" ]]; do echo "trying again"; sleep 5; done; curl localhost:8080; echo "DWV UP"'"""
+        }
+      }
+    }
     stage('Install ReactiveSearch') {
       steps {
         dir('image-archive/reactive-search/') {
           sh 'npm install'
           sh 'npm run dev &'
-          sh """bash -c 'while [[ "`curl -v --cookie "token=771100" -s -o /dev/null -w ''%{http_code}'' localhost:3000`" != "200" ]]; do echo "trying again"; sleep 5; done; echo "ReactiveSearch UP"'"""
+          sh """bash -c 'while [[ "`curl -v --cookie "token=771100" -s -o /dev/null -w ''%{http_code}'' localhost:3000`" != "200" ]]; do echo "trying again"; sleep 5; done; curl -v localhost:3000; echo "ReactiveSearch UP"'"""
+        }
+      }
+    }
+    stage('Load Sample Images') {
+      steps {
+        dir('image-archive/de-id/') {
+          sh 'python3 load_elastic.py ../images/sample-dicom/image_list.txt ../reactive-search/static/thumbnails/'
+          sh 'cp ../images/sample-dicom/*.dcm ../reactive-search/static/dicom/'
         }
       }
     }
