@@ -278,11 +278,12 @@ if __name__ == '__main__':
   log.info('Finished.')
 
   # Write parameters
-  CPU = os.environ['CPU']
-  RAM = os.environ['RAM']
-  stats_filename = '/home/chuynh/kiddata/stats.csv'
-  with open(stats_filename, 'a') as file_handle:
-    file_handle.write(RAM + ',')
-    file_handle.write(CPU + ',')
-    file_handle.write(str(args.num) + ',')
-    file_handle.write(str(ingest_rate) + '\n')
+  CPU = os.getenv('CPU',None)
+  RAM = os.getenv('RAM',None)
+  if CPU and RAM:
+    stats_filename = '/home/chuynh/kiddata/stats.csv'
+    with open(stats_filename, 'a') as file_handle:
+      file_handle.write(RAM + ',')
+      file_handle.write(CPU + ',')
+      file_handle.write(str(args.num) + ',')
+      file_handle.write(str(ingest_rate) + '\n')
