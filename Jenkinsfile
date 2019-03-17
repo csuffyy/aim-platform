@@ -38,7 +38,7 @@ pipeline {
         dir('image-archive/reactive-search/') {
           sh 'npm install'
           sh 'npm run dev &'
-          sh """bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:3000`" != "200" ]]; do echo "trying again"; sleep 5; done; curl -v --cookie "token=771100" localhost:3000; echo "ReactiveSearch UP"'"""
+          sh """bash -c 'while [[ "`curl -v --cookie "token=771100" -s -o /dev/null -w ''%{http_code}'' localhost:3000`" != "200" ]]; do echo "trying again"; sleep 5; done; echo "ReactiveSearch UP"'"""
         }
       }
     }
