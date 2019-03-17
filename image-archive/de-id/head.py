@@ -53,7 +53,7 @@ def create_job_sh(fn, jobdir):
         f.write('source /home/chuynh/secrets.sh\n')
         f.write('\n')
         f.write('python /home/chuynh/aim-platform/image-archive/de-id/load_elastic.py '
-            + fn + '.txt /hpf/largeprojects/diagimage_common/shared/thumbnails\n')
+            + fn + '.txt /home/chuynh/kiddata/jobs/thumbnails\n')
         f.write('\n')
     return
 
@@ -163,7 +163,8 @@ def main(jobdir, datadir, num):
     # Assign dicom files to the groups. List of lists.
     groups = []
     for i in range(ng):
-        groups.append(new_fns[i*num:(i+1)*num])
+        # groups.append(new_fns[i*num:(i+1)*num])
+        groups.append(master_list[i*num:(i+1)*num])
 
     print('Putting dicom files into {} groups.'.format(ng), end='')
     print(' Creating job shell scripts... ', end='')
