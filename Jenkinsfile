@@ -33,10 +33,19 @@ pipeline {
         sh "tmux kill-session -t AIM"
       }
     }
+    stage('Install ReactiveSearch') {
+      steps {
+        dir('image-archive/reactive-search/') {
+          sh 'npm install'
+          sh 'npm run dev &'
+          sh """bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:3000`" != "200" ]]; do echo "trying again"; sleep 5; done; curl localhost:3000; echo "ReactiveSearch UP"'"""
+        }
+      }
+    }
     stage('Start Tmux') {
       steps {
         dir('image-archive/environments/development/') {
-          sh "export WORKSPACE=${env.WORKSPACE} && nohup tmuxinator &"
+          sh "export WORKSPACE=${env.WORKSPACE} && BUILD_ID=dontKillMe tmuxinator &"
         }
       }
     }
