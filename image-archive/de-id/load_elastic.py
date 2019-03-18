@@ -248,7 +248,7 @@ if __name__ == '__main__':
   # Get the list of dicom files to be scanned
   with open(input_filenames, 'r') as f:
     files = f.read().split('\n')
-    files = files[0:1000]
+    files = files[0:5000]
     del files[-1]  # Remove blank item
 
   # # Get master linking log (do we still need this? maybe not...)
