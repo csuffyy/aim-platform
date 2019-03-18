@@ -77,7 +77,7 @@ pipeline {
         dir('image-archive/reactive-search/') {
           sh 'npm install'
           sh 'npm run dev &'
-          sh """bash -c 'while [[ "`curl -v --cookie "token=771100" -s -o /dev/null -w ''%{http_code}'' localhost:3000`" != "200" ]]; do echo "trying again"; sleep 5; done; curl -v localhost:3000; echo "ReactiveSearch UP"'"""
+          sh """bash -c 'while [[ "`curl -v --cookie "token=${env.AUTH_TOKEN}" -s -o /dev/null -w ''%{http_code}'' localhost:3000`" != "200" ]]; do echo "trying again"; sleep 5; done; curl -v localhost:3000; echo "ReactiveSearch UP"'"""
         }
       }
     }
@@ -126,11 +126,11 @@ pipeline {
   options {
     // For example, we'd like to make sure we only keep 10 builds at a time, so
     // we don't fill up our storage!
-    buildDiscarder(logRotator(numToKeepStr:'10'))
+    // buildDiscarder(logRotator(numToKeepStr:'10')) // Disabled because it was removing most recent builds?
     
     // And we'd really like to be sure that this build doesn't hang forever, so
     // let's time it out after an hour.
-    timeout(time: 60, unit: 'MINUTES')
+    timeout(time: 40, unit: 'MINUTES')
   }
 }
 
