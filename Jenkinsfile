@@ -92,7 +92,7 @@ pipeline {
     stage('Start Tmux') {
       steps {
         dir('image-archive/environments/development/') {
-          sh "export WORKSPACE=${env.WORKSPACE} && BUILD_ID=dontKillMe tmuxinator &"
+          sh "export WORKSPACE=${env.WORKSPACE} && BUILD_ID=dontKillMe AUTH_TOKEN=${env.AUTH_TOKEN} tmuxinator &"
         }
       }
     }
