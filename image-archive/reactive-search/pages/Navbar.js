@@ -22,10 +22,10 @@ import { DataSearch } from "@appbaseio/reactivesearch";
 // }
 
 function custQueryAllFields(value, props) {
-  console.log(props)
-  console.log(value)
-  console.log(value===undefined)
-  console.log(value==='')
+  // console.log(props)
+  // console.log(value)
+  // console.log(value===undefined)
+  // console.log(value==='')
   // if (value==='') {
   //   value = undefined;
   // }
@@ -54,6 +54,7 @@ const components = {
     componentId: "mainSearch",
     // dataField: ["descriptions"],
     // dataField: ["StudyDescription","ReasonForStudy","SeriesDescription","StudyComments"],
+    dataField: [],
     customQuery: custQueryAllFields,
     categoryField: "title",
     className: "search-bar",
@@ -96,10 +97,10 @@ class Navbar extends Component {
   render() {
     return (
       <div className="navbar">
-        <div class="wrapper">
-          <aside class="aside aside-logo">
-            <div class="container">
-              <div class="row">
+        <div className="wrapper">
+          <aside className="aside aside-logo" style={{paddingLeft: "10px"}}>
+            <div className="container">
+              <div className="row">
                 <div style={{float: "left"}}>
                   <img
                     className="app-logo"
@@ -108,7 +109,7 @@ class Navbar extends Component {
                   />
                 </div>
               </div>
-              <div class="row">
+              <div className="row">
                 <h3 className="header-text">
                   Diagnostic Image Archive
                 </h3>
@@ -119,10 +120,10 @@ class Navbar extends Component {
 
 
 
-          <aside class="aside aside-buttons">
-            <div class="btn-container">
-              <div class="row">
-                <div class="col-sm">
+          <aside className="aside aside-buttons">
+            <div className="btn-container">
+              <div className="row">
+                <div className="col-sm">
               <div>
                             <span className="header-support-text">
                 <a className="login-footer-link" href="mailto:daniel.snider@sickkids.ca?subject=Diagnostic Image Archive Support" target="_blank">Support</a> Provided by <a className="login-footer-link" href="https://ccm.sickkids.ca/" target="_blank">The Centre for Computational Medicine</a>
@@ -130,7 +131,7 @@ class Navbar extends Component {
               </div>
                 </div>
               </div>
-              <div class="row btn-group">
+              <div className="row btn-group">
               <button type="button" className="btn btn-secondary app-button disabled">Collections</button>
               <button type="button" className="btn btn-secondary app-button disabled">Download</button>
               <button type="button" className="btn btn-secondary app-button" onClick={this.LogOut}>Log Out</button>
@@ -139,7 +140,7 @@ class Navbar extends Component {
            
           </aside>
 
-          <footer class="header-footer">
+          <footer className="header-footer">
             <div className="search-container">
             <DataSearch {...components.dataSearch} />
             </div>

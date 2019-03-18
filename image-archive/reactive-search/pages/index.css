@@ -85,7 +85,7 @@ hr {
 }
 
 .wrapper > * {
-  padding: 10px;
+  padding: 10px 10px 10px 0px;
   flex: 1 100%;
 
 }
@@ -137,7 +137,8 @@ body {
   font-family: 'Jura', sans-serif;
   font-size: calc(10px + 1vw);
   float: left; white-space: nowrap;
-  margin-right: 15px
+  margin-right: 15px;
+  margin-bottom: 0px;
 }
 
 .header-text-container {

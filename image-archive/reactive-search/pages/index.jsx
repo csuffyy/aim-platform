@@ -101,7 +101,7 @@ const components = {
     className: "Result_card",
     paginationAt: "bottom",
     pages: 5,
-    size: 12,
+    size: 10,
     Loader: "Loading...",
     noResults: "No results found...",
     // sortOptions: [
@@ -150,7 +150,7 @@ const components = {
                   {res.original_title}
                   <button
                     type="button"
-                    class="btn btn-dark"
+                    className="btn btn-dark"
                     style={{ marginLeft: "100px" }}
                     onClick={e => AddToCollection(e, res)}
                   >
@@ -230,8 +230,8 @@ const components = {
 };
 
 function AddToCollection(e, res) {
-  console.log(e);
-  console.log(res);
+  // console.log(e);
+  // console.log(res);
   e.preventDefault();
   // CALL API
 }
@@ -242,9 +242,43 @@ class Main extends Component {
 
     this.state = {
       isClicked: false,
-      message: "🔬Show Filters"
+      message: "🔬Show Filters",
+      isDesktop: false,
+      height: 0, 
+      width: 0,
     };
+
+    this.updatePredicate = this.updatePredicate.bind(this);
+    this.updateDimensions = this.updateDimensions.bind(this);
   }
+
+  componentDidMount() {
+    console.log(this.state.height);
+    // Additionally I could have just used an arrow function for the binding `this` to the component...
+    window.addEventListener("resize", this.updateDimensions);
+    this.updatePredicate();
+    window.addEventListener("resize", this.updatePredicate);
+    this.updateDimensions()
+  }
+  updateDimensions() {
+    this.setState({
+      height: window.innerHeight, 
+      width: window.innerWidth
+    });
+    const divWidth = document.getElementsByClassName('Result_card')[0].clientWidth;
+    components.resultCard.size = 4 * Math.floor((-150 + divWidth) / 250);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("resize", this.updateDimensions);
+    window.removeEventListener("resize", this.updatePredicate);
+  }
+
+  updatePredicate() {
+    console.log('updatePredicate');
+    this.setState({ isDesktop: window.innerWidth > 1450 });
+  }
+
 
   handleClick() {
     console.log("handleClick");
@@ -292,11 +326,13 @@ class Main extends Component {
         ],
         null,
         components.settings
-      )
+      ),
     };
   }
 
   render() {
+    const isDesktop = this.state.isDesktop;
+
     return (
       <div className="main-container">
         <ReactiveBase {...components.settings} initialState={this.props.store}>
@@ -313,6 +349,19 @@ class Main extends Component {
               }
             >
               <SelectedFilters {...components.selectedFilters} />
+
+
+{/*              <div>
+                {isDesktop ? (
+                  <div>I show on 1451px or higher</div>
+                ) : (
+                  <div>I show on 1450px or lower</div>
+                )}
+              </div>
+              <h3>
+                Window width: {this.state.width} and height: {this.state.height} Number of Results: {components.resultCard.size}
+              </h3>*/}
+
 
               <ResultCard {...components.resultCard} />
             </div>

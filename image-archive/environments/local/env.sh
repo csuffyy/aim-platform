@@ -10,3 +10,4 @@ export FILESERVER_PORT='3000'
 export FILESERVER_TOKEN=''
 export FILESERVER_DICOM_PATH='static/dicom'
 export FILESERVER_THUMBNAIL_PATH='static/thumbnails'
+export AUTH_TOKEN=771100
