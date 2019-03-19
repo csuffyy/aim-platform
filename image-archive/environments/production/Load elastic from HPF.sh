@@ -38,6 +38,7 @@ export FALLBACK_ELASTIC_IP='192.168.100.61' # special elastic location via tunne
 export FILESERVER_TOKEN='-0TO0-771100'
 export INPUT_FILE_LIST=~/Disk1_Part_aa
 export OUTPUT_THUMBNAIL_DIR=/hpf/largeprojects/diagimage_common/shared/thumbnails
+# double check path in aim-qsub.sh script ---> #PBS -o /home/dsnider/jobs
 qsub ./aim-platform/image-archive/environments/production/aim-qsub.sh
 
 # Confirm everything is working
