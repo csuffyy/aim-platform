@@ -93,7 +93,7 @@ pipeline {
     stage('Start Tmux') {
       steps {
         dir('image-archive/environments/production/') { // TODO 'production' here should be a variable
-          sh "export WORKSPACE=${env.WORKSPACE} && BUILD_ID=dontKillMe AUTH_TOKEN=${env.AUTH_TOKEN} tmuxinator &"
+          sh "export WORKSPACE=${env.WORKSPACE} && BUILD_ID=dontKillMe tmuxinator &"
         }
       }
     }

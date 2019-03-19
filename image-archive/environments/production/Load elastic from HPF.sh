@@ -32,13 +32,6 @@ split -l 50000 Disk1_FileList_DCM.txt  Disk1_Part_ # split list of files into sm
 
 # Submit a qjob
 # Run on hpf23.ccm.sickkids.ca
-source aim-platform/image-archive/environments/production/env.sh
-export ELASTIC_IP='192.168.100.61' # special elastic location via tunnel when in HPF
-export FALLBACK_ELASTIC_IP='192.168.100.61' # special elastic location via tunnel when in HPF
-export FILESERVER_TOKEN='-0TO0-771100'
-export INPUT_FILE_LIST=~/Disk1_Part_aa
-export OUTPUT_THUMBNAIL_DIR=/hpf/largeprojects/diagimage_common/shared/thumbnails
-# double check path in aim-qsub.sh script ---> #PBS -o /home/dsnider/jobs
 qsub ./aim-platform/image-archive/environments/production/aim-qsub.sh
 
 # Confirm everything is working
