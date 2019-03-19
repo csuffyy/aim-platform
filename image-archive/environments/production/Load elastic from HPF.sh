@@ -1,5 +1,5 @@
 
-
+# This guide assumes elastic and 172.20.4.83:3000 is runnig on your AIM-server
 
 # AIM Tunnel to get a static file webserver on port 8000 out of HPF through port 22 to Openstack port 8000
 # Run tunnel on data1.ccm.sickkids.ca
@@ -32,11 +32,13 @@ split -l 50000 Disk1_FileList_DCM.txt  Disk1_Part_ # split list of files into sm
 
 # Submit a qjob
 # Run on hpf23.ccm.sickkids.ca
-aim-platform/image-archive/environments/hpf/env.sh
+source aim-platform/image-archive/environments/production/env.sh
+export ELASTIC_IP='192.168.100.61' # special elastic location via tunnel when in HPF
+export FALLBACK_ELASTIC_IP='192.168.100.61' # special elastic location via tunnel when in HPF
 export FILESERVER_TOKEN='-0TO0-91817A16151'
 export INPUT_FILE_LIST=~/Disk1_Part_aa
 export OUTPUT_THUMBNAIL_DIR=/hpf/largeprojects/diagimage_common/shared/thumbnails
-aim-platform/image-archive/environments/hpf/aim-qsub.sh
+./aim-platform/image-archive/environments/production/aim-qsub.sh
 
 # Confirm everything is working
 1. Open 172.20.4.83:3000

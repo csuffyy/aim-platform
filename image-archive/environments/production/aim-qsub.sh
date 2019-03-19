@@ -12,8 +12,6 @@ export CPU=1
 export RAM=8
 
 module load python/3.7.1_GDCM
-# source /home/chuynh/aim-platform/image-archive/environments/hpf/env.sh
-# source /home/chuynh/secrets.sh
 
 ES_BLUK_INSERT_SIZE = 500
 
