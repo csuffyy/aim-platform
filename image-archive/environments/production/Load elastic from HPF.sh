@@ -6,10 +6,10 @@
 ssh -fNq -R 0.0.0.0:8000:localhost:8000 ubuntu@172.20.4.83
 # Run webserver on data1.ccm.sickkids.ca
 cd /hpf/largeprojects/diagimage_common
-python aim-platform/image-archive/environments/hpf/static_webserver.py
-echo helloworld > test.file
+# python aim-platform/image-archive/environments/hpf/static_webserver.py
+export TOKEN='771100'
+python ~/hpf_static_server.py
 # Test from AIM-server
-curl 172.20.4.83:8000/test.file
 curl 172.20.4.83:8000/src/disk1/Images/NASLibrary10/2000/02/09/1559937/75473475.dcm-0TO0-771100.dcm
 curl 172.20.4.83:8000/shared/thumbnails/test.png-0TO0-771100
 
@@ -35,10 +35,10 @@ split -l 50000 Disk1_FileList_DCM.txt  Disk1_Part_ # split list of files into sm
 source aim-platform/image-archive/environments/production/env.sh
 export ELASTIC_IP='192.168.100.61' # special elastic location via tunnel when in HPF
 export FALLBACK_ELASTIC_IP='192.168.100.61' # special elastic location via tunnel when in HPF
-export FILESERVER_TOKEN='-0TO0-91817A16151'
+export FILESERVER_TOKEN='-0TO0-771100'
 export INPUT_FILE_LIST=~/Disk1_Part_aa
 export OUTPUT_THUMBNAIL_DIR=/hpf/largeprojects/diagimage_common/shared/thumbnails
-./aim-platform/image-archive/environments/production/aim-qsub.sh
+qsub ./aim-platform/image-archive/environments/production/aim-qsub.sh
 
 # Confirm everything is working
 1. Open 172.20.4.83:3000

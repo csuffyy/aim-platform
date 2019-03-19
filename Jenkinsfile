@@ -17,6 +17,7 @@ pipeline {
         load "image-archive/environments/production/env.groovy"
         // echo "${params.Greeting} World!"
         echo "PUBILC_IP: ${env.PUBILC_IP}"
+        echo "WORKSPACE: ${env.WORKSPACE}"
         sh "env"
       }
     }

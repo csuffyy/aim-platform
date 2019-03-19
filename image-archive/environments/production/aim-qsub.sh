@@ -6,7 +6,7 @@
 #PBS -l nodes=1:ppn=1
 #PBS -l walltime=00:40:00
 #PBS -j oe
-#PBS -o /home/chuynh/kiddata/jobs
+#PBS -o /home/dsnider/jobs
 
 export CPU=1
 export RAM=8

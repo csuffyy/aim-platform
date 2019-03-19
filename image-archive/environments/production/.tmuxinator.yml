@@ -1,7 +1,7 @@
 # sudo apt install tmuxinator
 # place this file in ".tmuxinatior.yml" then from that directory enter the command "mux"
 
-# export WORKSPACE=/home/ubuntu/workspace/aim-platform_master/image-archive/
+# export WORKSPACE=/var/lib/jenkins-agent/workspace/aim-platform_production/image-archive/
 
 name: AIM
 windows:
@@ -28,7 +28,7 @@ windows:
       root: <%= ENV["WORKSPACE"] %>/reactive-search
       layout: tiled
       panes:
-        - source ../environments/development/env.sh && npm run dev
+        - source ../environments/production/env.sh && npm run dev
         - echo 'http://localhost:3000'
   - funnel:
       root: <%= ENV["WORKSPACE"] %>/de-id
