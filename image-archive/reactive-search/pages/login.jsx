@@ -126,7 +126,7 @@ class Main extends Component {
               <p/>
               <label>
                 {/*<span>Password:</span>*/}
-                <input className="login-field" type="text" value={this.state.password} onChange={this.handleChangePassword} placeholder=" Password"/>
+                <input className="login-field" type="password" value={this.state.password} onChange={this.handleChangePassword} placeholder=" Password"/>
               </label>
               <p/>
               <input className="login-submit btn btn-secondary" type="submit" value="Login" />

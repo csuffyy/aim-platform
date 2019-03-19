@@ -192,6 +192,7 @@ def load_images():
     dicom_metadata['original_title'] = 'Dicom'
     dicom_metadata['_index'] = INDEX_NAME
     dicom_metadata['_type'] = DOC_TYPE
+    dicom_metadata['searchallblank'] = '' # needed to search across everything (via searching for empty string)
     yield dicom_metadata
 
 

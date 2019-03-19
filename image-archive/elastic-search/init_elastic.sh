@@ -194,8 +194,8 @@ curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
 # }
 # EOF
 
-sleep 2
-curl -s -X GET http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX 
+# sleep 2
+# curl -s -X GET http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX 
 # curl -s -X GET http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX | jq
 
 
