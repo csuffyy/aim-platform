@@ -14,7 +14,7 @@ pipeline {
     stage('Start') {
       steps {
         showChangeLogs()
-        load "image-archive/environments/development/env.groovy"
+        load "image-archive/environments/production/env.groovy"
         // echo "${params.Greeting} World!"
         echo "PUBILC_IP: ${env.PUBILC_IP}"
         sh "env"
@@ -91,7 +91,7 @@ pipeline {
     }
     stage('Start Tmux') {
       steps {
-        dir('image-archive/environments/development/') {
+        dir('image-archive/environments/production/') {
           sh "export WORKSPACE=${env.WORKSPACE} && BUILD_ID=dontKillMe AUTH_TOKEN=${env.AUTH_TOKEN} tmuxinator &"
         }
       }

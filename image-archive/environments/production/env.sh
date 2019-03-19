@@ -1,0 +1,14 @@
+export PUBLIC_IP='172.20.4.83'
+export ELASTIC_IP='172.20.4.83'
+export FALLBACK_ELASTIC_IP='172.20.4.83'
+export FALLBACK_ELASTIC_PORT=9200
+export ELASTIC_PORT=9200
+export ELASTIC_INDEX='image'
+export ELASTIC_DOC_TYPE='image'
+export ES_JAVA_OPTS='-Xms16g -Xmx16g'
+export FILESERVER_IP='172.20.4.83'
+export FILESERVER_PORT='3000'
+export FILESERVER_TOKEN=''
+export FILESERVER_DICOM_PATH='static/dicom'
+export FILESERVER_THUMBNAIL_PATH='static/thumbnails'
+export AUTH_TOKEN='771100'
