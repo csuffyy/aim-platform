@@ -1,6 +1,6 @@
 pipeline {
   agent {
-    label "development"
+    label "production"
   }
   // parameters {
   //   string(name: 'Greeting', defaultValue: InetAddress.localHost.hostAddress, description: 'How should I greet the world?')
