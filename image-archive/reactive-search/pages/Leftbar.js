@@ -1,5 +1,6 @@
 import React, { Component } from "react";
-import resultComponent from "./resultComponent.jsx";
+// import resultComponent from "./resultComponent.jsx";
+// import Main, {myvar} from "./index.jsx";
 import {
   removeComponent,
   updateHits
@@ -191,59 +192,64 @@ class Leftbar extends Component {
   }
 
   render() {
-    var show_rangeSliderAge;
-    console.log(this)
-    if (this.state.isChecked) {
-      show_rangeSliderAge = "checked";
-      // components.multiListBodyPart.componentId = 'nope';
-      components.rangeSliderAge.componentId = 'age-slider';
-      components.rangeSliderAge.dataField = "PatientAgeInt";
-      // components.multiListBodyPart.componentId = 'nope';
-      // components.multiListBodyPart.componentId = 'bodypart-list';
-      // resultComponent.key = 'results';
-      // resultComponent.componentId = 'nopes';
-      // resultComponent.componentId = 'results';
-      resultComponent.react = {
-        and: [
-          "mainSearch",
-          "modality-list",
-          "gender-list",
-          "bodypart-list",
-          "age-slider",
-          "age-slider2",
-          "acquisitiondate-range",
-          "tagCloud"
-        ]
-      };
-      console.log(resultComponent.react);
-    } else {
-      // components.rangeSliderAge.componentId = 'nope';
-      // components.rangeSliderAge.dataField = "";
-      show_rangeSliderAge = "unchecked";
-      console.log(resultComponent.react);
-      resultComponent.react = {
-        and: [
-          "mainSearch",
-          "modality-list",
-          "gender-list",
-          "bodypart-list",
-          "acquisitiondate-range",
-          "tagCloud"
-        ]
-      };
+    // var show_rangeSliderAge;
+    // // console.log(this)
+    // if (this.state.isChecked) {
+    //   myvar("checked")
+    //   show_rangeSliderAge = "checked";
+    //   // components.multiListBodyPart.componentId = 'nope';
+    //   components.rangeSliderAge.componentId = 'age-slider';
+    //   components.rangeSliderAge.dataField = "PatientAgeInt";
+    //   // components.multiListBodyPart.componentId = 'nope';
+    //   // components.multiListBodyPart.componentId = 'bodypart-list';
+    //   // resultComponent.key = 'results';
+    //   // resultComponent.componentId = 'nopes';
+    //   // resultComponent.componentId = 'results';
+    //   // resultComponent.react = {
+    //   //   and: [
+    //   //     "mainSearch",
+    //   //     "modality-list",
+    //   //     "gender-list",
+    //   //     "bodypart-list",
+    //   //     "age-slider",
+    //   //     "age-slider2",
+    //   //     "acquisitiondate-range",
+    //   //     "tagCloud"
+    //   //   ]
+    //   // };
+    //   // console.log(resultComponent.react);
+    //   // console.log(myvar); console.log(myvar);
+    // } else {
+    //   myvar("unchecked")
+
+    //   // console.log(myvar); console.log(myvar);
+    //   components.rangeSliderAge.componentId = 'nope';
+    //   components.rangeSliderAge.dataField = "";
+    //   show_rangeSliderAge = "unchecked";
+    //   // console.log(resultComponent.react);
+    //   // resultComponent.react = {
+    //   //   and: [
+    //   //     "mainSearch",
+    //   //     "modality-list",
+    //   //     "gender-list",
+    //   //     "bodypart-list",
+    //   //     "acquisitiondate-range",
+    //   //     "tagCloud"
+    //   //   ]
+    //   // };
 
 
-      // key
-      // componentId
-      // multiListBodyPart
+    //   // key
+    //   // componentId
+    //   // multiListBodyPart
 
-      // updateHits()
-      // removeComponent(...components.dateRangeAcquisition)
-      // this.forceUpdate();
-      // console.log(document)
-      // var elem = document.getElementById('ceohuao');
-      // elem.parentNode.removeChild(elem);
-    }
+    //   // updateHits()
+    //   // removeComponent(...components.dateRangeAcquisition)
+    //   // this.forceUpdate();
+    //   // console.log(document)
+    //   // var elem = document.getElementById('ceohuao');
+    //   // elem.parentNode.removeChild(elem);
+    // }
 
     return (
       <div className={this.props.isClicked ? "left-bar-optional" : "left-bar"}>
@@ -280,6 +286,7 @@ class Leftbar extends Component {
 
         <hr className="blue" />
 
+        {/* A JSX comment 
         <div className="filter-heading center">
           <b>
             <i className="fa fa-address-card" /> Patient Age
@@ -295,6 +302,7 @@ class Leftbar extends Component {
           <RangeSlider {...components.rangeSliderAge} />
         }
         <hr className="blue" />
+        */}
 
 
         <div className="filter-heading center">
