@@ -93,7 +93,7 @@ pipeline {
     stage('Start Tmux') {
       steps {
         dir('image-archive/environments/production/') { // TODO 'production' here should be a variable
-          sh "BUILD_ID=dontKillMe tmuxinator"
+          sh "BUILD_ID=dontKillMe tmuxinator &"
         }
       }
     }
