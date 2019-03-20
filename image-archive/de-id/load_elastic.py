@@ -96,7 +96,7 @@ def load_images():
     # Load Image
     dicom = pydicom.dcmread(filepath, force=True)
     dicom_metadata = {}
-    [dicom_metadata.__setitem__(key,dicom.get(key)) for key in dicom.dir() if key not in ['PixelData']]
+    [dicom_metadata.__setitem__(key,str(dicom.get(key))) for key in dicom.dir() if key not in ['PixelData']]
 
     log.info('\n\n')
     log.info('Processing: %s' % filepath)
@@ -147,11 +147,11 @@ def load_images():
     dicom_metadata.clear()
     dicom_metadata.update(filtered)
 
-    # Convert any values that can be displayed as a string (things that need to be numbers should follow this)
-    for k, v in dicom_metadata.items():
-      # convert to string if not already a string and has str method
-      if not isinstance(v,str) and '__str__' in dir(v):
-        dicom_metadata[k] = dicom_metadata[key].__str__()
+    # # Convert any values that can be displayed as a string (things that need to be numbers should follow this)
+    # for k, v in dicom_metadata.items():
+    #   # convert to string if not already a string and has str method
+    #   if not isinstance(v,str) and '__str__' in dir(v):
+    #     dicom_metadata[k] = dicom_metadata[key].__str__()
 
     try:
       if 'PatientBirthDate' in dicom_metadata and 'AcquisitionDate' in dicom_metadata:

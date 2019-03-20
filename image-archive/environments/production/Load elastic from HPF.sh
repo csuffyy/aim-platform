@@ -40,7 +40,7 @@ function qlog() {
 }
 alias qs="ql"
 alias qs="qstat | grep dsni"
-alias qm="cat jobs/aim-qsub.sh.o$(qstat | grep dsnider | cut -f1 -d' ' | tail -n1) && qstat | grep dsnider"
+alias qm="cat jobs/aim-qsub.sh.o$(qstat | grep dsnider | cut -f1 -d' ' | tail -n1); qstat | grep dsnider"
 qm
 
 # Confirm everything is working
