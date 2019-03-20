@@ -35,8 +35,13 @@ split -l 50000 Disk1_FileList_DCM.txt  Disk1_Part_ # split list of files into sm
 qsub ./aim-platform/image-archive/environments/production/aim-qsub.sh
 
 # Check log
-tail -- "$(find jobs -maxdepth 1 -type f -printf '%T@.%p\0' | sort -znr -t. -k1,2 | while IFS= read -r -d '' -r record ; do printf '%s' "$record" | cut -d. -f3- ; break ; done)"
-
+function qlog() {
+    tail -- "$(find jobs -maxdepth 1 -type f -printf '%T@.%p\0' | sort -znr -t. -k1,2 | while IFS= read -r -d '' -r record ; do printf '%s' "$record" | cut -d. -f3- ; break ; done)"
+}
+alias qs="ql"
+alias qs="qstat | grep dsni"
+alias qm="cat jobs/aim-qsub.sh.o$(qstat | grep dsnider | cut -f1 -d' ' | tail -n1) && qstat | grep dsnider"
+qm
 
 # Confirm everything is working
 1. Open 172.20.4.83:3000

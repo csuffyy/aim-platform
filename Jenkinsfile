@@ -83,6 +83,11 @@ pipeline {
       }
     }
     stage('Load Sample Images') {
+      when {
+          not {
+              branch 'master'
+          }
+      }
       steps {
         dir('image-archive/de-id/') {
           sh 'python3 load_elastic.py ../images/sample-dicom/image_list.txt ../reactive-search/static/thumbnails/'

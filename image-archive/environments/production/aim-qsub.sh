@@ -11,7 +11,7 @@
 source aim-platform/image-archive/environments/production/env.sh
 export CPU=8
 export RAM=8
-export ES_BLUK_INSERT_SIZE=500
+export ES_BLUK_INSERT_SIZE=50
 export ELASTIC_IP='192.168.100.61' # special elastic location via tunnel when in HPF
 export FALLBACK_ELASTIC_IP='192.168.100.61' # special elastic location via tunnel when in HPF
 export FILESERVER_TOKEN='-0TO0-771100'

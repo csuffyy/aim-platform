@@ -141,6 +141,18 @@ def load_images():
     except:
       log.warning('Didn\'t understand value: %s = \'%s\'' % ('AcquisitionDate', dicom_metadata['AcquisitionDate']))
     # PatientAgeInt (Method 1: diff between birth and acquisition dates)
+
+    # Remove bytes datatype from metadata because it can't be serialized for sending to elasticsearch
+    filtered = {k: v for k, v in dicom_metadata.items() if type(v) is not bytes}
+    dicom_metadata.clear()
+    dicom_metadata.update(filtered)
+
+    # Convert any values that can be displayed as a string (things that need to be numbers should follow this)
+    for k, v in dicom_metadata.items():
+      # convert to string if not already a string and has str method
+      if not isinstance(v,str) and '__str__' in dir(v):
+        dicom_metadata[k] = dicom_metadata[key].__str__()
+
     try:
       if 'PatientBirthDate' in dicom_metadata and 'AcquisitionDate' in dicom_metadata:
         PatientBirthDate = datetime.strptime(dicom_metadata['PatientBirthDate'], '%Y%m%d')
@@ -164,10 +176,6 @@ def load_images():
     # if 'PatientAgeInt' not in dicom_metadata:
     #   dicom_metadata['PatientAgeInt'] = random.randint(1,20)
 
-    # Remove bytes datatype from metadata because it can't be serialized for sending to elasticsearch
-    filtered = {k: v for k, v in dicom_metadata.items() if type(v) is not bytes}
-    dicom_metadata.clear()
-    dicom_metadata.update(filtered)
 
     thumbnail_filepath = save_thumbnail_of_dicom(dicom, filepath)
     if not thumbnail_filepath:
