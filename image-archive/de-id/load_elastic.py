@@ -181,7 +181,8 @@ def load_images():
     if FILESERVER_TOKEN != '': # when using a token, add .dcm to the end of the URL so that DWV will accept the file
       dicom_token = FILESERVER_TOKEN + '.dcm'
     dicom_metadata['dicom_filename'] = dicom_filename
-    dicom_metadata['dicom_filepath'] = '{ip}:{port}/{path}/{filename}{token}'.format(ip=FILESERVER_IP, port=FILESERVER_PORT, path=FILESERVER_DICOM_PATH, filename=dicom_filename, token=dicom_token)
+    dicom_path = filepath.replace(FILESERVER_DICOM_PATH,'')
+    dicom_metadata['dicom_filepath'] = '{ip}:{port}/{path}{token}'.format(ip=FILESERVER_IP, port=FILESERVER_PORT, path=dicom_path, token=dicom_token)
 
     # Save Path of Thumbnail
     # Example: http://172.20.4.85:8000/static/thumbnails/testplot.png-0TO0-771100

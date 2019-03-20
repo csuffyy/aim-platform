@@ -76,7 +76,7 @@ pipeline {
     stage('Install ReactiveSearch') {
       steps {
         dir('image-archive/reactive-search/') {
-          sh 'npm install'
+          sh 'npm install --verbose 2>&1'
           sh 'npm run dev &'
           sh """bash -c 'while [[ "`curl -v --cookie "token=${env.AUTH_TOKEN}" -s -o /dev/null -w ''%{http_code}'' localhost:3000`" != "200" ]]; do echo "trying again"; sleep 5; done; curl -v localhost:3000; echo "ReactiveSearch UP"'"""
         }
