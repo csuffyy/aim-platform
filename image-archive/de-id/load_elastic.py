@@ -134,6 +134,7 @@ def load_images():
         datetime.strptime(dicom_metadata['PatientBirthDatePretty'], '%Y-%m-%d')  # just check that it works
     except:
       log.warning('Didn\'t understand value: %s = \'%s\'' % ('PatientBirthDate', dicom_metadata['PatientBirthDate']))
+      dicom_metadata.pop('PatientBirthDatePretty', None) # remove bad formatted metadata
     # AcquisitionDatePretty
     try:
       if 'AcquisitionDate' in dicom_metadata:
@@ -142,6 +143,7 @@ def load_images():
         datetime.strptime(dicom_metadata['AcquisitionDatePretty'], '%Y-%m-%d')  # just check that it works
     except:
       log.warning('Didn\'t understand value: %s = \'%s\'' % ('AcquisitionDate', dicom_metadata['AcquisitionDate']))
+      dicom_metadata.pop('AcquisitionDatePretty', None) # remove bad formatted metadata
     # PatientAgeInt (Method 1: diff between birth and acquisition dates)
 
     # Remove bytes datatype from metadata because it can't be serialized for sending to elasticsearch
@@ -204,6 +206,7 @@ def load_images():
     dicom_metadata['_index'] = INDEX_NAME
     dicom_metadata['_type'] = DOC_TYPE
     dicom_metadata['searchallblank'] = '' # needed to search across everything (via searching for empty string)
+    # embed()
     yield dicom_metadata
 
 
