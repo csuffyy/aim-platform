@@ -85,7 +85,7 @@ pipeline {
     stage('Load Sample Images') {
       when {
           not {
-              branch 'master'
+              branch 'production'
           }
       }
       steps {
