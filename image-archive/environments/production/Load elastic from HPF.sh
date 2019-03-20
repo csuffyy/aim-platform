@@ -32,15 +32,16 @@ split -l 50000 Disk1_FileList_DCM.txt  Disk1_Part_ # split list of files into sm
 
 # Submit a qjob
 # Run on hpf23.ccm.sickkids.ca
-qsub ./aim-platform/image-archive/environments/production/aim-qsub.sh
+INPUT_FILE_LIST=~/Disk1_Part_ab qsub ./aim-platform/image-archive/environments/production/aim-qsub.sh
 
 # Check log
-function qlog() {
+function ql() {
     tail -- "$(find jobs -maxdepth 1 -type f -printf '%T@.%p\0' | sort -znr -t. -k1,2 | while IFS= read -r -d '' -r record ; do printf '%s' "$record" | cut -d. -f3- ; break ; done)"
 }
-alias qs="ql"
 alias qs="qstat | grep dsni"
-alias qm="cat jobs/aim-qsub.sh.o$(qstat | grep dsnider | cut -f1 -d' ' | tail -n1); qstat | grep dsnider"
+function qm() {
+  cat jobs/aim-qsub.sh.o$(qstat | grep dsnider | grep -v ' C '| cut -f1 -d' ' | tail -n1); qstat | grep dsnider
+}
 qm
 
 # Confirm everything is working
