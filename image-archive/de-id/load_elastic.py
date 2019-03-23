@@ -96,7 +96,7 @@ def load_images():
     # Load Image
     dicom = pydicom.dcmread(filepath, force=True)
     dicom_metadata = {}
-    [dicom_metadata.__setitem__(key,dicom.get(key)) for key in dicom.dir() if key not in ['PixelData']]
+    [dicom_metadata.__setitem__(key,str(dicom.get(key))) for key in dicom.dir() if key not in ['PixelData']]
 
     log.info('\n\n')
     log.info('Processing: %s' % filepath)
@@ -131,16 +131,32 @@ def load_images():
       if 'PatientBirthDate' in dicom_metadata:
         PatientBirthDate = datetime.strptime(dicom_metadata['PatientBirthDate'], '%Y%m%d')
         dicom_metadata['PatientBirthDatePretty'] = datetime.strftime(PatientBirthDate,'%Y-%m-%d')
+        datetime.strptime(dicom_metadata['PatientBirthDatePretty'], '%Y-%m-%d')  # just check that it works
     except:
       log.warning('Didn\'t understand value: %s = \'%s\'' % ('PatientBirthDate', dicom_metadata['PatientBirthDate']))
+      dicom_metadata.pop('PatientBirthDatePretty', None) # remove bad formatted metadata
     # AcquisitionDatePretty
     try:
       if 'AcquisitionDate' in dicom_metadata:
         AcquisitionDate = datetime.strptime(dicom_metadata['AcquisitionDate'], '%Y%m%d')
         dicom_metadata['AcquisitionDatePretty'] = datetime.strftime(AcquisitionDate,'%Y-%m-%d')
+        datetime.strptime(dicom_metadata['AcquisitionDatePretty'], '%Y-%m-%d')  # just check that it works
     except:
       log.warning('Didn\'t understand value: %s = \'%s\'' % ('AcquisitionDate', dicom_metadata['AcquisitionDate']))
+      dicom_metadata.pop('AcquisitionDatePretty', None) # remove bad formatted metadata
     # PatientAgeInt (Method 1: diff between birth and acquisition dates)
+
+    # Remove bytes datatype from metadata because it can't be serialized for sending to elasticsearch
+    filtered = {k: v for k, v in dicom_metadata.items() if type(v) is not bytes}
+    dicom_metadata.clear()
+    dicom_metadata.update(filtered)
+
+    # # Convert any values that can be displayed as a string (things that need to be numbers should follow this)
+    # for k, v in dicom_metadata.items():
+    #   # convert to string if not already a string and has str method
+    #   if not isinstance(v,str) and '__str__' in dir(v):
+    #     dicom_metadata[k] = dicom_metadata[key].__str__()
+
     try:
       if 'PatientBirthDate' in dicom_metadata and 'AcquisitionDate' in dicom_metadata:
         PatientBirthDate = datetime.strptime(dicom_metadata['PatientBirthDate'], '%Y%m%d')
@@ -164,10 +180,6 @@ def load_images():
     # if 'PatientAgeInt' not in dicom_metadata:
     #   dicom_metadata['PatientAgeInt'] = random.randint(1,20)
 
-    # Remove bytes datatype from metadata because it can't be serialized for sending to elasticsearch
-    filtered = {k: v for k, v in dicom_metadata.items() if type(v) is not bytes}
-    dicom_metadata.clear()
-    dicom_metadata.update(filtered)
 
     thumbnail_filepath = save_thumbnail_of_dicom(dicom, filepath)
     if not thumbnail_filepath:
@@ -181,7 +193,8 @@ def load_images():
     if FILESERVER_TOKEN != '': # when using a token, add .dcm to the end of the URL so that DWV will accept the file
       dicom_token = FILESERVER_TOKEN + '.dcm'
     dicom_metadata['dicom_filename'] = dicom_filename
-    dicom_metadata['dicom_filepath'] = '{ip}:{port}/{path}/{filename}{token}'.format(ip=FILESERVER_IP, port=FILESERVER_PORT, path=FILESERVER_DICOM_PATH, filename=dicom_filename, token=dicom_token)
+    dicom_path = filepath.replace(FILESERVER_DICOM_PATH,'')
+    dicom_metadata['dicom_filepath'] = '{ip}:{port}/{path}{token}'.format(ip=FILESERVER_IP, port=FILESERVER_PORT, path=dicom_path, token=dicom_token)
 
     # Save Path of Thumbnail
     # Example: http://172.20.4.85:8000/static/thumbnails/testplot.png-0TO0-771100
@@ -193,6 +206,7 @@ def load_images():
     dicom_metadata['_index'] = INDEX_NAME
     dicom_metadata['_type'] = DOC_TYPE
     dicom_metadata['searchallblank'] = '' # needed to search across everything (via searching for empty string)
+    # embed()
     yield dicom_metadata
 
 
@@ -263,7 +277,8 @@ if __name__ == '__main__':
   
   # Bulk load elastic
   print('Bulk chunk_size = {}'.format(args.num))
-  res = helpers.bulk(es, load_images(), chunk_size=args.num, max_chunk_bytes=500000000, max_retries=1) # 500 MB
+  # res = helpers.bulk(es, load_images(), chunk_size=args.num, max_chunk_bytes=500000000, max_retries=1) # 500 MB
+  res = helpers.bulk(es, load_images(), chunk_size=args.num, max_chunk_bytes=500000000, max_retries=1, raise_on_error=False, raise_on_exception=False) # 500 MB
   log.info('Bulk insert result: %s, %s' % (res[0], res[1]))
 
   # Update Index
