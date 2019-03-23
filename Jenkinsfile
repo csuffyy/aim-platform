@@ -17,6 +17,7 @@ pipeline {
         load "image-archive/environments/production/env.groovy"
         // echo "${params.Greeting} World!"
         echo "PUBILC_IP: ${env.PUBILC_IP}"
+        echo "WORKSPACE: ${env.WORKSPACE}"
         sh "env"
       }
     }
@@ -75,13 +76,18 @@ pipeline {
     stage('Install ReactiveSearch') {
       steps {
         dir('image-archive/reactive-search/') {
-          sh 'npm install'
+          sh 'npm install --verbose --color false 2>&1'
           sh 'npm run dev &'
           sh """bash -c 'while [[ "`curl -v --cookie "token=${env.AUTH_TOKEN}" -s -o /dev/null -w ''%{http_code}'' localhost:3000`" != "200" ]]; do echo "trying again"; sleep 5; done; curl -v localhost:3000; echo "ReactiveSearch UP"'"""
         }
       }
     }
     stage('Load Sample Images') {
+      when {
+          not {
+              branch 'production'
+          }
+      }
       steps {
         dir('image-archive/de-id/') {
           sh 'python3 load_elastic.py ../images/sample-dicom/image_list.txt ../reactive-search/static/thumbnails/'
@@ -92,7 +98,7 @@ pipeline {
     stage('Start Tmux') {
       steps {
         dir('image-archive/environments/production/') { // TODO 'production' here should be a variable
-          sh "export WORKSPACE=${env.WORKSPACE} && BUILD_ID=dontKillMe AUTH_TOKEN=${env.AUTH_TOKEN} tmuxinator &"
+          sh "BUILD_ID=dontKillMe tmuxinator &"
         }
       }
     }
