@@ -8,9 +8,10 @@
     "emotion-server": "9.1.0",
     "material-design-icons": "^3.0.1",
     "next": "5.1.0",
-    "react": "16.2.0",
-    "react-dom": "16.2.0",
-    "react-scripts": "^2.1.5"
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
+    "react-scripts": "^2.1.5",
+    "reactstrap": "^7.1.0"
   },
   "scripts": {
     "dev": "next",

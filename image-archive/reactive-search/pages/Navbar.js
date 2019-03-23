@@ -1,5 +1,7 @@
 import React, { Component } from "react";
 import { DataSearch } from "@appbaseio/reactivesearch";
+import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
+
 
 // function custQuery(value, props) {
 // COLON DELIMITED SEARCH
@@ -71,7 +73,21 @@ class Navbar extends Component {
   constructor(props) {
     super(props);
     this.LogOut = this.LogOut.bind(this);
+
+
+    this.toggle = this.toggle.bind(this);
+    this.state = {
+      dropdownOpen: false
+    };
+
   }
+
+  toggle() {
+    this.setState({
+      dropdownOpen: !this.state.dropdownOpen
+    });
+  }
+
 
   LogOut(event) {
     setCookie('token','');
@@ -98,7 +114,7 @@ class Navbar extends Component {
     return (
       <div className="navbar">
         <div className="wrapper">
-          <aside className="aside aside-logo" style={{paddingLeft: "10px"}}>
+          <aside className="aside aside-logo">
             <div className="container">
               <div className="row">
                 <div style={{float: "left"}}>
@@ -110,9 +126,34 @@ class Navbar extends Component {
                 </div>
               </div>
               <div className="row">
-                <h3 className="header-text">
-                  Diagnostic Image Archive
-                </h3>
+
+                <ButtonDropdown isOpen={this.state.dropdownOpen} toggle={this.toggle}>
+                  <DropdownToggle caret className='data-selector-button'>
+                    <h3 className="header-text">
+                      Diagnostic Imaging Archive
+                    </h3>
+
+                  </DropdownToggle>
+                  <DropdownMenu>
+                    {/* <DropdownItem header>Header</DropdownItem> */}
+                    <DropdownItem disabled >
+                      <h3 className="header-text">
+                      Stoke Lab Research Study
+                      </h3>
+                    </DropdownItem>
+                    <DropdownItem disabled >
+                      <h3 className="header-text">
+                      Radiology Text Reports
+                      </h3>
+                     </DropdownItem>
+                    {/* <DropdownItem divider /> */}
+                    {/* <DropdownItem disabled>
+                      <h3 className="header-text">
+                      Another
+                      </h3>
+                     </DropdownItem> */}
+                  </DropdownMenu>
+                </ButtonDropdown>
               </div>
             </div>
           </aside>
@@ -126,7 +167,7 @@ class Navbar extends Component {
                 <div className="col-sm">
               <div>
                             <span className="header-support-text">
-                <a className="login-footer-link" href="mailto:daniel.snider@sickkids.ca?subject=Diagnostic Image Archive Support" target="_blank">Support</a> Provided by <a className="login-footer-link" href="https://ccm.sickkids.ca/" target="_blank">The Centre for Computational Medicine</a>
+                <a className="login-footer-link" href="mailto:daniel.snider@sickkids.ca?subject=Diagnostic Imaging Archive Support" target="_blank">Support</a> Provided by <a className="login-footer-link" href="https://ccm.sickkids.ca/" target="_blank">The Centre for Computational Medicine</a>
               </span>
               </div>
                 </div>
