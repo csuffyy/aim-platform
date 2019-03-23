@@ -92,122 +92,124 @@ def save_thumbnail_of_dicom(dicom, filepath):
 def load_images():
   for filepath in files:
     # filepath = mll[file]
-
-    # Load Image
-    dicom = pydicom.dcmread(filepath, force=True)
-    dicom_metadata = {}
-    [dicom_metadata.__setitem__(key,str(dicom.get(key))) for key in dicom.dir() if key not in ['PixelData']]
-
-    log.info('\n\n')
-    log.info('Processing: %s' % filepath)
-    for key, value in dicom_metadata.items():
-      if hasattr(dicom_metadata[key], '_list'):
-        # Fix for error: TypeError("Unable to serialize ['ORIGINAL', 'SECONDARY'] (type: <class 'pydicom.multival.MultiValue'>)")
-        dicom_metadata[key] = dicom_metadata[key]._list
-      if hasattr(dicom_metadata[key], 'original_string'):
-        # Fix for error: TypeError("Unable to serialize '' (type: <class 'pydicom.valuerep.PersonName3'>)")
-        dicom_metadata[key] = dicom_metadata[key].original_string
-      if isinstance(dicom_metadata[key], bytes):
-        # Fix for error: TypeError("Unable to serialize b'FOONAME^BARNAM' (type: <class 'bytes'>)")
-        try:
-          dicom_metadata[key] = dicom_metadata[key].decode("utf-8")
-        except UnicodeDecodeError as e:
-          pass
-      if isinstance(dicom_metadata[key], list):
-        if len(dicom_metadata[key])>0 and type(dicom_metadata[key][0]) is pydicom.dataset.Dataset:
-          # Fix for error: TypeError("Unable to serialize 'ProcedureCodeSequence' (type: <class 'pydicom.dataset.Dataset'>)")")
-          dicom_metadata[key] = dicom_metadata[key].__str__()
-
-      log.debug('%s: %s' % (key, value))
-
-    if 'TransferSyntaxUID' not in dicom.file_meta:
-      # Guess a transfer syntax if none is available
-      dicom.file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian  # 1.2.840.10008.1.2
-      dicom.add_new(0x19100e, 'FD', [0,1,0]) # I have no idea what this last vector should actually be
-      dicom[0x19100e].value = 'Assumed TransferSyntaxUID'
-      log.warning('Assumed TransferSyntaxUID')
-    # PatientBirthDatePretty
     try:
-      if 'PatientBirthDate' in dicom_metadata:
-        PatientBirthDate = datetime.strptime(dicom_metadata['PatientBirthDate'], '%Y%m%d')
-        dicom_metadata['PatientBirthDatePretty'] = datetime.strftime(PatientBirthDate,'%Y-%m-%d')
-        datetime.strptime(dicom_metadata['PatientBirthDatePretty'], '%Y-%m-%d')  # just check that it works
+      # Load Image
+      dicom = pydicom.dcmread(filepath, force=True)
+      dicom_metadata = {}
+      [dicom_metadata.__setitem__(key,str(dicom.get(key))) for key in dicom.dir() if key not in ['PixelData']]
+
+      log.info('\n\n')
+      log.info('Processing: %s' % filepath)
+      for key, value in dicom_metadata.items():
+        if hasattr(dicom_metadata[key], '_list'):
+          # Fix for error: TypeError("Unable to serialize ['ORIGINAL', 'SECONDARY'] (type: <class 'pydicom.multival.MultiValue'>)")
+          dicom_metadata[key] = dicom_metadata[key]._list
+        if hasattr(dicom_metadata[key], 'original_string'):
+          # Fix for error: TypeError("Unable to serialize '' (type: <class 'pydicom.valuerep.PersonName3'>)")
+          dicom_metadata[key] = dicom_metadata[key].original_string
+        if isinstance(dicom_metadata[key], bytes):
+          # Fix for error: TypeError("Unable to serialize b'FOONAME^BARNAM' (type: <class 'bytes'>)")
+          try:
+            dicom_metadata[key] = dicom_metadata[key].decode("utf-8")
+          except UnicodeDecodeError as e:
+            pass
+        if isinstance(dicom_metadata[key], list):
+          if len(dicom_metadata[key])>0 and type(dicom_metadata[key][0]) is pydicom.dataset.Dataset:
+            # Fix for error: TypeError("Unable to serialize 'ProcedureCodeSequence' (type: <class 'pydicom.dataset.Dataset'>)")")
+            dicom_metadata[key] = dicom_metadata[key].__str__()
+
+        log.debug('%s: %s' % (key, value))
+
+      if 'TransferSyntaxUID' not in dicom.file_meta:
+        # Guess a transfer syntax if none is available
+        dicom.file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian  # 1.2.840.10008.1.2
+        dicom.add_new(0x19100e, 'FD', [0,1,0]) # I have no idea what this last vector should actually be
+        dicom[0x19100e].value = 'Assumed TransferSyntaxUID'
+        log.warning('Assumed TransferSyntaxUID')
+      # PatientBirthDatePretty
+      try:
+        if 'PatientBirthDate' in dicom_metadata:
+          PatientBirthDate = datetime.strptime(dicom_metadata['PatientBirthDate'], '%Y%m%d')
+          dicom_metadata['PatientBirthDatePretty'] = datetime.strftime(PatientBirthDate,'%Y-%m-%d')
+          datetime.strptime(dicom_metadata['PatientBirthDatePretty'], '%Y-%m-%d')  # just check that it works
+      except:
+        log.warning('Didn\'t understand value: %s = \'%s\'' % ('PatientBirthDate', dicom_metadata['PatientBirthDate']))
+        dicom_metadata.pop('PatientBirthDatePretty', None) # remove bad formatted metadata
+      # AcquisitionDatePretty
+      try:
+        if 'AcquisitionDate' in dicom_metadata:
+          AcquisitionDate = datetime.strptime(dicom_metadata['AcquisitionDate'], '%Y%m%d')
+          dicom_metadata['AcquisitionDatePretty'] = datetime.strftime(AcquisitionDate,'%Y-%m-%d')
+          datetime.strptime(dicom_metadata['AcquisitionDatePretty'], '%Y-%m-%d')  # just check that it works
+      except:
+        log.warning('Didn\'t understand value: %s = \'%s\'' % ('AcquisitionDate', dicom_metadata['AcquisitionDate']))
+        dicom_metadata.pop('AcquisitionDatePretty', None) # remove bad formatted metadata
+      # PatientAgeInt (Method 1: diff between birth and acquisition dates)
+
+      # Remove bytes datatype from metadata because it can't be serialized for sending to elasticsearch
+      filtered = {k: v for k, v in dicom_metadata.items() if type(v) is not bytes}
+      dicom_metadata.clear()
+      dicom_metadata.update(filtered)
+
+      # # Convert any values that can be displayed as a string (things that need to be numbers should follow this)
+      # for k, v in dicom_metadata.items():
+      #   # convert to string if not already a string and has str method
+      #   if not isinstance(v,str) and '__str__' in dir(v):
+      #     dicom_metadata[k] = dicom_metadata[key].__str__()
+
+      try:
+        if 'PatientBirthDate' in dicom_metadata and 'AcquisitionDate' in dicom_metadata:
+          PatientBirthDate = datetime.strptime(dicom_metadata['PatientBirthDate'], '%Y%m%d')
+          AcquisitionDate = datetime.strptime(dicom_metadata['AcquisitionDate'], '%Y%m%d')
+        age = AcquisitionDate - PatientBirthDate
+        age = int(age.days / 365) # age in years
+        dicom_metadata['PatientAgeInt'] = age
+      except:
+        log.warning('Falling back for PatientAge')
+      # PatientAgeInt (Method 2: str to int)
+      try:
+        if 'PatientAge' in dicom_metadata:
+          age = dicom_metadata['PatientAge'] # usually looks like '06Y'
+          if 'Y' in age:
+            age = age.split('Y')
+            age = int(age[0])
+            dicom_metadata['PatientAgeInt'] = age
+      except:
+        log.warning('Didn\'t understand value: %s = \'%s\'' % ('PatientAge', dicom_metadata['PatientAge']))
+      # DEMO ONLY!!!! Add random age
+      # if 'PatientAgeInt' not in dicom_metadata:
+      #   dicom_metadata['PatientAgeInt'] = random.randint(1,20)
+
+
+      thumbnail_filepath = save_thumbnail_of_dicom(dicom, filepath)
+      if not thumbnail_filepath:
+        log.warning('Skipping this dicom. Could not generate thumbnail.')
+        continue
+
+      # Save Path of DICOM
+      # Example: 172.20.4.85:8000/static/dicom/OT-MONO2-8-hip.dcm-0TO0-771100.dcm
+      dicom_filename = os.path.basename(filepath)
+      dicom_token = FILESERVER_TOKEN
+      if FILESERVER_TOKEN != '': # when using a token, add .dcm to the end of the URL so that DWV will accept the file
+        dicom_token = FILESERVER_TOKEN + '.dcm'
+      dicom_metadata['dicom_filename'] = dicom_filename
+      dicom_path = filepath.replace(FILESERVER_DICOM_PATH,'')
+      dicom_metadata['dicom_filepath'] = '{ip}:{port}/{path}{token}'.format(ip=FILESERVER_IP, port=FILESERVER_PORT, path=dicom_path, token=dicom_token)
+
+      # Save Path of Thumbnail
+      # Example: http://172.20.4.85:8000/static/thumbnails/testplot.png-0TO0-771100
+      thumbnail_filename = os.path.basename(thumbnail_filepath)
+      dicom_metadata['thumbnail_filename'] = thumbnail_filename
+      dicom_metadata['thumbnail_filepath'] = 'http://{ip}:{port}/{path}/{filename}{token}'.format(ip=FILESERVER_IP, port=FILESERVER_PORT, path=FILESERVER_THUMBNAIL_PATH, filename=thumbnail_filename, token=FILESERVER_TOKEN)
+
+      dicom_metadata['original_title'] = 'Dicom'
+      dicom_metadata['_index'] = INDEX_NAME
+      dicom_metadata['_type'] = DOC_TYPE
+      dicom_metadata['searchallblank'] = '' # needed to search across everything (via searching for empty string)
+      yield dicom_metadata
     except:
-      log.warning('Didn\'t understand value: %s = \'%s\'' % ('PatientBirthDate', dicom_metadata['PatientBirthDate']))
-      dicom_metadata.pop('PatientBirthDatePretty', None) # remove bad formatted metadata
-    # AcquisitionDatePretty
-    try:
-      if 'AcquisitionDate' in dicom_metadata:
-        AcquisitionDate = datetime.strptime(dicom_metadata['AcquisitionDate'], '%Y%m%d')
-        dicom_metadata['AcquisitionDatePretty'] = datetime.strftime(AcquisitionDate,'%Y-%m-%d')
-        datetime.strptime(dicom_metadata['AcquisitionDatePretty'], '%Y-%m-%d')  # just check that it works
-    except:
-      log.warning('Didn\'t understand value: %s = \'%s\'' % ('AcquisitionDate', dicom_metadata['AcquisitionDate']))
-      dicom_metadata.pop('AcquisitionDatePretty', None) # remove bad formatted metadata
-    # PatientAgeInt (Method 1: diff between birth and acquisition dates)
-
-    # Remove bytes datatype from metadata because it can't be serialized for sending to elasticsearch
-    filtered = {k: v for k, v in dicom_metadata.items() if type(v) is not bytes}
-    dicom_metadata.clear()
-    dicom_metadata.update(filtered)
-
-    # # Convert any values that can be displayed as a string (things that need to be numbers should follow this)
-    # for k, v in dicom_metadata.items():
-    #   # convert to string if not already a string and has str method
-    #   if not isinstance(v,str) and '__str__' in dir(v):
-    #     dicom_metadata[k] = dicom_metadata[key].__str__()
-
-    try:
-      if 'PatientBirthDate' in dicom_metadata and 'AcquisitionDate' in dicom_metadata:
-        PatientBirthDate = datetime.strptime(dicom_metadata['PatientBirthDate'], '%Y%m%d')
-        AcquisitionDate = datetime.strptime(dicom_metadata['AcquisitionDate'], '%Y%m%d')
-      age = AcquisitionDate - PatientBirthDate
-      age = int(age.days / 365) # age in years
-      dicom_metadata['PatientAgeInt'] = age
-    except:
-      log.warning('Falling back for PatientAge')
-    # PatientAgeInt (Method 2: str to int)
-    try:
-      if 'PatientAge' in dicom_metadata:
-        age = dicom_metadata['PatientAge'] # usually looks like '06Y'
-        if 'Y' in age:
-          age = age.split('Y')
-          age = int(age[0])
-          dicom_metadata['PatientAgeInt'] = age
-    except:
-      log.warning('Didn\'t understand value: %s = \'%s\'' % ('PatientAge', dicom_metadata['PatientAge']))
-    # DEMO ONLY!!!! Add random age
-    # if 'PatientAgeInt' not in dicom_metadata:
-    #   dicom_metadata['PatientAgeInt'] = random.randint(1,20)
-
-
-    thumbnail_filepath = save_thumbnail_of_dicom(dicom, filepath)
-    if not thumbnail_filepath:
-      log.warning('Skipping this dicom. Could not generate thumbnail.')
-      continue
-
-    # Save Path of DICOM
-    # Example: 172.20.4.85:8000/static/dicom/OT-MONO2-8-hip.dcm-0TO0-771100.dcm
-    dicom_filename = os.path.basename(filepath)
-    dicom_token = FILESERVER_TOKEN
-    if FILESERVER_TOKEN != '': # when using a token, add .dcm to the end of the URL so that DWV will accept the file
-      dicom_token = FILESERVER_TOKEN + '.dcm'
-    dicom_metadata['dicom_filename'] = dicom_filename
-    dicom_path = filepath.replace(FILESERVER_DICOM_PATH,'')
-    dicom_metadata['dicom_filepath'] = '{ip}:{port}/{path}{token}'.format(ip=FILESERVER_IP, port=FILESERVER_PORT, path=dicom_path, token=dicom_token)
-
-    # Save Path of Thumbnail
-    # Example: http://172.20.4.85:8000/static/thumbnails/testplot.png-0TO0-771100
-    thumbnail_filename = os.path.basename(thumbnail_filepath)
-    dicom_metadata['thumbnail_filename'] = thumbnail_filename
-    dicom_metadata['thumbnail_filepath'] = 'http://{ip}:{port}/{path}/{filename}{token}'.format(ip=FILESERVER_IP, port=FILESERVER_PORT, path=FILESERVER_THUMBNAIL_PATH, filename=thumbnail_filename, token=FILESERVER_TOKEN)
-
-    dicom_metadata['original_title'] = 'Dicom'
-    dicom_metadata['_index'] = INDEX_NAME
-    dicom_metadata['_type'] = DOC_TYPE
-    dicom_metadata['searchallblank'] = '' # needed to search across everything (via searching for empty string)
-    # embed()
-    yield dicom_metadata
+      print(traceback.format_exc())
+      log.error('Skipping this image because of unknown error')
 
 
 if __name__ == '__main__':
@@ -263,8 +265,8 @@ if __name__ == '__main__':
   # Get the list of dicom files to be scanned
   with open(input_filenames, 'r') as f:
     files = f.read().split('\n')
-    files = files[0:5000]
-    del files[-1]  # Remove blank item
+    # files = files[0:5000]
+    # del files[-1]  # Remove blank item
 
   # # Get master linking log (do we still need this? maybe not...)
   # fn = input_filenames.split('.')[0]
@@ -277,7 +279,8 @@ if __name__ == '__main__':
   
   # Bulk load elastic
   print('Bulk chunk_size = {}'.format(args.num))
-  res = helpers.bulk(es, load_images(), chunk_size=args.num, max_chunk_bytes=500000000, max_retries=1) # 500 MB
+  # res = helpers.bulk(es, load_images(), chunk_size=args.num, max_chunk_bytes=500000000, max_retries=1) # 500 MB
+  res = helpers.bulk(es, load_images(), chunk_size=args.num, max_chunk_bytes=500000000, max_retries=1, raise_on_error=False, raise_on_exception=False) # 500 MB
   log.info('Bulk insert result: %s, %s' % (res[0], res[1]))
 
   # Update Index

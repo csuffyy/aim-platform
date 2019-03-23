@@ -5,10 +5,10 @@
 # Run tunnel on data1.ccm.sickkids.ca
 ssh -fNq -R 0.0.0.0:8000:localhost:8000 ubuntu@172.20.4.83
 # Run webserver on data1.ccm.sickkids.ca
+# file from aim-platform/image-archive/environments/hpf/static_webserver.py
 cd /hpf/largeprojects/diagimage_common
-# python aim-platform/image-archive/environments/hpf/static_webserver.py
 export TOKEN='771100'
-python ~/hpf_static_server.py
+nohup python ~/hpf_static_server.py &
 # Test from AIM-server
 curl 172.20.4.83:8000/src/disk1/Images/NASLibrary10/2000/02/09/1559937/75473475.dcm-0TO0-771100.dcm
 curl 172.20.4.83:8000/shared/thumbnails/test.png-0TO0-771100
@@ -32,17 +32,21 @@ split -l 50000 Disk1_FileList_DCM.txt  Disk1_Part_ # split list of files into sm
 
 # Submit a qjob
 # Run on hpf23.ccm.sickkids.ca
-export INPUT_FILE_LIST=~/Disk1_Part_ab && qsub ./aim-platform/image-archive/environments/production/aim-qsub.sh
+sed -i 's/export INPUT_FILE_LIST.*/export INPUT_FILE_LIST\=~\/Disk1_Part_aa/g' ./aim-platform/image-archive/environments/production/aim-qsub.sh
+qsub ./aim-platform/image-archive/environments/production/aim-qsub.sh
 
 # Check log
+alias qs="qstat -rn1 | grep dsni"
+alias wqs="watch 'qstat -rn1 | grep dsni'"
 function ql() {
-    tail -f -- "$(find jobs -maxdepth 1 -type f -printf '%T@.%p\0' | sort -znr -t. -k1,2 | while IFS= read -r -d '' -r record ; do printf '%s' "$record" | cut -d. -f3- ; break ; done)"
+    tail $1 -- "$(find jobs -maxdepth 1 -type f -printf '%T@.%p\0' | sort -znr -t. -k1,2 | while IFS= read -r -d '' -r record ; do printf '%s' "$record" | cut -d. -f3- ; break ; done)"
 }
-alias qs="qstat | grep dsni"
 function qm() {
-  cat jobs/aim-qsub.sh.o$(qstat | grep dsnider | grep -v ' C '| cut -f1 -d' ' | tail -n1); qstat | grep dsnider
+  tail -n100 jobs/aim-qsub.sh.o$(qstat -rn1 | grep dsnider | grep -v ' C '| cut -f1 -d' ' | tail -n1); qstat -rn1 | grep dsnider
 }
-qm
+function wqm() { # watch q-monitor
+  while [ 1 ]; do cat jobs/aim-qsub.sh.o$(qstat -rn1 | grep dsnider | grep -v ' C '| cut -f1 -d' ' | tail -n1); qstat -rn1 | grep dsnider; sleep 1; test $? -gt 128 && break; done
+}
 
 # Confirm everything is working
 1. Open 172.20.4.83:3000
