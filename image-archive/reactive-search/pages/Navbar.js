@@ -138,7 +138,7 @@ class Navbar extends Component {
                     {/* <DropdownItem header>Header</DropdownItem> */}
                     <DropdownItem disabled >
                       <h3 className="header-text">
-                      Stoke Lab Research Study
+                      Stroke Lab Research Study
                       </h3>
                     </DropdownItem>
                     <DropdownItem disabled >
