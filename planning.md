@@ -16,8 +16,7 @@ Icon | Meaning
 ## Priorities
 
 #### 1.
-#####Image Search Website ![](https://img.shields.io/badge/Epic-Image_Search-blueviolet.svg) ![](https://img.shields.io/badge/Weeks-3-ff64b9.svg)
-<br>
+##### Image Search Website ![](https://img.shields.io/badge/Epic-Image_Search-blueviolet.svg) ![](https://img.shields.io/badge/Weeks-3-ff64b9.svg)
 
 #### 2.
 
@@ -28,13 +27,11 @@ Prioritize according to revenue:
 ##### Goldenberg Lab: Cancer Surveillance ![](https://img.shields.io/badge/Weeks-3-ff64b9.svg) ![](https://img.shields.io/badge/Epic-Reports_Search-blueviolet.svg) ![](https://img.shields.io/badge/Weeks-2-ff64b9.svg)
 ##### Doria Lab: NLP on Radiology Text Reports ![](https://img.shields.io/badge/Weeks-3-ff64b9.svg) ![](https://img.shields.io/badge/Epic-Reports_Search-blueviolet.svg) ![](https://img.shields.io/badge/Weeks-2-ff64b9.svg)
 ##### Stroke Lab: Imaging Research Study  ![](https://img.shields.io/badge/Weeks-8-ff64b9.svg) ![](https://img.shields.io/badge/Epic-Clinical_Search-blueviolet.svg) ![](https://img.shields.io/badge/Weeks-3_❔-ff64b9.svg)
-<br>
 
 #### 3.
 ##### Internal SickKids Access ![](https://img.shields.io/badge/Epic-Internal_SickKids-blueviolet.svg) ![](https://img.shields.io/badge/Weeks-6-ff64b9.svg)
 
 
-<br>
 
 ## Stroke Lab: Imaging Research Study  ![](https://img.shields.io/badge/Weeks-8-ff64b9.svg)
 
