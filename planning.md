@@ -209,8 +209,8 @@ Subtasks:
 - ✔ Ingestion Script `load_elastic.py` ![](https://img.shields.io/badge/Days-3-ff64b9.svg)
 - ✔ HPF Script `aim-qsub.sh` ![](https://img.shields.io/badge/Days-2-ff64b9.svg)
 - 🕕 Find all dicoms ![](https://img.shields.io/badge/-Saturday-green.svg) ![](https://img.shields.io/badge/Hours-1-ff64b9.svg)
-- Fix Color Thumbnails ![](https://img.shields.io/badge/-Sunday-green.svg) ![](https://img.shields.io/badge/Hours-4-ff64b9.svg)
-- Search Speed: Max value byte length ![](https://img.shields.io/badge/-Sunday-green.svg) ![](https://img.shields.io/badge/Hours-1-ff64b9.svg)
+- Fix Color Thumbnails ![](https://img.shields.io/badge/-Monday-green.svg) ![](https://img.shields.io/badge/Hours-4-ff64b9.svg)
+- Search Speed: Max value byte length ![](https://img.shields.io/badge/-Monday-green.svg) ![](https://img.shields.io/badge/Hours-1-ff64b9.svg)
 - Fix color thumbnail for picture of:
       - Face :8080/index.html?input=:8000/src/disk1/Images/NASLibrary13/def_20120321/def_20120321/def_20120321/DEMO4/126559797.dcm
       - 3D spine :8000/src/disk1/Images/NASLibrary13/2000/02/08/9999993CORDEA__ADRIAN/119783495.dcm
@@ -230,7 +230,7 @@ Subtasks:
 ### Radiology Reports Search ![](https://img.shields.io/badge/Epic-Reports_Search-blueviolet.svg) ![](https://img.shields.io/badge/Lab-Goldenberg-Blue.svg) ![](https://img.shields.io/badge/Lab-Doria-Blue.svg) ![](https://img.shields.io/badge/Weeks-2-ff64b9.svg)
 
 - Local all reports ![](https://img.shields.io/badge/-Saturday-green.svg) ![](https://img.shields.io/badge/Hours-2-ff64b9.svg)
-- Setup database, example insert ![](https://img.shields.io/badge/-Saturday-green.svg) ![](https://img.shields.io/badge/Hours-2-ff64b9.svg)
+- Setup database, example insert ![](https://img.shields.io/badge/-Sunday-green.svg) ![](https://img.shields.io/badge/Hours-2-ff64b9.svg)
 - Parse Report Data Format ![](https://img.shields.io/badge/-Monday-green.svg) ![](https://img.shields.io/badge/Days-1-ff64b9.svg)
 - Write test cases ![](https://img.shields.io/badge/-Monday-green.svg) ![](https://img.shields.io/badge/Hours-1-ff64b9.svg)
 - De-Id Reports ![](https://img.shields.io/badge/Days-2-ff64b9.svg)
@@ -299,7 +299,7 @@ Subtasks:
 - Review NLP emails ![](https://img.shields.io/badge/-Saturday-green.svg)
 - Chris Help ![](https://img.shields.io/badge/-Monday-green.svg)
 - Gautham Update ![](https://img.shields.io/badge/-Monday-green.svg)
-- Robb Code ![](https://img.shields.io/badge/-Monday-green.svg)
+- Robb Code and CHMOD ![](https://img.shields.io/badge/-Monday-green.svg)
 - Anna Update ![](https://img.shields.io/badge/-Wednesday-green.svg)
 - Macgowan Update ![](https://img.shields.io/badge/-Wednesday-green.svg)
 - Miller Update ![](https://img.shields.io/badge/-Wednesday-green.svg)
