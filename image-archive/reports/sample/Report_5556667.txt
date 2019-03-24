@@ -1,0 +1,40 @@
+===========================================================REPORT
+
+                           Hospital for Sick Children
+                                 Toronto, Ontario
+
+Exam Requested: RA Chest 2 Views
+Requesting Physician: RPHYS       Scheduled Date:1959.05.10
+Patient Name: PLAST, PFIRST    		     Sex: F
+Medical Record Number: 1234658	     Birth Date: 1944.08.13
+  	
+Accession Number: 5556667	     Order Number: RA19590001234 
+
+Reason for Exam:  PRE RENAL TX W/U
+Clinical Comments:  
+
+---------------------------- Radiological Report ----------------------------------
+
+dd:  1959-05-15
+
+HISTORY:Pre-renal transplant.
+
+COMMENT:The heart is moderately enlarged.  Pulmonary vascularity is within normal limits.  No pleural edema or pleural effusions are seen.  The bones and soft tissues are unremarkable.
+
+
+
+Transcribed on:1959-05-16 12:38     Radiologist: RLAST, RFIRST   MD
+Transcriptionist:HD
+
+ELECTRONICALLY APPROVED and SIGNED on 1959-05-17 13:15 by Dr. RFIRST RLAST
+
+    
+             Creation Date: 1959.05.16
+             Creation Time: 12:29:37.0000
+
+               Approved by: RLAST, RFIRST
+
+             
+
+THIS REPORT WAS RECEIVED FROM AN EXTERNAL RIS SYSTEM
+----------------------------------------------------

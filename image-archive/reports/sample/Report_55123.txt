@@ -1,0 +1,45 @@
+===========================================================REPORT
+
+                           Hospital for Sick Children
+                                 Toronto, Ontario
+
+Exam Requested: RA Chest 1 View
+Requesting Physician: REQDOC	     Scheduled Date:2035.02.15
+Patient Name: PLAST, PFIRST      		     Sex: M
+Medical Record Number: 1234569	     Birth Date: 2034.06.20
+  	
+Accession Number: 555123	     Order Number: RA20350000003 
+
+Reason for Exam:  S/P GLEN, F/U PNEUMONIA
+Clinical Comments:  
+
+---------------------------- Radiological Report ----------------------------------
+
+INDICATION:  Follow-up.
+
+FINDINGS:  Comparison is made with the most recent study dated 11/02/35. 
+
+The endotracheal tube, mediastinal drain and sternotomy wires are unchanged since the previous examination.
+
+The study is obtained with the patient slightly rotated.  Accounting for this, the cardiac silhouette is unchanged.  
+
+The previous right upper lobe and left lower lobe opacity, has slightly decreased since the previous examination.  The opacities within the left upper and right middle lobe persist.  Bilateral pleural effusions are again demonstrated unchanged.  
+
+The pulmonary vasculature is asymmetric with the left being less than the right, however, this is unchanged since the previous examination.
+
+IMPRESSION:  Mild interval improvement in the right upper lobe opacity and left lower lobe opacity.  Persistence of the right middle and left upper lobe opacity.  These findings are compatible with atelectasis and consolidation.  
+
+Transcribed on    35/02/16                                                                            Radiologist : RLAST, RFIRST   MD
+Transcriptionist  BR                                                                                    Resident : ResLAST, ResFIRST
+
+                           ELECTRONICALLY APPROVED and SIGNED on 35/02/16 by Rfirst Rlast
+    
+             Creation Date: 2035.02.16
+             Creation Time: 09:34:30.0000
+
+               Approved by: RLAST, RFIRST
+
+             
+
+THIS REPORT WAS RECEIVED FROM AN EXTERNAL RIS SYSTEM
+----------------------------------------------------

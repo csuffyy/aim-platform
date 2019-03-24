@@ -199,3 +199,95 @@ curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
 # curl -s -X GET http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX | jq
 
 
+
+
+
+
+
+
+
+
+##
+## Create Reports Index
+##
+
+ELASTIC_INDEX="${ELASTIC_INDEX:-reports}"
+ELASTIC_DOC_TYPE="${ELASTIC_DOC_TYPE:-reports}"
+
+# Create index
+curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX -w "\n" -d  @- << EOF
+{
+  "mappings": {
+    "$ELASTIC_DOC_TYPE": {
+      "properties": {
+        "body": {
+          "type": "text",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            }
+          },
+          "analyzer": "standard"
+        }
+      }
+    }
+  }
+}
+EOF
+
+curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_close -w "\n"
+
+# followed by the actual addition of analyzers with:
+curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -w "\n" -d  @- << EOF
+{
+  "analysis" : {
+    "analyzer":{
+        "autosuggest_analyzer": {
+            "filter": [
+                "lowercase",
+                "asciifolding",
+                "autosuggest_filter"
+            ],
+            "tokenizer": "standard",
+            "type": "custom"
+        },
+        "ngram_analyzer": {
+            "filter": [
+                "lowercase",
+                "asciifolding",
+                "ngram_filter"
+            ],
+            "tokenizer": "standard",
+            "type": "custom"
+        }
+    },
+    "filter": {
+        "autosuggest_filter": {
+            "max_gram": "20",
+            "min_gram": "1",
+            "token_chars": [
+                "letter",
+                "digit",
+                "punctuation",
+                "symbol"
+            ],
+            "type": "edge_ngram"
+        },
+        "ngram_filter": {
+            "max_gram": "9",
+            "min_gram": "2",
+            "token_chars": [
+                "letter",
+                "digit",
+                "punctuation",
+                "symbol"
+            ],
+            "type": "ngram"
+        }
+    }
+  }
+}
+EOF
+
+# followed by opening of the index. It is important to open the index up for any indexing and search operations to occur.
+curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"

@@ -1,0 +1,47 @@
+===========================================================REPORT
+
+                           Hospital for Sick Children
+                                 Toronto, Ontario
+
+Exam Requested: MRI Consult Neuro
+Requesting Physician: REQDOC 	     Scheduled Date:1915.11.10
+Patient Name: PLAST, PFIRST      		     Sex: F
+Medical Record Number: 8765432	     Birth Date: 1902.10.17
+  	
+Accession Number: 5556454	     Order Number: MR19150002132 
+
+Reason for Exam:  MS;  FOLLOW-UP MRI STUDY.  HSC INTERPRETATION.  (OUTSIDE FILM CONSULTATION) MRI HEAD DONE ON SEPTEMBER 12, 1915 FROM  EXTERNAL HOSPITAL
+Clinical Comments:  
+
+---------------------------- Radiological Report ----------------------------------
+
+d: 1915-11-14
+
+OUTSIDE CONSULTATION MRI of brain done on September 12, 1915 from External Hospital.
+
+CLINICAL HISTORY:  13 year old with MS.  Follow up exam. 
+
+TECHNIQUE:  
+MR of the brain has been obtained with  T1, T2, proton density, FLAIR and DWI in axial, coronal and sagittal plane.
+
+FINDINGS:  Comparison was made to previous outside exam dated August 23, 1915. 
+
+There is an interval increase in number of right white matter abnormal lesions.  There is a new lesion in the right corpus callosum. The left periventricular and corona radiata lesions have been increased in size.  The periventricular left frontal lesion is noted in the T1 sagittal plane as a low signal intensity lesion.  The ventricles are minimally dilated.  The sulci and the craniocervical junction are unremarkable. 
+
+IMPRESSION:  There is an interval increase in number of the abnormal white matter lesion when compared to previous exam dated September 12, 1915.  
+
+Transcribed on:   1915-11-15 22:28                 Radiologist: RLAST, RFIRST
+Transcriptionist:SS                             Co-contributor: FLAST, FFIRST (Fellow)
+
+ELECTRONICALLY APPROVED and SIGNED on 1915-11-15 22:59 by Dr. RFirst RLast
+
+    
+             Received on PACS Date: 1915.11.15
+             Received on PACS Time: 23:14:13.0000
+
+               Approved by: RLAST, RFIRST
+
+             
+
+THIS REPORT WAS RECEIVED FROM AN EXTERNAL RIS SYSTEM
+----------------------------------------------------
