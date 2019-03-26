@@ -141,12 +141,16 @@ class Navbar extends Component {
                       Stroke Lab Research Study
                       </h3>
                     </DropdownItem>
+                    {/*
                     <DropdownItem disabled >
                       <h3 className="header-text">
                       Radiology Text Reports
                       </h3>
                      </DropdownItem>
-                    {/* <DropdownItem divider /> */}
+                   */}
+                    {/*
+                     <DropdownItem divider />
+                   */}
                     {/* <DropdownItem disabled>
                       <h3 className="header-text">
                       Another
