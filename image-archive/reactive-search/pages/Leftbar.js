@@ -86,7 +86,7 @@ const components = {
     componentId: "bodypart-list",
     dataField: "BodyPartExamined.raw",
     className: "bodypart-filter",
-    size: 20,
+    size: 100,
     sortBy: "count",
     queryFormat: "or",
     selectAllLabel: "All Body Parts",
