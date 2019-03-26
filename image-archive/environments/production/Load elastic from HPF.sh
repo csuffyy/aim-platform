@@ -24,10 +24,26 @@ qlogin -l nodes=qlogin11.ccm.sickkids.ca
 curl 192.168.100.61:9200
 
 # List DCM files to upload to HPF
-# Run on hpf23.ccm.sickkids.ca
+nohup find /hpf/largeprojects/diagimage_common/src/disk1 > ~/Disk1_FileList_ALL.txt &
+nohup find /hpf/largeprojects/diagimage_common/src/disk2 > ~/Disk2_FileList_ALL.txt &
+nohup find /hpf/largeprojects/diagimage_common/src/disk3 > ~/Disk3_FileList_ALL.txt &
+nohup find /hpf/largeprojects/diagimage_common/shared/inventory/extraction/ > ~/Extraction_FileList_ALL.txt &
+
+cat /hpf/largeprojects/diagimage_common/src/disk1 | grep -i '\.dcm' > ~/Disk1_FileList_DCM.txt &
+cat /hpf/largeprojects/diagimage_common/src/disk2 | grep -i '\.dcm' > ~/Disk2_FileList_DCM.txt &
+cat /hpf/largeprojects/diagimage_common/src/disk3 | grep -i '\.dcm' > ~/Disk3_FileList_DCM.txt &
+cat /hpf/largeprojects/diagimage_common/shared/inventory/extraction/ | grep -i '\.dcm' > ~/Extraction_FileList_DCM.txt &
+
+# Monitor
+while true; do tail ~/Disk1_FileList_ALL.txt; echo ""; ps -ef | grep find; date; sleep 5; done
+while true; do tail ~/Disk2_FileList_ALL.txt; echo ""; ps -ef | grep find; date; sleep 5; done
+while true; do tail ~/Disk3_FileList_ALL.txt; echo ""; ps -ef | grep find; date; sleep 5; done
+while true; do tail ~/Extraction_FileList_ALL.txt; echo ""; ps -ef | grep find; date; sleep 5; done
+
+# Split Files
 cd TO_FOLDER_YOU_WANT_TO_LOAD
-find "$(pwd)" -iname "*.dcm" > list_of_dicoms.txt # find all DCMs and print full path
-sed -e 's/^/\/hpf\/largeprojects\/diagimage_common\/src\//' -i Disk1_FileList_DCM.txt # prefix text infront of each line in file if you need to 
+# find "$(pwd)" -iname "*.dcm" > list_of_dicoms.txt # find all DCMs and print full path
+# sed -e 's/^/\/hpf\/largeprojects\/diagimage_common\/src\//' -i Disk1_FileList_DCM.txt # prefix text infront of each line in file if you need to 
 split -l 50000 Disk1_FileList_DCM.txt  Disk1_Part_ # split list of files into smaller groups of 50000 line
 
 # Submit a qjob
@@ -53,3 +69,12 @@ function wqm() { # watch q-monitor
 2. Find a newly added entry
 3. Check that thumbnail works
 4. Check that DCM viewer works
+
+
+
+##
+## REPORTS
+##
+
+sed -e 's/^/\/hpf\/largeprojects\/diagimage_common\/src\/disk3\/PACS_reports\/reports_A\//' -i ~/reports_A_filelist # prefix text infront of each line in file if you need to 
+
