@@ -7,7 +7,8 @@
 
 # module load python/3.7.1_GDCM
 
-import os 
+import os
+import sys
 import cv2
 import glob
 import random
@@ -44,10 +45,11 @@ def save_thumbnail_of_dicom(dicom, filepath):
     log.warning('Image size is 0: %s' % filepath)
     return
   # Handle greyscale Z stacks
-  if len(img.shape) == 3 and img.shape[0] > 3:
+  smallest_dimension = np.sort(img.shape)[0]
+  if len(img.shape) == 3 and smallest_dimension != 3: # 3 here means rgb, likely a z-stack
     img = img[int(img.shape[0]/2),:,:]
   # Handle rgbd Z stacks
-  if len(img.shape) == 4 and img.shape[0] > 3:
+  if len(img.shape) == 4 and smallest_dimension != 3: # 3 here means rgb, likely a z-stack
     img = img[int(img.shape[0]/2),:,:,:]
   if len(img.shape) not in [2,3]:
     log.warning('Image shape is not supported: %s' % filepath)
@@ -66,19 +68,18 @@ def save_thumbnail_of_dicom(dicom, filepath):
     img = img[...,::-1]
 
   # Calculate thumnail size while retaining preportions
-  max_height = 333
-  max_width = 250
-  if img.shape[1] / max_width > img.shape[0] / max_height:
-      # It must be fixed by width
-      resize_width = max_width
-      resize_height = round(img.shape[1] / (img.shape[1] / max_width))
-  else:
-      # Fixed by max_height
-      resize_width = round(img.shape[0] / (img.shape[0] / max_height))
-      resize_height = max_height
-
-  im_resized = cv2.resize(img, dsize=(resize_width, resize_height), interpolation=cv2.INTER_CUBIC)
-  im_resized = np.interp(im_resized, (im_resized.min(), im_resized.max()), (0, 255))
+  max_height = 333.0
+  max_width = 250.0
+  ratio = np.min([max_width / img.shape[0], max_height / img.shape[1]])
+  resize_width = int(img.shape[0]*ratio)
+  resize_height = int(img.shape[1]*ratio)
+  im_resized = cv2.resize(img, dsize=(resize_height, resize_width), interpolation=cv2.INTER_CUBIC)
+  # TODO: USE PERTENTILE
+  # >>> v_min, v_max = np.percentile(moon, (0.2, 99.8))
+  # (10.0, 186.0)
+  # >>> better_contrast = exposure.rescale_intensity(
+  # ...                                     moon, in_range=(v_min, v_max))
+  im_resized = np.interp(im_resized, (im_resized.min(), im_resized.max()), (0, 255)) # rescale between min and max
   filename = os.path.basename(filepath)
   thumbnail_filename = '%s.png' % filename
   thumbnail_filepath = os.path.join(output_path, thumbnail_filename)
@@ -117,6 +118,9 @@ def load_images():
           if len(dicom_metadata[key])>0 and type(dicom_metadata[key][0]) is pydicom.dataset.Dataset:
             # Fix for error: TypeError("Unable to serialize 'ProcedureCodeSequence' (type: <class 'pydicom.dataset.Dataset'>)")")
             dicom_metadata[key] = dicom_metadata[key].__str__()
+        # Remove bytes datatype from metadata because it can't be serialized for sending to elasticsearch
+        if type(dicom_metadata[key]) is bytes:
+          dicom_metadata.pop(key, None) # remove
 
         log.debug('%s: %s' % (key, value))
 
@@ -146,11 +150,6 @@ def load_images():
         dicom_metadata.pop('AcquisitionDatePretty', None) # remove bad formatted metadata
       # PatientAgeInt (Method 1: diff between birth and acquisition dates)
 
-      # Remove bytes datatype from metadata because it can't be serialized for sending to elasticsearch
-      filtered = {k: v for k, v in dicom_metadata.items() if type(v) is not bytes}
-      dicom_metadata.clear()
-      dicom_metadata.update(filtered)
-
       # # Convert any values that can be displayed as a string (things that need to be numbers should follow this)
       # for k, v in dicom_metadata.items():
       #   # convert to string if not already a string and has str method
@@ -179,7 +178,6 @@ def load_images():
       # DEMO ONLY!!!! Add random age
       # if 'PatientAgeInt' not in dicom_metadata:
       #   dicom_metadata['PatientAgeInt'] = random.randint(1,20)
-
 
       thumbnail_filepath = save_thumbnail_of_dicom(dicom, filepath)
       if not thumbnail_filepath:
