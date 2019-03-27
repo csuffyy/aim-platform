@@ -68,7 +68,7 @@ if __name__ == '__main__':
   
   # Bulk load elastic
   print('Bulk chunk_size = {}'.format(args.num))
-  res = helpers.bulk(es, load_reports(), chunk_size=args.num, max_chunk_bytes=500000000, max_retries=1, raise_on_error=True, raise_on_exception=True) # 500 MB
+  res = helpers.bulk(es, load_reports(), chunk_size=args.num, max_chunk_bytes=500000000, max_retries=1, raise_on_error=False, raise_on_exception=False) # 500 MB
   log.info('Bulk insert result: %s, %s' % (res[0], res[1]))
 
   # Update Index
