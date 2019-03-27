@@ -3,30 +3,29 @@
 Created on Tue Mar 12 11:50:37 2019
 
 @author: Zitian Zhang (Jordan)
+
+Usage:
+python3 image-archive/de-id/parse_all_colons.py image-archive/reports/sample/
 """
 
+import glob
+import sys
 import re
 import csv
 import os
 
-#prevdir = os.getcwd()
-#os.chdir(os.path.expanduser('sample'))
-#files = os.listdir()
-#df = pd.read_csv(files[0], sep='\t+\r', header=None)
-#os.chdir(prevdir)
-
-
+from dateparser.search import search_dates
 
 
 def csv_append(output_dict):
-  with open('output/test.csv', mode='a',newline='') as csv_file: 
+  with open(output_csv, mode='a',newline='') as csv_file: 
     fieldnames = output_dict.keys()
     writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
     writer.writeheader()
     writer.writerow(output_dict) 
 
 def csv_newfile(output_dict):
-  with open('output/test.csv', mode='w+',newline='') as csv_file: 
+  with open(output_csv, mode='w+',newline='') as csv_file: 
     fieldnames = output_dict.keys()
     writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
     writer.writeheader()
@@ -43,7 +42,7 @@ def extract_value(text, output_dict):
   label = split_text[0].strip()        
   output_dict[label] = result
      
-def split_raw(string):
+def split_sections(string):
   report, footer = re.split(r'Transcribed on',string, maxsplit=1,
                             flags=re.IGNORECASE)
   footer ='Transcribed on' + footer
@@ -68,6 +67,16 @@ def format_report(report):
   output.append(line)
   return output
 
+def find_and_fix_dates(report):
+  matches = search_dates(report) # Documentation: https://github.com/scrapinghub/dateparser/blob/master/dateparser/search/__init__.py#L9
+
+  for (match, dateobj) in matches:
+    if ':' in match:
+      match_index = report.find(match)
+      report = report[:match_index] + match.replace(':',';') + report[match_index + len(match):]
+
+  return report
+
 def process_file(filename):
   '''main code for report parser
   assumes the report only has colon behind each label, 
@@ -75,8 +84,11 @@ def process_file(filename):
   with open(filename, 'r') as f:
     raw = f.read()
     print(raw)
-  header, report = split_raw(raw)
+
+  report_with_consistent_dates = find_and_fix_dates(raw)
+  header, report = split_sections(report_with_consistent_dates)
   output_dict = {'Raw': raw}
+  output_dict['Report_Raw'] = report
   output_dict['Report'] = report.strip().strip('-').strip('\n').replace('\n','  ')
   header = re.split(r'\n|\t|\s{3,}', header)  #Split header into 'A:B's
   report = format_report(report)
@@ -87,15 +99,8 @@ def process_file(filename):
   return output_dict
     
 if __name__ == '__main__':
-  files = os.listdir('sample')
-  for file in files:
-    filename = os.path.join('sample',file)
+  input_folder = sys.argv[1] if len(sys.argv) > 1 else './sample'
+  files = glob.iglob('%s/**/*.txt' % input_folder, recursive=True)
+  for filename in files:
+    # filename = os.path.join(input_folder,file)
     output_dict = process_file(filename)
-    if os.path.exists('output/test.csv'):
-      csv_append(output_dict)
-    else:
-      csv_newfile(output_dict)
-
-
-
-

@@ -19,11 +19,6 @@ const {ELASTIC_IP} = publicRuntimeConfig;
 const {ELASTIC_INDEX} = publicRuntimeConfig;
 const {AUTH_TOKEN} = publicRuntimeConfig;
 
-console.log('PUBLIC_IP: ' + PUBLIC_IP);
-console.log('ELASTIC_PORT: ' + ELASTIC_PORT);
-console.log('ELASTIC_IP: ' + ELASTIC_IP);
-console.log('ELASTIC_INDEX: ' + ELASTIC_INDEX);
-console.log('AUTH_TOKEN: ' + AUTH_TOKEN);
 if (AUTH_TOKEN === undefined) {
   throw new Error('AUTH_TOKEN is undefined');
 }
@@ -252,7 +247,6 @@ class Main extends Component {
   }
 
   componentDidMount() {
-    // console.log(this.state.height);
     // Additionally I could have just used an arrow function for the binding `this` to the component...
     window.addEventListener("resize", this.updateDimensions);
     this.updatePredicate();
@@ -274,14 +268,11 @@ class Main extends Component {
   }
 
   updatePredicate() {
-    // console.log('updatePredicate');
     this.setState({ isDesktop: window.innerWidth > 1450 });
   }
 
 
   handleClick() {
-    console.log("handleClick");
-    console.log(this);
     this.setState({
       isClicked: !this.state.isClicked,
       message: this.state.isClicked ? "🔬 Show Filters" : "🎬 Show Images"
@@ -294,15 +285,12 @@ class Main extends Component {
     
     // Get the visitor name set in the cookie
     var token = cookies.token;
-    console.log('token: ' + token);
-    console.log('AUTH_TOKEN: ' + AUTH_TOKEN);
 
     // Set a header
     // res.setHeader('X-Foo', 'bar');
 
     // Redirect to login if no token
     if (token !== AUTH_TOKEN) {
-      console.log('invalid token')
       res.writeHead(302, {
         Location: 'login'
       })
@@ -392,9 +380,6 @@ class Main extends Component {
 
 export default Main;
 // export function myvar(state){
-//   console.log("components.resultCard!!!!!!!!!!!!!!!!!11");
-//   console.log(components);
-//   console.log("components.resultCard!!!!!!!!!!!!!!!!11");
 //   if (state === 'checked') {
 //     components.resultCard.componentId = 'nopes';
 //     components.resultCard.componentId = 'results';
