@@ -75,5 +75,5 @@ function wqm() { # watch q-monitor
 ##
 ## REPORTS
 ##
-
+find /hpf/largeprojects/diagimage_common/src/disk3/PACS_reports
 sed -e 's/^/\/hpf\/largeprojects\/diagimage_common\/src\/disk3\/PACS_reports\/reports_A\//' -i ~/reports_A_filelist # prefix text infront of each line in file if you need to
