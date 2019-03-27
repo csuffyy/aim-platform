@@ -71,3 +71,74 @@ su ubuntu
 mkdir ~/esdata
 chown -R ubuntu:ubuntu ~/esdata
 
+# Set hostname
+hostname images.ccm.sickkids.ca
+sudo echo images.ccm.sickkids.ca > /etc/hostname
+
+# apache SSL gateway
+apt-get install apache2
+sudo ufw allow 'Apache'
+sudo systemctl status apache2
+sudo a2enmod rewrite
+sudo a2enmod ssl
+sudo a2enmod proxy
+sudo a2enmod proxy_http
+systemctl restart apache2
+
+/etc/apache2/sites-enabled/images.conf
+<VirtualHost *:80>
+    ServerName images.ccm.sickkids.ca
+    RewriteEngine On
+    RewriteRule ^/(.*)$  https://%{HTTP_HOST}/$1 [QSA,R=301,L]
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName images.ccm.sickkids.ca
+    Timeout 3000
+
+    SSLEngine on
+    SSLProtocol all -SSLv2 -SSLv3
+    SSLCipherSuite ALL:!ADH:!EXPORT:!SSLv2:!RC4+RSA:+HIGH:+MEDIUM:!LOW
+
+    SSLCertificateFile /etc/cert/star_ccm_sickkids_ca.crt
+    SSLCertificateKeyFile /etc/cert/star_ccm_sickkids_ca.key
+    SSLCertificateChainFile /etc/cert/DigiCertCA.crt
+
+    ProxyRequests Off
+    <Proxy *>
+        Order deny,allow
+        Allow from all
+    </Proxy>
+    ProxyPreserveHost On
+    ProxyPass / http://localhost:3000/
+</VirtualHost>
+
+
+
+
+<VirtualHost *:80>
+    ServerName elastic.images.ccm.sickkids.ca
+    RewriteEngine On
+    RewriteRule ^/(.*)$  https://%{HTTP_HOST}/$1 [QSA,R=301,L]
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName elastic.images.ccm.sickkids.ca
+    Timeout 3000
+
+    SSLEngine on
+    SSLProtocol all -SSLv2 -SSLv3
+    SSLCipherSuite ALL:!ADH:!EXPORT:!SSLv2:!RC4+RSA:+HIGH:+MEDIUM:!LOW
+
+    SSLCertificateFile /etc/cert/star_ccm_sickkids_ca.crt
+    SSLCertificateKeyFile /etc/cert/star_ccm_sickkids_ca.key
+    SSLCertificateChainFile /etc/cert/DigiCertCA.crt
+
+    ProxyRequests Off
+    <Proxy *>
+        Order deny,allow
+        Allow from all
+    </Proxy>
+    ProxyPreserveHost On
+    ProxyPass / http://localhost:9200/
+</VirtualHost>

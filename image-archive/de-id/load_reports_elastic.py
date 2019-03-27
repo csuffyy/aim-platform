@@ -17,23 +17,19 @@ from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 from datetime import datetime
 from IPython import embed
+from parse_all_colons import process_file
 
 logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
                     datefmt='%H:%M:%S',
                     level=logging.INFO)
                     # level=logging.DEBUG)
 log = logging.getLogger('main')
-
-
+    
 def load_reports():
   for filepath in files:
     try:
       # Load Report
-      report = {
-        'cat': 'meow',
-        'dog': 'woof',
-        'body': 'berp'
-      }
+      report = process_file(filepath)
 
       log.info('\n\n')
       log.info('Processing: %s' % filepath)
@@ -46,6 +42,7 @@ def load_reports():
     except:
       print(traceback.format_exc())
       log.error('Skipping this image because of unknown error')
+      raise
 
 
 if __name__ == '__main__':
@@ -85,3 +82,4 @@ if __name__ == '__main__':
   log.info('{} files loaded to Elastic Search '.format(len(files)) + 'in {:.2f} seconds.'.format(elapsed_time))
   log.info('Ingest rate (files/s): {:.2f}'.format(ingest_rate))
   log.info('Finished.')
+

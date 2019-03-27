@@ -29,9 +29,9 @@ nohup find /hpf/largeprojects/diagimage_common/src/disk2 > ~/Disk2_FileList_ALL.
 nohup find /hpf/largeprojects/diagimage_common/src/disk3 > ~/Disk3_FileList_ALL.txt &
 nohup find /hpf/largeprojects/diagimage_common/shared/inventory/extraction/ > ~/Extraction_FileList_ALL.txt &
 
-cat /hpf/largeprojects/diagimage_common/src/disk1 | grep -i '\.dcm' > ~/Disk1_FileList_DCM.txt &
-cat /hpf/largeprojects/diagimage_common/src/disk2 | grep -i '\.dcm' > ~/Disk2_FileList_DCM.txt &
-cat /hpf/largeprojects/diagimage_common/src/disk3 | grep -i '\.dcm' > ~/Disk3_FileList_DCM.txt &
+cat ~/Disk1_FileList_ALL.txt | grep -i '\.dcm' > ~/Disk1_FileList_DCM.txt &
+cat ~/Disk2_FileList_ALL.txt | grep -i '\.dcm' > ~/Disk2_FileList_DCM.txt &
+cat ~/Disk3_FileList_ALL.txt | grep -i '\.dcm' > ~/Disk3_FileList_DCM.txt &
 cat /hpf/largeprojects/diagimage_common/shared/inventory/extraction/ | grep -i '\.dcm' > ~/Extraction_FileList_DCM.txt &
 
 # Monitor
@@ -76,5 +76,4 @@ function wqm() { # watch q-monitor
 ## REPORTS
 ##
 
-sed -e 's/^/\/hpf\/largeprojects\/diagimage_common\/src\/disk3\/PACS_reports\/reports_A\//' -i ~/reports_A_filelist # prefix text infront of each line in file if you need to 
-
+sed -e 's/^/\/hpf\/largeprojects\/diagimage_common\/src\/disk3\/PACS_reports\/reports_A\//' -i ~/reports_A_filelist # prefix text infront of each line in file if you need to

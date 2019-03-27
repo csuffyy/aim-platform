@@ -19,11 +19,6 @@ const {ELASTIC_IP} = publicRuntimeConfig;
 const {ELASTIC_INDEX} = publicRuntimeConfig;
 const {AUTH_TOKEN} = publicRuntimeConfig;
 
-console.log('PUBLIC_IP: ' + PUBLIC_IP);
-console.log('ELASTIC_PORT: ' + ELASTIC_PORT);
-console.log('ELASTIC_IP: ' + ELASTIC_IP);
-console.log('ELASTIC_INDEX: ' + ELASTIC_INDEX);
-console.log('AUTH_TOKEN: ' + AUTH_TOKEN);
 
 var today = new Date();
 var expiry = new Date(today.getTime() + 30 * 24 * 3600 * 1000); // plus 30 days
@@ -43,25 +38,16 @@ class Main extends Component {
   }
 
   handleChangeUsername(event) {
-    console.log(event);
-    console.log(event.target);
-    console.log(event.target.value);
     // this.state.username=event.target.value;
     this.setState({username: event.target.value});
   }
 
   handleChangePassword(event) {
-    console.log(event);
-    console.log(event.target);
-    console.log(event.target.value);
     // this.state.password=event.target.value;
     this.setState({password: event.target.value});
   }
 
   handleSubmit(event) {
-    console.log(event);
-    console.log(this);
-    console.log(this.state);
     setCookie('token', this.state.password);
     // event.preventDefault();
   }
@@ -72,8 +58,6 @@ class Main extends Component {
     
     // Get the visitor name set in the cookie
     var token = cookies.token;
-    console.log('token: ' + token);
-    console.log('AUTH_TOKEN: ' + AUTH_TOKEN);
 
     // // Set a Cookie
     // res.setHeader('Set-Cookie', cookie.serialize('token', '771100', {
@@ -86,7 +70,6 @@ class Main extends Component {
 
     // Redirect to login if no token
     if (token === AUTH_TOKEN) {
-      console.log('valid token')
       res.writeHead(302, {
         Location: '/'
       })
