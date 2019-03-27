@@ -41,8 +41,8 @@ def load_reports():
       yield report
     except:
       print(traceback.format_exc())
-      log.error('Skipping this image because of unknown error')
-      raise
+      log.error('Skipping this report because of unknown error')
+      # raise
 
 
 if __name__ == '__main__':

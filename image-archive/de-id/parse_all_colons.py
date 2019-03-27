@@ -68,6 +68,7 @@ def format_report(report):
   return output
 
 def find_and_fix_dates(report):
+  '''Replace colons to semicolons in dates so that we can use the remaining colons as key value indicators.'''
   matches = search_dates(report) # Documentation: https://github.com/scrapinghub/dateparser/blob/master/dateparser/search/__init__.py#L9
 
   for (match, dateobj) in matches:
@@ -102,5 +103,4 @@ if __name__ == '__main__':
   input_folder = sys.argv[1] if len(sys.argv) > 1 else './sample'
   files = glob.iglob('%s/**/*.txt' % input_folder, recursive=True)
   for filename in files:
-    # filename = os.path.join(input_folder,file)
     output_dict = process_file(filename)
