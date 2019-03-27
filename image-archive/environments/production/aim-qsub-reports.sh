@@ -1,18 +1,14 @@
 #!/bin/bash
-# Usage:
-# INPUT_FILE_LIST=~/Disk1_Part_aa OUTPUT_THUMBNAIL_DIR=/hpf/largeprojects/diagimage_common/shared/thumbnails aim-qsub.sh
 
-#PBS -l mem=8gb,vmem=8gb
-#PBS -l nodes=1:ppn=1
-#PBS -l walltime=00:40:00
+#PBS -l mem=1gb,vmem=1gb
+#PBS -l nodes=1:ppn=2
+#PBS -l walltime=48:00:00
 #PBS -j oe
 #PBS -o /home/dsnider/jobs
 
 set -x
 
 source aim-platform/image-archive/environments/production/env.sh
-export CPU=8
-export RAM=8
 export ES_BLUK_INSERT_SIZE=50
 export ELASTIC_IP='192.168.100.61' # special elastic location via tunnel when in HPF
 export FALLBACK_ELASTIC_IP='192.168.100.61' # special elastic location via tunnel when in HPF

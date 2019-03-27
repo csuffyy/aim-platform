@@ -75,5 +75,9 @@ function wqm() { # watch q-monitor
 ##
 ## REPORTS
 ##
-find /hpf/largeprojects/diagimage_common/src/disk3/PACS_reports
+find /hpf/largeprojects/diagimage_common/src/disk3/PACS_reports/reports_A > ~/reports_A_filelist
 sed -e 's/^/\/hpf\/largeprojects\/diagimage_common\/src\/disk3\/PACS_reports\/reports_A\//' -i ~/reports_A_filelist # prefix text infront of each line in file if you need to
+split -l 2500 reports_A_filelist  report_file_lists/Reports_A_Part_ # split list of files into smaller groups of 50000 line
+mv jobs/* jobs-old
+sed -i 's/export INPUT_FILE_LIST.*/export INPUT_FILE_LIST\=~\/Reports_A_Part_aa/g' ./aim-platform/image-archive/environments/production/aim-qsub-reports.sh
+qsub ./aim-platform/image-archive/environments/production/aim-qsub-reports.sh
