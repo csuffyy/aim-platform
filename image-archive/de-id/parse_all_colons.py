@@ -84,7 +84,7 @@ def process_file(filename):
   thus colon appears in timestamps must be replaced beforehand.'''
   with open(filename, 'r') as f:
     raw = f.read()
-    print(raw)
+    # print(raw)
 
   report_with_consistent_dates = find_and_fix_dates(raw)
   header, report = split_sections(report_with_consistent_dates)
