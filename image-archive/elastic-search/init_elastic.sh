@@ -211,8 +211,8 @@ curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
 ## Create Reports Index
 ##
 
-ELASTIC_INDEX="${ELASTIC_INDEX:-reports}"
-ELASTIC_DOC_TYPE="${ELASTIC_DOC_TYPE:-reports}"
+ELASTIC_INDEX="${REPORT_ELASTIC_INDEX:-report}"
+ELASTIC_DOC_TYPE="${REPORT_ELASTIC_DOC_TYPE:-report}"
 
 # Create index
 curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX -w "\n" -d  @- << EOF
