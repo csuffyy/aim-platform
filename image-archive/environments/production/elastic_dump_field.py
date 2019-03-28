@@ -1,3 +1,6 @@
+# Usage:
+# python3 image-archive/environments/production/elastic_dump_field.py report Report > ~/380375_Reports_for_Chris.json
+
 import os
 import sys
 import json
@@ -12,9 +15,15 @@ ELASTIC_PORT = os.environ['ELASTIC_PORT']
 
 # Process hits here
 def process_hits(hits):
-  print('.', end='', file=sys.stderr)
+  print('.', end='', file=sys.stderr, flush=True)
   for item in hits:
-    print(json.dumps(item, indent=2) + ',')
+    record = {
+      'id': item['_id'],
+      field: item['_source'][field]
+    }
+    print(json.dumps(record, indent=2) + ',') # PRINT ONE FIELD
+    # print(json.dumps(item, indent=2) + ',') # PRINT ALL FIELDS
+
 
 if __name__ == '__main__':
   # Set up command line arguments
@@ -72,6 +81,5 @@ if __name__ == '__main__':
 
   elapsed_time = time.time() - t0
   dl_rate = hit_count / elapsed_time
-  print('{} documents loaded to Elastic Search '.format(hit_count) + 'in {:.2f} seconds.'.format(elapsed_time), file=sys.stderr)
+  print('\n{} documents from Elastic Search '.format(hit_count) + 'in {:.2f} seconds.'.format(elapsed_time), file=sys.stderr)
   print('Download rate (documents/s): {:.2f}'.format(dl_rate), file=sys.stderr)
-  print('Finished.', file=sys.stderr)
