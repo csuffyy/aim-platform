@@ -81,3 +81,10 @@ split -l 2500 reports_A_filelist  report_file_lists/Reports_A_Part_ # split list
 mv jobs/* jobs-old
 sed -i 's/export INPUT_FILE_LIST.*/export INPUT_FILE_LIST\=~\/Reports_A_Part_aa/g' ./aim-platform/image-archive/environments/production/aim-qsub-reports.sh
 qsub ./aim-platform/image-archive/environments/production/aim-qsub-reports.sh
+
+## Confirm Reports are Loading Nicely
+# Print Raw Report
+cat /hpf/largeprojects/diagimage_common/src/disk3/PACS_reports/reports_A/Report_1967262.txt
+# Get Report in Elastic
+curl -H 'Content-Type: application/json' -XGET "localhost:9200/report/report/MnjvwGkBD86Op0uG1ix5" | jq
+

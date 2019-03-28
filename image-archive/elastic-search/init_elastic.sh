@@ -177,6 +177,14 @@ EOF
 # followed by opening of the index. It is important to open the index up for any indexing and search operations to occur.
 curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
 
+# Increase number of allowed fields
+curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
+{
+  "index.mapping.total_fields.limit": 100000
+}'
+
+
+
 # curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_mapping/$ELASTIC_DOC_TYPE -w "\n" -d  @- << EOF
 # {
 #   "properties": {
@@ -291,3 +299,9 @@ EOF
 
 # followed by opening of the index. It is important to open the index up for any indexing and search operations to occur.
 curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
+
+# Increase number of allowed fields
+curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
+{
+  "index.mapping.total_fields.limit": 100000
+}'
