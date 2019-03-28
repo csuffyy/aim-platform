@@ -1,29 +1,29 @@
-from elasticsearch import Elasticsearch
+import os
+import sys
 import json
+import time
+import argparse
 
-
-logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
-                    datefmt='%H:%M:%S',
-                    level=logging.INFO)
-                    # level=logging.DEBUG)
-log = logging.getLogger('main')
+from elasticsearch import Elasticsearch
 
 ELASTIC_IP = os.environ['ELASTIC_IP']
 ELASTIC_PORT = os.environ['ELASTIC_PORT']
-INDEX_NAME = os.environ['ELASTIC_INDEX']
-DOC_TYPE = os.environ['ELASTIC_DOC_TYPE']
+
 
 # Process hits here
 def process_hits(hits):
-    for item in hits:
-        print(json.dumps(item, indent=2))
+  print('.', end='', file=sys.stderr)
+  for item in hits:
+    print(json.dumps(item, indent=2) + ',')
 
 if __name__ == '__main__':
   # Set up command line arguments
   parser = argparse.ArgumentParser(description='Load dicoms to Elastic.')
-  parser.add_argument('field', help='Field.')
+  parser.add_argument('index_name', help='Elasticsearch index and field name.')
+  parser.add_argument('field', help='Elasticsearch index field.')
   args = parser.parse_args()
   field = args.field
+  index_name = args.index_name
 
   # Define config
   scroll_size = 5000
@@ -35,14 +35,14 @@ if __name__ == '__main__':
   es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
 
   # Check index exists
-  if not es.indices.exists(index=ELASTIC_INDEX):
-    print("Index " + ELASTIC_INDEX + " not exists")
+  if not es.indices.exists(index=index_name):
+    print("Index " + index_name + " not exists")
     exit()
 
   # Init scroll by search
   data = es.search(
-    index=ELASTIC_INDEX,
-    doc_type=ELASTIC_DOC_TYPE,
+    index=index_name,
+    doc_type=index_name,
     scroll='2m',
     size=scroll_size,
     body=search_body
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     scroll_size = len(data['hits']['hits'])
 
   elapsed_time = time.time() - t0
-  dl_rate = len(hit_count) / elapsed_time
-  log.info('{} documents loaded to Elastic Search '.format(len(hit_count)) + 'in {:.2f} seconds.'.format(elapsed_time))
-  log.info('Download rate (documents/s): {:.2f}'.format(dl_rate))
-  log.info('Finished.')
+  dl_rate = hit_count / elapsed_time
+  print('{} documents loaded to Elastic Search '.format(hit_count) + 'in {:.2f} seconds.'.format(elapsed_time), file=sys.stderr)
+  print('Download rate (documents/s): {:.2f}'.format(dl_rate), file=sys.stderr)
+  print('Finished.', file=sys.stderr)
