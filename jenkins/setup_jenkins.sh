@@ -66,6 +66,12 @@ sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubun
 sudo apt-get update
 sudo apt-get install -y docker-ce
 
+# install Tmuxinator (=>v0.11)
+git clone https://github.com/tmuxinator/tmuxinator
+cd tmuxinator
+gem install tmuxinator
+tmuxinator -v
+
 # Setup Worker Node For Elastic
 su ubuntu
 mkdir ~/esdata

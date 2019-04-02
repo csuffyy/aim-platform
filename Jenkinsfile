@@ -31,7 +31,7 @@ pipeline {
         }
       }
       steps {
-        sh "tmux kill-session -t AIM"
+        sh "sudo systemctl stop aim.service"
       }
     }
     stage('Install Docker') {
@@ -97,9 +97,7 @@ pipeline {
     }
     stage('Start Tmux') {
       steps {
-        dir('image-archive/environments/production/') { // TODO 'production' here should be a variable
-          sh "BUILD_ID=dontKillMe tmuxinator &"
-        }
+        sh "sudo systemctl start aim.service"
       }
     }
   }

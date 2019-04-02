@@ -1,5 +1,6 @@
 # Usage:
 # python3 image-archive/environments/production/elastic_dump_field.py report Report > ~/380375_Reports_for_Chris.json
+# ./scp -i ~/.ssh/id_rsa_CCM ubuntu@172.20.4.83:~/380375_Reports_for_Chris.json ./
 
 import os
 import sys
@@ -81,5 +82,5 @@ if __name__ == '__main__':
 
   elapsed_time = time.time() - t0
   dl_rate = hit_count / elapsed_time
-  print('\n{} documents from Elastic Search '.format(hit_count) + 'in {:.2f} seconds.'.format(elapsed_time), file=sys.stderr)
+  print('\n{} documents loaded to Elastic Search '.format(hit_count) + 'in {:.2f} seconds.'.format(elapsed_time), file=sys.stderr)
   print('Download rate (documents/s): {:.2f}'.format(dl_rate), file=sys.stderr)
