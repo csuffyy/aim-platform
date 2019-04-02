@@ -77,8 +77,12 @@ def save_thumbnail_of_dicom(dicom, filepath):
   p2, p98 = np.percentile(im_resized, (0.5, 99.5)) # adjust brightness to improve thumbnail viewing
   im_resized = np.interp(im_resized, (p2, p98), (0, 255)) # rescale between min and max
   filename = os.path.basename(filepath)
+  parent_folder_name = os.path.basename(os.path.dirname(filepath))
   thumbnail_filename = '%s.png' % filename
-  thumbnail_filepath = os.path.join(output_path, thumbnail_filename)
+  thumbnail_folder = os.path.join(output_path, parent_folder_name)
+  if not os.path.exists(thumbnail_folder):
+      os.makedirs(thumbnail_folder)
+  thumbnail_filepath = os.path.join(thumbnail_folder, thumbnail_filename)
   cv2.imwrite(thumbnail_filepath, im_resized);
   # plt.imshow(im_resized, cmap='gray')
   # plt.show()
@@ -191,10 +195,12 @@ def load_images():
       dicom_metadata['dicom_filepath'] = '{ip}:{port}/{path}{token}'.format(ip=FILESERVER_IP, port=FILESERVER_PORT, path=dicom_path, token=dicom_token)
 
       # Save Path of Thumbnail
-      # Example: http://172.20.4.85:8000/static/thumbnails/testplot.png-0TO0-771100
+      # Example: http://172.20.4.85:8000/static/thumbnails/2011/testplot.png-0TO0-771100
       thumbnail_filename = os.path.basename(thumbnail_filepath)
-      dicom_metadata['thumbnail_filename'] = thumbnail_filename
-      dicom_metadata['thumbnail_filepath'] = 'http://{ip}:{port}/{path}/{filename}{token}'.format(ip=FILESERVER_IP, port=FILESERVER_PORT, path=FILESERVER_THUMBNAIL_PATH, filename=thumbnail_filename, token=FILESERVER_TOKEN)
+      parent_folder_name = os.path.basename(os.path.dirname(thumbnail_filepath))
+      thumbnail_relative_path = os.path.join(parent_folder_name, thumbnail_filename) # relative to westatic bserver
+      dicom_metadata['thumbnail_filename'] = thumbnail_relative_path
+      dicom_metadata['thumbnail_filepath'] = 'http://{ip}:{port}/{path}/{filename}{token}'.format(ip=FILESERVER_IP, port=FILESERVER_PORT, path=FILESERVER_THUMBNAIL_PATH, filename=thumbnail_relative_path, token=FILESERVER_TOKEN)
 
       dicom_metadata['original_title'] = 'Dicom'
       dicom_metadata['_index'] = INDEX_NAME
