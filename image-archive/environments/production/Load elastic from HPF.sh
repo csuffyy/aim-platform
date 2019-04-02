@@ -29,9 +29,9 @@ nohup find /hpf/largeprojects/diagimage_common/src/disk2 > ~/Disk2_FileList_ALL.
 nohup find /hpf/largeprojects/diagimage_common/src/disk3 > ~/Disk3_FileList_ALL.txt &
 nohup find /hpf/largeprojects/diagimage_common/shared/inventory/extraction/ > ~/Extraction_FileList_ALL.txt &
 
-cat ~/Disk1_FileList_ALL.txt | grep -i '\.dcm' > ~/Disk1_FileList_DCM.txt &
-cat ~/Disk2_FileList_ALL.txt | grep -i '\.dcm' > ~/Disk2_FileList_DCM.txt &
-cat ~/Disk3_FileList_ALL.txt | grep -i '\.dcm' > ~/Disk3_FileList_DCM.txt &
+cat /hpf/largeprojects/diagimage_common/src/disk1 | grep -i '\.dcm' > ~/Disk1_FileList_DCM.txt &
+cat /hpf/largeprojects/diagimage_common/src/disk2 | grep -i '\.dcm' > ~/Disk2_FileList_DCM.txt &
+cat /hpf/largeprojects/diagimage_common/src/disk3 | grep -i '\.dcm' > ~/Disk3_FileList_DCM.txt &
 cat /hpf/largeprojects/diagimage_common/shared/inventory/extraction/ | grep -i '\.dcm' > ~/Extraction_FileList_DCM.txt &
 
 # Monitor
@@ -70,21 +70,59 @@ function wqm() { # watch q-monitor
 3. Check that thumbnail works
 4. Check that DCM viewer works
 
-
+##
+## Find all Dicoms
+##
+qsub -v INPUT_PATH="shared/inventory/extraction/disk1/" -N dicom_extraction_disk1 ~/qsub-find-dicom.sh
+qsub -v INPUT_PATH="shared/inventory/extraction/disk2/" -N dicom_extraction_disk2 ~/qsub-find-dicom.sh
+qsub -v INPUT_PATH="shared/inventory/extraction/disk3/" -N dicom_extraction_disk3 ~/qsub-find-dicom.sh
+qsub -v INPUT_PATH="src/disk1/" -N dicom_src_disk1 ~/qsub-find-dicom.sh
+qsub -v INPUT_PATH="src/disk2/" -N dicom_src_disk2 ~/qsub-find-dicom.sh
+qsub -v INPUT_PATH="src/disk3/" -N dicom_src_disk3 ~/qsub-find-dicom.sh
 
 ##
 ## REPORTS
 ##
-find /hpf/largeprojects/diagimage_common/src/disk3/PACS_reports/reports_A > ~/reports_A_filelist
-sed -e 's/^/\/hpf\/largeprojects\/diagimage_common\/src\/disk3\/PACS_reports\/reports_A\//' -i ~/reports_A_filelist # prefix text infront of each line in file if you need to
-split -l 2500 reports_A_filelist  report_file_lists/Reports_A_Part_ # split list of files into smaller groups of 50000 line
-mv jobs/* jobs-old
-sed -i 's/export INPUT_FILE_LIST.*/export INPUT_FILE_LIST\=~\/Reports_A_Part_aa/g' ./aim-platform/image-archive/environments/production/aim-qsub-reports.sh
+sed -e 's/^/\/hpf\/largeprojects\/diagimage_common\/src\/disk3\/PACS_reports\/reports_A\//' -i ~/reports_A_filelist # prefix text infront of each line in file if you need to 
+./aim-platform/image-archive/environments/production/aim-qsub-reports.sh
 qsub ./aim-platform/image-archive/environments/production/aim-qsub-reports.sh
 
-## Confirm Reports are Loading Nicely
-# Print Raw Report
-cat /hpf/largeprojects/diagimage_common/src/disk3/PACS_reports/reports_A/Report_1967262.txt
-# Get Report in Elastic
-curl -H 'Content-Type: application/json' -XGET "localhost:9200/report/report/MnjvwGkBD86Op0uG1ix5" | jq
+# Find All Reports
+qsub -v INPUT_FILE="BloorView_report.zip" -N report_BloorView_report ~/qsub-find-reports.sh 
+qsub -v INPUT_FILE="HSC_report_0_500K.zip" -N report_HSC_report_0_500K ~/qsub-find-reports.sh 
+qsub -v INPUT_FILE="HSC_report_1.5M_2M.zip" -N report_HSC_report_1.5M_2M ~/qsub-find-reports.sh 
+qsub -v INPUT_FILE="HSC_report_1M_1.5M.zip" -N report_HSC_report_1M_1.5M ~/qsub-find-reports.sh 
+qsub -v INPUT_FILE="HSC_report_2.5M_3M.zip" -N report_HSC_report_2.5M_3M ~/qsub-find-reports.sh 
+qsub -v INPUT_FILE="HSC_report_2M_2.5M.zip" -N report_HSC_report_2M_2.5M ~/qsub-find-reports.sh 
+qsub -v INPUT_FILE="HSC_report_500K_1M.zip" -N report_HSC_report_500K_1M ~/qsub-find-reports.sh 
+
+
+wc -l /hpf/largeprojects/diagimage_common/shared/dicom-paths/*.txt
+wc -l /hpf/largeprojects/diagimage_common/shared/reports/*.txt
+
+
+32075764 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__shared_inventory_extraction_disk1_.txt
+31256545 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__shared_inventory_extraction_disk2_.txt
+30552510 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__shared_inventory_extraction_disk3_.txt
+      1 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__shared_test_.txt
+1481364 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__src_disk1_.txt
+1408525 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__src_disk2_.txt
+2245071 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__src_disk3_.txt
+99,019,780 total
+
+   6943 /hpf/largeprojects/diagimage_common/shared/reports/File_List__BloorView_report.zip.txt
+ 408767 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_0_500K.zip.txt
+ 369386 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_1.5M_2M.zip.txt
+ 384889 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_1M_1.5M.zip.txt
+ 239191 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_2.5M_3M.zip.txt
+ 358444 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_2M_2.5M.zip.txt
+ 407171 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_500K_1M.zip.txt
+2,174,791 total
+
+# Rerun disk1 extraction with 99h walltime
+[dsnider@qlogin3 ~]$ qsub -v INPUT_PATH="shared/inventory/extraction/disk1/" -N dicom_extraction_disk1 ~/qsub-find-dicom.sh
+46870171
+
+
+
 
