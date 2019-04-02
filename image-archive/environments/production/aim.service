@@ -1,0 +1,24 @@
+# Usage:
+# sudo vim /etc/systemd/system/aim.service
+# sudo systemctl daemon-reload
+# sudo systemctl stop aim
+# sudo systemctl start aim
+
+[Unit]
+Description=aim
+After=network.target local-fs.target
+
+[Service]
+Type=forking
+KillMode=none
+User=ubuntu
+WorkingDirectory=/var/lib/jenkins-agent/workspace/aim-platform_production/image-archive/environments/production
+Environment="WORKSPACE=/var/lib/jenkins-agent/workspace/aim-platform_production/image-archive"
+SuccessExitStatus=0 1
+ExecStart=/usr/local/bin/tmuxinator start -p /var/lib/jenkins-agent/workspace/aim-platform_production/image-archive/environments/production/.tmuxinator.yml
+ExecStop=/usr/bin/tmux kill-session -t AIM
+ExecStartPre=/usr/bin/pkill node ; /usr/bin/pkill grunt
+ExecStopPost=/usr/bin/pkill node ; /usr/bin/pkill grunt; /usr/bin/tmux kill-session -t AIM
+
+[Install]
+WantedBy=default.target

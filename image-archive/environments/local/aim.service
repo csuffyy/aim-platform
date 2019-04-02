@@ -1,0 +1,24 @@
+# Usage:
+# sudo vim /etc/systemd/system/aim.service
+# sudo systemctl daemon-reload
+# sudo systemctl stop aim
+# sudo systemctl start aim
+
+[Unit]
+Description=aim
+After=network.target local-fs.target
+
+[Service]
+Type=forking
+KillMode=none
+User=dan
+WorkingDirectory=/home/dan/aim-platform/image-archive/environments/local
+Environment="WORKSPACE=/home/dan/aim-platform/image-archive"
+SuccessExitStatus=0 1
+ExecStart=/usr/local/bin/tmuxinator start -p /home/dan/aim-platform/image-archive/environments/local/.tmuxinator.yml
+ExecStop=/usr/bin/tmux kill-session -t AIM
+ExecStartPre=/usr/bin/pkill node ; /usr/bin/pkill grunt
+ExecStopPost=/usr/bin/pkill node ; /usr/bin/pkill grunt; /usr/bin/tmux kill-session -t AIM
+
+[Install]
+WantedBy=default.target
