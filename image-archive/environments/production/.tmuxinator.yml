@@ -5,7 +5,7 @@
 
 name: AIM
 windows:
-  -  DEV: ''
+  -  PROD: ''
   -  elastic: 
       layout: tiled
       root: <%= ENV["WORKSPACE"] %>/elastic-search

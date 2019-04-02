@@ -16,7 +16,7 @@ ELASTIC_PORT = os.environ['ELASTIC_PORT']
 
 # Process hits here
 def process_hits(hits):
-  print('.', end='', file=sys.stderr)
+  print('.', end='', file=sys.stderr, flush=True)
   for item in hits:
     record = {
       'id': item['_id'],
