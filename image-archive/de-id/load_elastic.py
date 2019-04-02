@@ -74,12 +74,8 @@ def save_thumbnail_of_dicom(dicom, filepath):
   resize_width = int(img.shape[0]*ratio)
   resize_height = int(img.shape[1]*ratio)
   im_resized = cv2.resize(img, dsize=(resize_height, resize_width), interpolation=cv2.INTER_CUBIC)
-  # TODO: USE PERTENTILE
-  # >>> v_min, v_max = np.percentile(moon, (0.2, 99.8))
-  # (10.0, 186.0)
-  # >>> better_contrast = exposure.rescale_intensity(
-  # ...                                     moon, in_range=(v_min, v_max))
-  im_resized = np.interp(im_resized, (im_resized.min(), im_resized.max()), (0, 255)) # rescale between min and max
+  p2, p98 = np.percentile(im_resized, (0.5, 99.5)) # adjust brightness to improve thumbnail viewing
+  im_resized = np.interp(im_resized, (p2, p98), (0, 255)) # rescale between min and max
   filename = os.path.basename(filepath)
   thumbnail_filename = '%s.png' % filename
   thumbnail_filepath = os.path.join(output_path, thumbnail_filename)
