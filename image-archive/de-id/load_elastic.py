@@ -191,16 +191,16 @@ def load_images():
       if FILESERVER_TOKEN != '': # when using a token, add .dcm to the end of the URL so that DWV will accept the file
         dicom_token = FILESERVER_TOKEN + '.dcm'
       dicom_metadata['dicom_filename'] = dicom_filename
-      dicom_path = filepath.replace(FILESERVER_DICOM_PATH,'')
-      dicom_metadata['dicom_filepath'] = '{ip}:{port}/{path}{token}'.format(ip=FILESERVER_IP, port=FILESERVER_PORT, path=dicom_path, token=dicom_token)
+      dicom_path = os.path.join(FILESERVER_DICOM_PATH, dicom_filename)
+      dicom_metadata['dicom_filepath'] = '{path}{token}'.format(path=dicom_path, token=dicom_token)
 
       # Save Path of Thumbnail
       # Example: http://172.20.4.85:8000/static/thumbnails/2011/testplot.png-0TO0-771100
       thumbnail_filename = os.path.basename(thumbnail_filepath)
       parent_folder_name = os.path.basename(os.path.dirname(thumbnail_filepath))
-      thumbnail_relative_path = os.path.join(parent_folder_name, thumbnail_filename) # relative to westatic bserver
-      dicom_metadata['thumbnail_filename'] = thumbnail_relative_path
-      dicom_metadata['thumbnail_filepath'] = 'http://{ip}:{port}/{path}/{filename}{token}'.format(ip=FILESERVER_IP, port=FILESERVER_PORT, path=FILESERVER_THUMBNAIL_PATH, filename=thumbnail_relative_path, token=FILESERVER_TOKEN)
+      thumbnail_relative_path = os.path.join(FILESERVER_THUMBNAIL_PATH, parent_folder_name, thumbnail_filename) # relative to static webserver
+      dicom_metadata['thumbnail_filename'] = thumbnail_filename
+      dicom_metadata['thumbnail_filepath'] = '{filename}{token}'.format(filename=thumbnail_relative_path, token=FILESERVER_TOKEN)
 
       dicom_metadata['original_title'] = 'Dicom'
       dicom_metadata['_index'] = INDEX_NAME
@@ -235,6 +235,9 @@ if __name__ == '__main__':
   FILESERVER_TOKEN = os.getenv('FILESERVER_TOKEN','')
   FILESERVER_DICOM_PATH = os.environ['FILESERVER_DICOM_PATH']
   FILESERVER_THUMBNAIL_PATH = os.environ['FILESERVER_THUMBNAIL_PATH']
+  STATIC_WEBSERVER_URL = os.environ['STATIC_WEBSERVER_URL'] # Example: 'http://192.168.136.128:3000/'
+  DWV_URL = os.environ['DWV_URL'] # Example: 'http://192.168.136.128:8080/'
+
 
   # output_path = '/hpf/largeprojects/diagimage_common/shared/thumbnails'
   # output_path = '/home/chuynh/aim-platform/image-archive/de-id/jobs/thumbnails'

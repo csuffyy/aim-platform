@@ -14,3 +14,5 @@ export FILESERVER_TOKEN='-0TO0-771100' # stored elsewhere secretly
 export FILESERVER_DICOM_PATH='/hpf/largeprojects/diagimage_common/'
 export FILESERVER_THUMBNAIL_PATH='shared/thumbnails'
 export AUTH_TOKEN='771100'
+export STATIC_WEBSERVER_URL='http://172.20.4.83:8000/'
+export DWV_URL='http://172.20.4.83:8080/'

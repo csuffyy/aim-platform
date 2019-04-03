@@ -14,3 +14,5 @@ env.FILESERVER_TOKEN='' // NOTE: groovy load sucks and doesn't want to set an em
 env.FILESERVER_DICOM_PATH='/hpf/largeprojects/diagimage_common/'
 env.FILESERVER_THUMBNAIL_PATH='shared/thumbnails'
 env.AUTH_TOKEN='771100'
+env.STATIC_WEBSERVER_URL='http://172.20.4.83:8000/'
+env.DWV_URL='http://172.20.4.83:8080/'

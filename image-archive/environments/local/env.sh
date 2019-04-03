@@ -13,3 +13,5 @@ export FILESERVER_TOKEN=''
 export FILESERVER_DICOM_PATH='static/dicom'
 export FILESERVER_THUMBNAIL_PATH='static/thumbnails'
 export AUTH_TOKEN=771100
+export STATIC_WEBSERVER_URL='http://192.168.136.128:3000/'
+export DWV_URL='http://192.168.136.128:8080/'

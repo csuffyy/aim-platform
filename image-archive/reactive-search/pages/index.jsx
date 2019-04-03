@@ -18,6 +18,8 @@ const {ELASTIC_PORT} = publicRuntimeConfig;
 const {ELASTIC_IP} = publicRuntimeConfig;
 const {ELASTIC_INDEX} = publicRuntimeConfig;
 const {AUTH_TOKEN} = publicRuntimeConfig;
+const {STATIC_WEBSERVER_URL} = publicRuntimeConfig;
+const {DWV_URL} = publicRuntimeConfig;
 
 if (AUTH_TOKEN === undefined) {
   throw new Error('AUTH_TOKEN is undefined');
@@ -128,16 +130,21 @@ const components = {
             <a
               target="#"
               href={
-                "http://" + PUBLIC_IP + 
-                ":8080/index.html?input=http://" + res.dicom_filepath
+                DWV_URL + 
+                "index.html?input=" + 
+                STATIC_WEBSERVER_URL +
+                res.dicom_filepath
               }
             >
+
               <div className="img">
                 <img
-                  src={res.thumbnail_filepath}
+                  src={STATIC_WEBSERVER_URL + res.thumbnail_filepath}
                   alt={res.original_title}
                   className="result-image"
                 />
+                {/* Example src:
+                http://192.168.136.128:3000/static/thumbnails/CT-MONO2-16-ankle.dcm.png */}
               </div>
               <div className="info colored">
                 <h3 className="overlay-title">
@@ -208,8 +215,10 @@ const components = {
         </div>
       ),
       url:
-        "http://" + PUBLIC_IP + 
-        ":8080/index.html?input=" + res.dicom_filepath 
+        DWV_URL + 
+        "index.html?input=" + 
+        STATIC_WEBSERVER_URL +
+        res.dicom_filepath
     }),
     innerClass: {
       title: "result-title",
