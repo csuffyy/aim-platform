@@ -100,11 +100,9 @@ qsub -v INPUT_FILE="HSC_report_500K_1M.zip" -N report_HSC_report_500K_1M ~/qsub-
 wc -l /hpf/largeprojects/diagimage_common/shared/dicom-paths/*.txt
 wc -l /hpf/largeprojects/diagimage_common/shared/reports/*.txt
 
-
 32075764 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__shared_inventory_extraction_disk1_.txt
 31256545 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__shared_inventory_extraction_disk2_.txt
 30552510 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__shared_inventory_extraction_disk3_.txt
-      1 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__shared_test_.txt
 1481364 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__src_disk1_.txt
 1408525 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__src_disk2_.txt
 2245071 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__src_disk3_.txt
@@ -123,6 +121,29 @@ wc -l /hpf/largeprojects/diagimage_common/shared/reports/*.txt
 [dsnider@qlogin3 ~]$ qsub -v INPUT_PATH="shared/inventory/extraction/disk1/" -N dicom_extraction_disk1 ~/qsub-find-dicom.sh
 46870171
 
+# Split Files
+split -l 100000 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__shared_inventory_extraction_disk1_.txt /hpf/largeprojects/diagimage_common/shared/dicom-paths/Subset__shared_inventory_extraction_disk1__
+split -l 100000 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__shared_inventory_extraction_disk2_.txt /hpf/largeprojects/diagimage_common/shared/dicom-paths/Subset__shared_inventory_extraction_disk2__
+split -l 100000 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__shared_inventory_extraction_disk3_.txt /hpf/largeprojects/diagimage_common/shared/dicom-paths/Subset__shared_inventory_extraction_disk3__
+split -l 100000 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__src_disk1_.txt /hpf/largeprojects/diagimage_common/shared/dicom-paths/Subset__src_disk1__
+split -l 100000 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__src_disk2_.txt /hpf/largeprojects/diagimage_common/shared/dicom-paths/Subset__src_disk2__
+split -l 100000 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__src_disk3_.txt /hpf/largeprojects/diagimage_common/shared/dicom-paths/Subset__src_disk3__
 
+split -l 100000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__BloorView_report.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__BloorView_report__
+split -l 100000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_0_500K.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__HSC_report_0_500K__
+split -l 100000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_1.5M_2M.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__HSC_report_1.5M_2M__
+split -l 100000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_1M_1.5M.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__HSC_report_1M_1.5M__
+split -l 100000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_2.5M_3M.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__HSC_report_2.5M_3M__
+split -l 100000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_2M_2.5M.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__HSC_report_2M_2.5M__
+split -l 100000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_500K_1M.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__HSC_report_500K_1M__
 
+# Fix for Grunt not found
+npm install
+# npm install -g grunt-cli
 
+# Recreate elastic
+cd ~/aim-platform/image-archive/elastic-search
+curl -H 'Content-Type: application/json' -XDELETE 'http://localhost:9200/image' && source ../environments/local/env.sh && ./init_elastic.sh 
+
+# Script to generate jobs
+aim-platform/image-archive/environments/production/qsub_jobs_loop.sh

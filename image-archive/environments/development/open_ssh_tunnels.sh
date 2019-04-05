@@ -1,6 +1,6 @@
 # AIM Tunnel to get a static file webserver on port 8000 out of HPF through port 22 to Openstack port 8000
 # Run on data1.ccm.sickkids.ca
-ssh -fNq -R 0.0.0.0:8000:localhost:8000 ubuntu@172.20.4.85
+ssh -fNq -R 0.0.0.0:8000:localhost:8000 ubuntu@172.20.4.83
 
 # AIM tunnel elasticsearch running on OpenStack VM (port 9200) to HPF data server (port 9200)
 # Run on hpf23.ccm.sickkids.ca

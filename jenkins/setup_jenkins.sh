@@ -123,13 +123,13 @@ systemctl restart apache2
 
 
 <VirtualHost *:80>
-    ServerName elastic.images.ccm.sickkids.ca
+    ServerName elasticimages.ccm.sickkids.ca
     RewriteEngine On
     RewriteRule ^/(.*)$  https://%{HTTP_HOST}/$1 [QSA,R=301,L]
 </VirtualHost>
 
 <VirtualHost *:443>
-    ServerName elastic.images.ccm.sickkids.ca
+    ServerName elasticimages.ccm.sickkids.ca
     Timeout 3000
 
     SSLEngine on
@@ -148,3 +148,18 @@ systemctl restart apache2
     ProxyPreserveHost On
     ProxyPass / http://localhost:9200/
 </VirtualHost>
+
+
+elasticimages.ccm.sickkids.ca ---> 172.20.4.83
+dwvimages.ccm.sickkids.ca ---> 172.20.4.83
+staticimages.ccm.sickkids.ca ---> 172.20.4.83
+
+devimages.ccm.sickkids.ca ---> 172.20.4.85
+develasticimages.ccm.sickkids.ca ---> 172.20.4.85
+devdwvimages.ccm.sickkids.ca ---> 172.20.4.85
+devstaticimages.ccm.sickkids.ca ---> 172.20.4.85
+
+Also please delete these records:
+elastic.images.ccm.sickkids.ca
+dev.images.ccm.sickkids.ca
+
