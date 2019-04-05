@@ -8,7 +8,7 @@ Requesting Physician: RPHYS       Scheduled Date:1959.05.10
 Patient Name: PLAST, PFIRST    		     Sex: F
 Medical Record Number: 1234658	     Birth Date: 1944.08.13
   	
-Accession Number: 5556667	     Order Number: RA19590001234 
+Accession Number: SMS000013	     Order Number: RA19590001234 
 
 Reason for Exam:  PRE RENAL TX W/U
 Clinical Comments:  

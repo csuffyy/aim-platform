@@ -8,7 +8,7 @@ Requesting Physician: REQDOC	     Scheduled Date:1980.06.27
 Patient Name: PLAST, PFIRST PMID      		     Sex: F
 Medical Record Number: 1234567	     Birth Date: 2980.06.15
   	
-Accession Number: 5556666	     Order Number: RA19800000010 
+Accession Number: FUJI95714	     Order Number: RA19800000010 
 
 Reason for Exam:  ?R COLLAPSE, R COLLAPSE ON FACIAL CPAP
 Clinical Comments:  

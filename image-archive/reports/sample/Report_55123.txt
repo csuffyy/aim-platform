@@ -6,9 +6,9 @@
 Exam Requested: RA Chest 1 View
 Requesting Physician: REQDOC	     Scheduled Date:2035.02.15
 Patient Name: PLAST, PFIRST      		     Sex: M
-Medical Record Number: 1234569	     Birth Date: 2034.06.20
+Medical Record Number: 015692001	     Birth Date: 2034.06.20
   	
-Accession Number: 555123	     Order Number: RA20350000003 
+Accession Number: 015692001	     Order Number: RA20350000003 
 
 Reason for Exam:  S/P GLEN, F/U PNEUMONIA
 Clinical Comments:  
