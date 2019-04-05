@@ -38,6 +38,7 @@ def save_thumbnail_of_dicom(dicom, filepath):
   except Exception as e:
     print(traceback.format_exc())
     log.warning('Skipping this image because error occured when reading pixel_array')
+    log.warning('Problem image was: %s\n' % filepath)
     return
 
   # Image shape
@@ -130,6 +131,7 @@ def load_images():
         dicom.add_new(0x19100e, 'FD', [0,1,0]) # I have no idea what this last vector should actually be
         dicom[0x19100e].value = 'Assumed TransferSyntaxUID'
         log.warning('Assumed TransferSyntaxUID')
+        log.warning('Problem image was: %s\n' % filepath)
       # PatientBirthDatePretty
       try:
         if 'PatientBirthDate' in dicom_metadata:
@@ -138,6 +140,7 @@ def load_images():
           datetime.strptime(dicom_metadata['PatientBirthDatePretty'], '%Y-%m-%d')  # just check that it works
       except:
         log.warning('Didn\'t understand value: %s = \'%s\'' % ('PatientBirthDate', dicom_metadata['PatientBirthDate']))
+        log.warning('Problem image was: %s\n' % filepath)
         dicom_metadata.pop('PatientBirthDatePretty', None) # remove bad formatted metadata
       # AcquisitionDatePretty
       try:
@@ -147,6 +150,7 @@ def load_images():
           datetime.strptime(dicom_metadata['AcquisitionDatePretty'], '%Y-%m-%d')  # just check that it works
       except:
         log.warning('Didn\'t understand value: %s = \'%s\'' % ('AcquisitionDate', dicom_metadata['AcquisitionDate']))
+        log.warning('Problem image was: %s\n' % filepath)
         dicom_metadata.pop('AcquisitionDatePretty', None) # remove bad formatted metadata
       # PatientAgeInt (Method 1: diff between birth and acquisition dates)
 
@@ -175,6 +179,7 @@ def load_images():
             dicom_metadata['PatientAgeInt'] = age
       except:
         log.warning('Didn\'t understand value: %s = \'%s\'' % ('PatientAge', dicom_metadata['PatientAge']))
+        log.warning('Problem image was: %s\n' % filepath)
       # DEMO ONLY!!!! Add random age
       # if 'PatientAgeInt' not in dicom_metadata:
       #   dicom_metadata['PatientAgeInt'] = random.randint(1,20)
@@ -182,6 +187,7 @@ def load_images():
       thumbnail_filepath = save_thumbnail_of_dicom(dicom, filepath)
       if not thumbnail_filepath:
         log.warning('Skipping this dicom. Could not generate thumbnail.')
+        log.warning('Problem image was: %s\n' % filepath)
         continue
 
       # Save Path of DICOM
@@ -191,8 +197,9 @@ def load_images():
       if FILESERVER_TOKEN != '': # when using a token, add .dcm to the end of the URL so that DWV will accept the file
         dicom_token = FILESERVER_TOKEN + '.dcm'
       dicom_metadata['dicom_filename'] = dicom_filename
-      dicom_path = os.path.join(FILESERVER_DICOM_PATH, dicom_filename)
-      dicom_metadata['dicom_filepath'] = '{path}{token}'.format(path=dicom_path, token=dicom_token)
+      dicom_metadata['dicom_filepath'] = filepath
+      dicom_relativepath = filepath.replace(FILESERVER_DICOM_PATH,'') # remove part of path up to where the webserver is located
+      dicom_metadata['dicom_relativepath'] = '{path}{token}'.format(path=dicom_relativepath, token=dicom_token)
 
       # Save Path of Thumbnail
       # Example: http://172.20.4.85:8000/static/thumbnails/2011/testplot.png-0TO0-771100
@@ -210,6 +217,7 @@ def load_images():
     except:
       print(traceback.format_exc())
       log.error('Skipping this image because of unknown error')
+      log.error('Problem image was: %s\n' % filepath)
 
 
 if __name__ == '__main__':
@@ -247,7 +255,8 @@ if __name__ == '__main__':
 
   logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
                       datefmt='%H:%M:%S',
-                      level=logging.INFO)
+                      level=logging.WARN)
+                      # level=logging.INFO)
                       # level=logging.DEBUG)
   log = logging.getLogger('main')
 

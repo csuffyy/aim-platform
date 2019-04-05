@@ -133,7 +133,7 @@ const components = {
                 DWV_URL + 
                 "index.html?input=" + 
                 STATIC_WEBSERVER_URL +
-                res.dicom_filepath
+                res.dicom_relativepath
               }
             >
 

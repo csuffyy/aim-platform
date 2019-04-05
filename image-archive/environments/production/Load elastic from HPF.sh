@@ -58,10 +58,12 @@ function ql() {
     tail $1 -- "$(find jobs -maxdepth 1 -type f -printf '%T@.%p\0' | sort -znr -t. -k1,2 | while IFS= read -r -d '' -r record ; do printf '%s' "$record" | cut -d. -f3- ; break ; done)"
 }
 function qm() {
-  tail -n100 jobs/aim-qsub.sh.o$(qstat -rn1 | grep dsnider | grep -v ' C '| cut -f1 -d' ' | tail -n1); qstat -rn1 | grep dsnider
+  tail -n25 `/bin/ls -1td /home/dsnider/jobs/* | /usr/bin/head -n1`
+  /bin/ls -1td /home/dsnider/jobs/* | /usr/bin/head -n1
+  qstat -u dsnider
 }
 function wqm() { # watch q-monitor
-  while [ 1 ]; do cat jobs/aim-qsub.sh.o$(qstat -rn1 | grep dsnider | grep -v ' C '| cut -f1 -d' ' | tail -n1); qstat -rn1 | grep dsnider; sleep 1; test $? -gt 128 && break; done
+  while [ 1 ]; do qm; sleep 1; done
 }
 
 # Confirm everything is working
