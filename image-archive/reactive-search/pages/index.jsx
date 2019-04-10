@@ -28,6 +28,7 @@ const components = {
   settings: {
     app: ELASTIC_INDEX,
     url: ELASTIC_URL,
+    // credentials: "abcdef123:abcdef12-ab12-ab12-ab12-abcdef123456", // DO NOT DELETE THIS COMMENT. ReactiveSearch will break =X!
     headers: {
         'X-Requested-With': AUTH_TOKEN // arbitrary headers are not allowed see whitelist in elasticsearch.yml
     },
