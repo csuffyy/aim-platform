@@ -18,7 +18,6 @@ pipeline {
         // echo "${params.Greeting} World!"
         echo "PUBILC_IP: ${env.PUBILC_IP}"
         echo "WORKSPACE: ${env.WORKSPACE}"
-        sh "env"
       }
     }
     stage('Stop Tmuxinator') {
@@ -78,7 +77,7 @@ pipeline {
         dir('image-archive/reactive-search/') {
           sh 'npm install --verbose --color false 2>&1'
           sh 'npm run dev &'
-          sh """bash -c 'while [[ "`curl -v --cookie "token=${env.AUTH_TOKEN}" -s -o /dev/null -w ''%{http_code}'' localhost:3000`" != "200" ]]; do echo "trying again"; sleep 5; done; curl -v localhost:3000; echo "ReactiveSearch UP"'"""
+          // sh """bash -c 'source ../environments/production/env.sh; while [[ "`curl --cookie "token=${env.AUTH_TOKEN}" -s -o /dev/null -w ''%{http_code}'' localhost:3000`" != "200" ]]; do echo "trying again"; sleep 5; done; echo "ReactiveSearch UP"'"""
         }
       }
     }
