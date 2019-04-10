@@ -77,6 +77,19 @@ su ubuntu
 mkdir ~/esdata
 chown -R ubuntu:ubuntu ~/esdata
 
+# Add names to enterprise DNS
+elasticimages.ccm.sickkids.ca ---> 172.20.4.83
+dwvimages.ccm.sickkids.ca ---> 172.20.4.83
+staticimages.ccm.sickkids.ca ---> 172.20.4.83
+
+devimages.ccm.sickkids.ca ---> 172.20.4.85
+develasticimages.ccm.sickkids.ca ---> 172.20.4.85
+devdwvimages.ccm.sickkids.ca ---> 172.20.4.85
+devstaticimages.ccm.sickkids.ca ---> 172.20.4.85
+
+#/etc/hosts
+127.0.0.1 localhost images.ccm.sickkids.ca elasticimages.ccm.sickkids.ca dwvimages.ccm.sickkids.ca staticimages.ccm.sickkids.ca
+
 # Set hostname
 hostname images.ccm.sickkids.ca
 sudo echo images.ccm.sickkids.ca > /etc/hostname
@@ -89,77 +102,10 @@ sudo a2enmod rewrite
 sudo a2enmod ssl
 sudo a2enmod proxy
 sudo a2enmod proxy_http
+sudo a2enmod headers
 systemctl restart apache2
 
-/etc/apache2/sites-enabled/images.conf
-<VirtualHost *:80>
-    ServerName images.ccm.sickkids.ca
-    RewriteEngine On
-    RewriteRule ^/(.*)$  https://%{HTTP_HOST}/$1 [QSA,R=301,L]
-</VirtualHost>
-
-<VirtualHost *:443>
-    ServerName images.ccm.sickkids.ca
-    Timeout 3000
-
-    SSLEngine on
-    SSLProtocol all -SSLv2 -SSLv3
-    SSLCipherSuite ALL:!ADH:!EXPORT:!SSLv2:!RC4+RSA:+HIGH:+MEDIUM:!LOW
-
-    SSLCertificateFile /etc/cert/star_ccm_sickkids_ca.crt
-    SSLCertificateKeyFile /etc/cert/star_ccm_sickkids_ca.key
-    SSLCertificateChainFile /etc/cert/DigiCertCA.crt
-
-    ProxyRequests Off
-    <Proxy *>
-        Order deny,allow
-        Allow from all
-    </Proxy>
-    ProxyPreserveHost On
-    ProxyPass / http://localhost:3000/
-</VirtualHost>
-
-
-
-
-<VirtualHost *:80>
-    ServerName elasticimages.ccm.sickkids.ca
-    RewriteEngine On
-    RewriteRule ^/(.*)$  https://%{HTTP_HOST}/$1 [QSA,R=301,L]
-</VirtualHost>
-
-<VirtualHost *:443>
-    ServerName elasticimages.ccm.sickkids.ca
-    Timeout 3000
-
-    SSLEngine on
-    SSLProtocol all -SSLv2 -SSLv3
-    SSLCipherSuite ALL:!ADH:!EXPORT:!SSLv2:!RC4+RSA:+HIGH:+MEDIUM:!LOW
-
-    SSLCertificateFile /etc/cert/star_ccm_sickkids_ca.crt
-    SSLCertificateKeyFile /etc/cert/star_ccm_sickkids_ca.key
-    SSLCertificateChainFile /etc/cert/DigiCertCA.crt
-
-    ProxyRequests Off
-    <Proxy *>
-        Order deny,allow
-        Allow from all
-    </Proxy>
-    ProxyPreserveHost On
-    ProxyPass / http://localhost:9200/
-</VirtualHost>
-
-
-elasticimages.ccm.sickkids.ca ---> 172.20.4.83
-dwvimages.ccm.sickkids.ca ---> 172.20.4.83
-staticimages.ccm.sickkids.ca ---> 172.20.4.83
-
-devimages.ccm.sickkids.ca ---> 172.20.4.85
-develasticimages.ccm.sickkids.ca ---> 172.20.4.85
-devdwvimages.ccm.sickkids.ca ---> 172.20.4.85
-devstaticimages.ccm.sickkids.ca ---> 172.20.4.85
-
-Also please delete these records:
-elastic.images.ccm.sickkids.ca
-dev.images.ccm.sickkids.ca
+# Install Apache conf for SSL/https proxy
+cp aim-platform/image-archive/environments/production/apache-https-proxy.conf /etc/apache2/sites-enabled/images.conf
+systemctl restart apache2
 

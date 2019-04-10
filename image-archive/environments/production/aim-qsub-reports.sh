@@ -2,7 +2,7 @@
 
 #PBS -l mem=1gb,vmem=1gb
 #PBS -l nodes=1:ppn=2
-#PBS -l walltime=48:00:00
+#PBS -l walltime=100:00:00
 #PBS -j oe
 #PBS -o /home/dsnider/jobs
 

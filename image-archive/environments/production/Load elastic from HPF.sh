@@ -52,7 +52,6 @@ sed -i 's/export INPUT_FILE_LIST.*/export INPUT_FILE_LIST\=~\/Disk1_Part_aa/g' .
 qsub ./aim-platform/image-archive/environments/production/aim-qsub.sh
 
 # Check log
-alias qs="qstat -rn1 | grep dsni"
 alias wqs="watch 'qstat -rn1 | grep dsni'"
 function ql() {
     tail $1 -- "$(find jobs -maxdepth 1 -type f -printf '%T@.%p\0' | sort -znr -t. -k1,2 | while IFS= read -r -d '' -r record ; do printf '%s' "$record" | cut -d. -f3- ; break ; done)"
@@ -64,6 +63,11 @@ function qm() {
 }
 function wqm() { # watch q-monitor
   while [ 1 ]; do qm; sleep 1; done
+}
+function qs() { 
+  echo "Queued: $(qstat -u dsnider | grep dsni | grep ' Q ' | wc -l)"
+  echo "Running: $(qstat -u dsnider | grep dsni | grep ' R ' | wc -l)"
+  echo "Complete: $(qstat -u dsnider | grep dsni | grep ' C ' | wc -l)"
 }
 
 # Confirm everything is working
@@ -131,13 +135,13 @@ split -l 100000 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List
 split -l 100000 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__src_disk2_.txt /hpf/largeprojects/diagimage_common/shared/dicom-paths/Subset__src_disk2__
 split -l 100000 /hpf/largeprojects/diagimage_common/shared/dicom-paths/File_List__src_disk3_.txt /hpf/largeprojects/diagimage_common/shared/dicom-paths/Subset__src_disk3__
 
-split -l 100000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__BloorView_report.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__BloorView_report__
-split -l 100000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_0_500K.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__HSC_report_0_500K__
-split -l 100000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_1.5M_2M.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__HSC_report_1.5M_2M__
-split -l 100000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_1M_1.5M.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__HSC_report_1M_1.5M__
-split -l 100000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_2.5M_3M.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__HSC_report_2.5M_3M__
-split -l 100000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_2M_2.5M.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__HSC_report_2M_2.5M__
-split -l 100000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_500K_1M.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__HSC_report_500K_1M__
+split -l 10000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__BloorView_report.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__BloorView_report__
+split -l 10000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_0_500K.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__HSC_report_0_500K__
+split -l 10000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_1.5M_2M.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__HSC_report_1.5M_2M__
+split -l 10000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_1M_1.5M.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__HSC_report_1M_1.5M__
+split -l 10000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_2.5M_3M.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__HSC_report_2.5M_3M__
+split -l 10000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_2M_2.5M.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__HSC_report_2M_2.5M__
+split -l 10000 /hpf/largeprojects/diagimage_common/shared/reports/File_List__HSC_report_500K_1M.zip.txt /hpf/largeprojects/diagimage_common/shared/reports/Subset__HSC_report_500K_1M__
 
 # Fix for Grunt not found
 npm install
@@ -148,4 +152,10 @@ cd ~/aim-platform/image-archive/elastic-search
 curl -H 'Content-Type: application/json' -XDELETE 'http://localhost:9200/image' && source ../environments/local/env.sh && ./init_elastic.sh 
 
 # Script to generate jobs
+qlogin
 aim-platform/image-archive/environments/production/qsub_jobs_loop.sh
+
+# Ingest all reports
+qlogin
+aim-platform/image-archive/environments/production/qsub_reports_jobs_loop.sh
+
