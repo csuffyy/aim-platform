@@ -17,3 +17,4 @@ export FILESERVER_THUMBNAIL_PATH='shared/thumbnails'
 export AUTH_TOKEN='771100'
 export STATIC_WEBSERVER_URL='https://staticimages.ccm.sickkids.ca/'
 export DWV_URL='https://dwvimages.ccm.sickkids.ca/'
+source /etc/secrets.sh

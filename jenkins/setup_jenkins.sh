@@ -109,3 +109,6 @@ systemctl restart apache2
 cp aim-platform/image-archive/environments/production/apache-https-proxy.conf /etc/apache2/sites-enabled/images.conf
 systemctl restart apache2
 
+
+# install secrets
+sudo echo "export AUTH_TOKEN='771100'" > /etc/secrets.sh
