@@ -131,13 +131,13 @@ const components = {
                 DWV_URL + 
                 "index.html?input=" + 
                 STATIC_WEBSERVER_URL +
-                res.dicom_relativepath
+                res.dicom_relativepath + '-0TO0-' + AUTH_TOKEN
               }
             >
 
               <div className="img">
                 <img
-                  src={STATIC_WEBSERVER_URL + res.thumbnail_filepath}
+                  src={STATIC_WEBSERVER_URL + res.thumbnail_filepath + '-0TO0-' + AUTH_TOKEN}
                   alt={res.original_title}
                   className="result-image"
                 />
@@ -216,7 +216,7 @@ const components = {
         DWV_URL + 
         "index.html?input=" + 
         STATIC_WEBSERVER_URL +
-        res.dicom_filepath
+        res.dicom_relativepath + '-0TO0-' + AUTH_TOKEN
     }),
     innerClass: {
       title: "result-title",

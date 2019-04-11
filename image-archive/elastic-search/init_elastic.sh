@@ -183,6 +183,13 @@ curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$EL
   "index.mapping.total_fields.limit": 100000
 }'
 
+# Reduce replica count to 0 to prefer performance over availability
+curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
+{
+    "index" : {
+        "number_of_replicas" : 0
+    }
+}'
 
 
 # curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_mapping/$ELASTIC_DOC_TYPE -w "\n" -d  @- << EOF
@@ -304,4 +311,12 @@ curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
 curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
 {
   "index.mapping.total_fields.limit": 100000
+}'
+
+# Reduce replica count to 0 to prefer performance over availability
+curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
+{
+    "index" : {
+        "number_of_replicas" : 0
+    }
 }'

@@ -1,0 +1,22 @@
+From 8762277623cb174d1857d6b635ae4aa7192b13ec Mon Sep 17 00:00:00 2001
+From: Daniel Snider <danielsnider12@gmail.com>
+Date: Thu, 11 Apr 2019 00:08:27 +0000
+Subject: [PATCH] Fix for server side to provide headers when calling elastic
+
+---
+ node_modules/@appbaseio/reactivesearch/lib/server/index.js | 1 +
+ 1 file changed, 1 insertions(+)
+
+diff --git a/lib/server/index.js b/lib/server/index.js
+index 24aa2f8..1a34053 100644
+--- a/node_modules/@appbaseio/reactivesearch/lib/server/index.js
++++ b/node_modules/@appbaseio/reactivesearch/lib/server/index.js
+@@ -77,6 +77,7 @@ function initReactivesearch(componentCollection, searchState, settings) {
+                        type: settings.type ? settings.type : '*'
+                };
+                var appbaseRef = (0, _appbaseJs2.default)(config);
++               appbaseRef.headers = settings.headers;
+
+                var components = [];
+                var selectedValues = {};
+--
