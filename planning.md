@@ -33,7 +33,7 @@ Prioritize according to revenue:
 
 
 
-## Stroke Lab: Imaging Research Study  ![](https://img.shields.io/badge/Weeks-8-ff64b9.svg)
+## Stroke Lab: Imaging Research Study  ![](https://img.shields.io/badge/Weeks-10-ff64b9.svg)
 
 The goal is to organize the Stroke Lab's DICOM images and make them more accessible. Data is coming from (a) prospective imaging studies (research study), (b) clinical images from SickKids, (c) also receiving 52 clinical images from other sites, and (d) Carbon, tatooween, silk servers at SickKids.
 
@@ -48,17 +48,17 @@ Lab members: rochelle.albert@sickkids.ca, amanda.robertson@sickkids.ca
     - Ingest images from 52 other sites ![](https://img.shields.io/badge/Weeks-2-ff64b9.svg)
     - Ingest from future SickKids clinical images ![](https://img.shields.io/badge/Weeks-1-ff64b9.svg)
 - Infrastructure:
-    - Project Specific Web Front-end ![](https://img.shields.io/badge/Days-3-ff64b9.svg)
-    - Performance Optimization ![](https://img.shields.io/badge/Days-1-ff64b9.svg)
-    - Basic Monitoring ![](https://img.shields.io/badge/Days-1-ff64b9.svg)
-    - Functional Tests ![](https://img.shields.io/badge/Days-0.5-ff64b9.svg)
-    - Continuous Integration ![](https://img.shields.io/badge/Days-0.5-ff64b9.svg)
+    - Web Front-end ![](https://img.shields.io/badge/Days-4-ff64b9.svg)
+    - Performance Optimization ![](https://img.shields.io/badge/Days-3-ff64b9.svg)
+    - Basic Monitoring ![](https://img.shields.io/badge/Days-2-ff64b9.svg)
+    - Functional Tests ![](https://img.shields.io/badge/Days-1-ff64b9.svg)
+    - Continuous Integration ![](https://img.shields.io/badge/Days-1-ff64b9.svg)
     - DICOM Static Web Server (not PACS) ![](https://img.shields.io/badge/Days-3-ff64b9.svg) ![](https://img.shields.io/badge/Cost-❔-ff0000.svg)
 - Security:
     - De-id Image Sets ![](https://img.shields.io/badge/Weeks-1-ff64b9.svg)
-    - Authentication ![](https://img.shields.io/badge/Days-1-ff64b9.svg)
-    - Data Backup ![](https://img.shields.io/badge/Days-1-ff64b9.svg) ![](https://img.shields.io/badge/Cost-❔-ff0000.svg)
-    - Master Linking List ![](https://img.shields.io/badge/Days-1-ff64b9.svg)
+    - Authentication ![](https://img.shields.io/badge/Days-4-ff64b9.svg)
+    - Data Backup ![](https://img.shields.io/badge/Days-2-ff64b9.svg) ![](https://img.shields.io/badge/Cost-❔-ff0000.svg)
+    - Master Linking List ![](https://img.shields.io/badge/Days-2-ff64b9.svg)
 
 ##### Advanced Milestones:
 
