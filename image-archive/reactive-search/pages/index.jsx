@@ -216,7 +216,7 @@ const components = {
         DWV_URL + 
         "index.html?input=" + 
         STATIC_WEBSERVER_URL +
-        res.dicom_relativepath + '-0TO0-' + AUTH_TOKEN
+        res.dicom_relativepath + '-0TO0-' + AUTH_TOKEN + '.dcm'
     }),
     innerClass: {
       title: "result-title",
