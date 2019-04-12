@@ -11,6 +11,7 @@ module.exports.publicRuntimeConfig = {
   ELASTIC_URL: process.env.ELASTIC_URL,
   ELASTIC_INDEX: process.env.ELASTIC_INDEX,
   AUTH_TOKEN: process.env.AUTH_TOKEN,
+  FILESERVER_TOKEN: process.env.FILESERVER_TOKEN,
   STATIC_WEBSERVER_URL: process.env.STATIC_WEBSERVER_URL,
   DWV_URL: process.env.DWV_URL
 }

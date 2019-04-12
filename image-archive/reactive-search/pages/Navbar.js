@@ -50,13 +50,25 @@ function setCookie(name, value)
   document.cookie=name + "=" + escape(value) + "; path=/; expires=" + expiry.toGMTString();
 }
 
+function beforeValueChange(value) {
+    if (typeof window !== 'undefined') {
+      var results = document.getElementsByClassName('Result_card');
+      document.getElementById('loadingekg').style.display = 'block';
+    }
+  return new Promise((resolve, reject) => {
+    resolve()
+    // or reject()
+  })
+}
 
 const components = {
   dataSearch: {
     componentId: "mainSearch",
+    debounce: 1000,
     // dataField: ["descriptions"],
     // dataField: ["StudyDescription","ReasonForStudy","SeriesDescription","StudyComments"],
     dataField: [],
+    beforeValueChange: beforeValueChange,
     customQuery: custQueryAllFields,
     categoryField: "title",
     className: "search-bar",

@@ -34,4 +34,4 @@ windows:
       root: ../../de-id/
       layout: tiled
       panes:
-        - cp ../images/sample-dicom/*.dcm ../reactive-search/static/dicom/ && source ../environments/local/env.sh && python3 load_elastic.py ../images/sample-dicom/image_list.txt ../reactive-search/static/thumbnails/
+        - source ../environments/local/env.sh && python3 load_elastic.py ../reactive-search/static/dicom/file_list.txt ../reactive-search/static/thumbnails/

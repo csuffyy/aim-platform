@@ -1,0 +1,17 @@
+/home/dan/aim-platform/image-archive/reactive-search/static/dicom/CR-MONO1-10-chest.dcm
+/home/dan/aim-platform/image-archive/reactive-search/static/dicom/CT-MONO2-12-lomb-an2.dcm
+/home/dan/aim-platform/image-archive/reactive-search/static/dicom/CT-MONO2-16-ankle.dcm
+/home/dan/aim-platform/image-archive/reactive-search/static/dicom/CT-MONO2-16-ort.dcm
+/home/dan/aim-platform/image-archive/reactive-search/static/dicom/CT-MONO2-8-abdo.dcm
+/home/dan/aim-platform/image-archive/reactive-search/static/dicom/MR-MONO2-12-an2.dcm
+/home/dan/aim-platform/image-archive/reactive-search/static/dicom/MR-MONO2-12-angio-an1.dcm
+/home/dan/aim-platform/image-archive/reactive-search/static/dicom/MR-MONO2-16-head.dcm
+/home/dan/aim-platform/image-archive/reactive-search/static/dicom/MR-MONO2-16-knee.dcm
+/home/dan/aim-platform/image-archive/reactive-search/static/dicom/MR-MONO2-8-16x-heart.dcm
+/home/dan/aim-platform/image-archive/reactive-search/static/dicom/NM-MONO2-16-13x-heart.dcm
+/home/dan/aim-platform/image-archive/reactive-search/static/dicom/OT-MONO2-8-a7.dcm
+/home/dan/aim-platform/image-archive/reactive-search/static/dicom/OT-MONO2-8-colon.dcm
+/home/dan/aim-platform/image-archive/reactive-search/static/dicom/OT-MONO2-8-hip.dcm
+/home/dan/aim-platform/image-archive/reactive-search/static/dicom/OT-PAL-8-face.dcm
+/home/dan/aim-platform/image-archive/reactive-search/static/dicom/US-MONO2-8-8x-execho.dcm
+/home/dan/aim-platform/image-archive/reactive-search/static/dicom/US-PAL-8-10x-echo.dcm
