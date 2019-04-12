@@ -10,7 +10,6 @@ export REPORT_ELASTIC_INDEX='report'
 export REPORT_ELASTIC_DOC_TYPE='report'
 export FILESERVER_IP='192.168.136.128'
 export FILESERVER_PORT='3000'
-export FILESERVER_TOKEN=''
 export FILESERVER_DICOM_PATH='static/dicom'
 export FILESERVER_THUMBNAIL_PATH='static/thumbnails'
 export AUTH_TOKEN=771100

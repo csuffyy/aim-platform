@@ -11,7 +11,6 @@ export REPORT_ELASTIC_DOC_TYPE='report'
 export ES_JAVA_OPTS='-Xms32g -Xmx32g'
 export FILESERVER_IP='172.20.4.83'
 export FILESERVER_PORT='8000'
-export FILESERVER_TOKEN='-0TO0-771100' # stored elsewhere secretly
 export FILESERVER_DICOM_PATH='/hpf/largeprojects/diagimage_common/'
 export FILESERVER_THUMBNAIL_PATH='shared/thumbnails'
 export AUTH_TOKEN='771100'
