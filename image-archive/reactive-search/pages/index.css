@@ -1,3 +1,10 @@
+#loadingekg, #loadingekg2 {
+  position: relative;
+  z-index: 100;
+  right: -150px;
+  height: 0px;
+}
+
 .dropdown-toggle::after {
   vertical-align: 0em;
 }

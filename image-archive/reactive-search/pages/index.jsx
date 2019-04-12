@@ -17,12 +17,39 @@ const {PUBLIC_IP} = publicRuntimeConfig;
 const {ELASTIC_URL} = publicRuntimeConfig;
 const {ELASTIC_INDEX} = publicRuntimeConfig;
 const {AUTH_TOKEN} = publicRuntimeConfig;
+const {FILESERVER_TOKEN} = publicRuntimeConfig;
 const {STATIC_WEBSERVER_URL} = publicRuntimeConfig;
 const {DWV_URL} = publicRuntimeConfig;
 
 if (AUTH_TOKEN === undefined) {
   throw new Error('AUTH_TOKEN is undefined');
 }
+
+var FILESERVER_SECRET = '';
+var FILESERVER_SECRET_DCM = '';
+if (FILESERVER_TOKEN != '') {
+  FILESERVER_SECRET = '-0TO0-' + AUTH_TOKEN
+  FILESERVER_SECRET_DCM = '-0TO0-' + AUTH_TOKEN + '.dcm'
+}
+
+
+// NOTE: This infinite loop execution fixes an asyc bug that sometimes leaves the loading ekg after no results are found.
+function infiniteLoopExecution() {
+  setTimeout(function() {
+      if (typeof window !== 'undefined') {
+        var results = document.getElementsByClassName('Result_card');
+        if (results && results[0].innerText === "No Results found." ) {
+          document.getElementById('loadingekg').style.display = 'none';
+        }
+      }
+    // Again
+    infiniteLoopExecution();
+    // Every 3 sec
+  }, 1100);
+}
+// Start loop
+infiniteLoopExecution();
+
 
 const components = {
   settings: {
@@ -79,6 +106,7 @@ const components = {
 
   resultCard: {
     componentId: "results",
+    // onQueryChange: onQueryChange,
     dataField: "original_title.search",
     react: {
       and: [
@@ -96,8 +124,15 @@ const components = {
     paginationAt: "bottom",
     pages: 5,
     size: 10,
-    Loader: "Loading...",
-    noResults: "No results found...",
+    Loader: "Loading... ", // NOTE: Option broken, does nothing :-()
+    // noResults:    function(res) {
+    //   if (typeof window !== 'undefined') {
+    //     document.getElementById('loadingekg').style.display = 'none';
+    //     document.getElementById("noResults").innerHTML = "noResults";
+    //   }
+    //   setTimeout(function(){ alert("Hello"); }, 3000);
+    //   return 'No Results found.';
+    // },
     // sortOptions: [
     //   {
     //     dataField: "revenue",
@@ -120,7 +155,14 @@ const components = {
     //     label: "Sort by Title(A-Z) \u00A0"
     //   }
     // ],
-    onData: res => ({
+    // onAllData: onData,
+    onData:   function(res) {
+      if (typeof window !== 'undefined') {
+        document.getElementById('loadingekg').style.display = 'none';
+        document.getElementById("noResults").innerHTML = "";
+      }
+
+    return {
       description: (
         <div className="main-description">
           <div className="ih-item square effect6 top_to_bottom">
@@ -131,13 +173,13 @@ const components = {
                 DWV_URL + 
                 "index.html?input=" + 
                 STATIC_WEBSERVER_URL +
-                res.dicom_relativepath + '-0TO0-' + AUTH_TOKEN
+                res.dicom_relativepath + FILESERVER_SECRET_DCM
               }
             >
 
               <div className="img">
                 <img
-                  src={STATIC_WEBSERVER_URL + res.thumbnail_filepath + '-0TO0-' + AUTH_TOKEN}
+                  src={STATIC_WEBSERVER_URL + res.thumbnail_filepath + FILESERVER_SECRET}
                   alt={res.original_title}
                   className="result-image"
                 />
@@ -216,8 +258,8 @@ const components = {
         DWV_URL + 
         "index.html?input=" + 
         STATIC_WEBSERVER_URL +
-        res.dicom_relativepath + '-0TO0-' + AUTH_TOKEN + '.dcm'
-    }),
+        res.dicom_relativepath + FILESERVER_SECRET_DCM
+    }},
     innerClass: {
       title: "result-title",
       listItem: "result-item",
@@ -326,7 +368,6 @@ class Main extends Component {
 
   render() {
     const isDesktop = this.state.isDesktop;
-
     return (
       <div className="main-container">
         <ReactiveBase {...components.settings} initialState={this.props.store}>
@@ -356,6 +397,13 @@ class Main extends Component {
                 Window width: {this.state.width} and height: {this.state.height} Number of Results: {components.resultCard.size}
               </h3>*/}
 
+
+              {/*'noResults' Div is used as a variable. TODO: User a proper javascrit variable*/}
+              <div id='noResults' style={{ height: "0px" }}>
+              </div>
+              <div id='loadingekg' style={{ display: "none" }}>
+                <object type="image/svg+xml" data="static/ekg.svg">Your browser does not support SVG</object>
+              </div>
 
               <ResultCard {...components.resultCard} />
             </div>
