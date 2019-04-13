@@ -32,25 +32,6 @@ if (FILESERVER_TOKEN != '') {
   FILESERVER_SECRET_DCM = '-0TO0-' + AUTH_TOKEN + '.dcm'
 }
 
-
-// NOTE: This infinite loop execution fixes an asyc bug that sometimes leaves the loading ekg after no results are found.
-function infiniteLoopExecution() {
-  setTimeout(function() {
-      if (typeof window !== 'undefined') {
-        var results = document.getElementsByClassName('Result_card');
-        if (results && results[0].innerText === "No Results found." ) {
-          document.getElementById('loadingekg').style.display = 'none';
-        }
-      }
-    // Again
-    infiniteLoopExecution();
-    // Every 3 sec
-  }, 1100);
-}
-// Start loop
-infiniteLoopExecution();
-
-
 const components = {
   settings: {
     app: ELASTIC_INDEX,
@@ -101,7 +82,7 @@ const components = {
     showFilter: true,
     filterLabel: "Description",
     URLParams: false,
-    loader: "Loading ..."
+    loader: ""
   },
 
   resultCard: {
@@ -119,20 +100,12 @@ const components = {
         "tagCloud"
       ]
     },
-    pagination: true,
+    pagination: false,
     className: "Result_card",
     paginationAt: "bottom",
     pages: 5,
     size: 10,
-    Loader: "Loading... ", // NOTE: Option broken, does nothing :-()
-    // noResults:    function(res) {
-    //   if (typeof window !== 'undefined') {
-    //     document.getElementById('loadingekg').style.display = 'none';
-    //     document.getElementById("noResults").innerHTML = "noResults";
-    //   }
-    //   setTimeout(function(){ alert("Hello"); }, 3000);
-    //   return 'No Results found.';
-    // },
+    loader: <object type="image/svg+xml" data="static/ekg.svg">Your browser does not support SVG</object>,
     // sortOptions: [
     //   {
     //     dataField: "revenue",
@@ -155,13 +128,7 @@ const components = {
     //     label: "Sort by Title(A-Z) \u00A0"
     //   }
     // ],
-    // onAllData: onData,
     onData:   function(res) {
-      if (typeof window !== 'undefined') {
-        document.getElementById('loadingekg').style.display = 'none';
-        document.getElementById("noResults").innerHTML = "";
-      }
-
     return {
       description: (
         <div className="main-description">
@@ -397,13 +364,6 @@ class Main extends Component {
                 Window width: {this.state.width} and height: {this.state.height} Number of Results: {components.resultCard.size}
               </h3>*/}
 
-
-              {/*'noResults' Div is used as a variable. TODO: User a proper javascrit variable*/}
-              <div id='noResults' style={{ height: "0px" }}>
-              </div>
-              <div id='loadingekg' style={{ display: "none" }}>
-                <object type="image/svg+xml" data="static/ekg.svg">Your browser does not support SVG</object>
-              </div>
 
               <ResultCard {...components.resultCard} />
             </div>
