@@ -24,14 +24,23 @@ import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reac
 // }
 
 function custQueryAllFields(value, props) {
-  // console.log(props)
-  // console.log(value)
-  // console.log(value===undefined)
-  // console.log(value==='')
-  // if (value==='') {
-  //   value = undefined;
-  // }
+  // Match everything if nothing specified
+  if (value==='') {
+      return {
+        "query":{"match_all":{}}
+      };
+  }
 
+  // Query String Query
+  return {
+    "query": {
+        "query_string" : {
+            "query" : value
+        }
+    }
+  };
+
+  // Old DSL way
   return {
     query: { multi_match: { query: value } }
   };

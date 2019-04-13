@@ -100,7 +100,7 @@ const components = {
         "tagCloud"
       ]
     },
-    pagination: false,
+    pagination: true,
     className: "Result_card",
     paginationAt: "bottom",
     pages: 5,
