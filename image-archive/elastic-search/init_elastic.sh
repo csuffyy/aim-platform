@@ -307,6 +307,8 @@ EOF
 # followed by opening of the index. It is important to open the index up for any indexing and search operations to occur.
 curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
 
+## Global settings
+#
 # Increase number of allowed fields
 curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
 {
@@ -320,3 +322,12 @@ curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$EL
         "number_of_replicas" : 0
     }
 }'
+
+# Return not 200 OK when partial query failure 
+curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
+{
+    "persistent" : {
+        "search.default_allow_partial_results" : "false"
+    }
+}
+'
