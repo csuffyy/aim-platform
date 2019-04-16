@@ -9,7 +9,6 @@ ELASTIC_DOC_TYPE="${ELASTIC_DOC_TYPE:-image}"
 curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX -w "\n" -d  @- << EOF
 {
   "mappings": {
-    "$ELASTIC_DOC_TYPE": {
       "properties": {
         "descriptions": {
           "type": "text",
@@ -115,64 +114,63 @@ curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT
           "analyzer": "standard"
         }
       }
-    }
   }
 }
 EOF
 
 curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_close -w "\n"
 
-# followed by the actual addition of analyzers with:
-curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -w "\n" -d  @- << EOF
-{
-  "analysis" : {
-    "analyzer":{
-        "autosuggest_analyzer": {
-            "filter": [
-                "lowercase",
-                "asciifolding",
-                "autosuggest_filter"
-            ],
-            "tokenizer": "standard",
-            "type": "custom"
-        },
-        "ngram_analyzer": {
-            "filter": [
-                "lowercase",
-                "asciifolding",
-                "ngram_filter"
-            ],
-            "tokenizer": "standard",
-            "type": "custom"
-        }
-    },
-    "filter": {
-        "autosuggest_filter": {
-            "max_gram": "20",
-            "min_gram": "1",
-            "token_chars": [
-                "letter",
-                "digit",
-                "punctuation",
-                "symbol"
-            ],
-            "type": "edge_ngram"
-        },
-        "ngram_filter": {
-            "max_gram": "9",
-            "min_gram": "2",
-            "token_chars": [
-                "letter",
-                "digit",
-                "punctuation",
-                "symbol"
-            ],
-            "type": "ngram"
-        }
-    }
-  }
-}
-EOF
+# # followed by the actual addition of analyzers with:
+# curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -w "\n" -d  @- << EOF
+# {
+#   "analysis" : {
+#     "analyzer":{
+#         "autosuggest_analyzer": {
+#             "filter": [
+#                 "lowercase",
+#                 "asciifolding",
+#                 "autosuggest_filter"
+#             ],
+#             "tokenizer": "standard",
+#             "type": "custom"
+#         },
+#         "ngram_analyzer": {
+#             "filter": [
+#                 "lowercase",
+#                 "asciifolding",
+#                 "ngram_filter"
+#             ],
+#             "tokenizer": "standard",
+#             "type": "custom"
+#         }
+#     },
+#     "filter": {
+#         "autosuggest_filter": {
+#             "max_gram": "20",
+#             "min_gram": "1",
+#             "token_chars": [
+#                 "letter",
+#                 "digit",
+#                 "punctuation",
+#                 "symbol"
+#             ],
+#             "type": "edge_ngram"
+#         },
+#         "ngram_filter": {
+#             "max_gram": "9",
+#             "min_gram": "2",
+#             "token_chars": [
+#                 "letter",
+#                 "digit",
+#                 "punctuation",
+#                 "symbol"
+#             ],
+#             "type": "ngram"
+#         }
+#     }
+#   }
+# }
+# EOF
 
 # followed by opening of the index. It is important to open the index up for any indexing and search operations to occur.
 curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
@@ -233,7 +231,6 @@ ELASTIC_DOC_TYPE="${REPORT_ELASTIC_DOC_TYPE:-report}"
 curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX -w "\n" -d  @- << EOF
 {
   "mappings": {
-    "$ELASTIC_DOC_TYPE": {
       "properties": {
         "body": {
           "type": "text",
@@ -245,64 +242,63 @@ curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT
           "analyzer": "standard"
         }
       }
-    }
   }
 }
 EOF
 
 curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_close -w "\n"
 
-# followed by the actual addition of analyzers with:
-curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -w "\n" -d  @- << EOF
-{
-  "analysis" : {
-    "analyzer":{
-        "autosuggest_analyzer": {
-            "filter": [
-                "lowercase",
-                "asciifolding",
-                "autosuggest_filter"
-            ],
-            "tokenizer": "standard",
-            "type": "custom"
-        },
-        "ngram_analyzer": {
-            "filter": [
-                "lowercase",
-                "asciifolding",
-                "ngram_filter"
-            ],
-            "tokenizer": "standard",
-            "type": "custom"
-        }
-    },
-    "filter": {
-        "autosuggest_filter": {
-            "max_gram": "20",
-            "min_gram": "1",
-            "token_chars": [
-                "letter",
-                "digit",
-                "punctuation",
-                "symbol"
-            ],
-            "type": "edge_ngram"
-        },
-        "ngram_filter": {
-            "max_gram": "9",
-            "min_gram": "2",
-            "token_chars": [
-                "letter",
-                "digit",
-                "punctuation",
-                "symbol"
-            ],
-            "type": "ngram"
-        }
-    }
-  }
-}
-EOF
+# # followed by the actual addition of analyzers with:
+# curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -w "\n" -d  @- << EOF
+# {
+#   "analysis" : {
+#     "analyzer":{
+#         "autosuggest_analyzer": {
+#             "filter": [
+#                 "lowercase",
+#                 "asciifolding",
+#                 "autosuggest_filter"
+#             ],
+#             "tokenizer": "standard",
+#             "type": "custom"
+#         },
+#         "ngram_analyzer": {
+#             "filter": [
+#                 "lowercase",
+#                 "asciifolding",
+#                 "ngram_filter"
+#             ],
+#             "tokenizer": "standard",
+#             "type": "custom"
+#         }
+#     },
+#     "filter": {
+#         "autosuggest_filter": {
+#             "max_gram": "20",
+#             "min_gram": "1",
+#             "token_chars": [
+#                 "letter",
+#                 "digit",
+#                 "punctuation",
+#                 "symbol"
+#             ],
+#             "type": "edge_ngram"
+#         },
+#         "ngram_filter": {
+#             "max_gram": "9",
+#             "min_gram": "2",
+#             "token_chars": [
+#                 "letter",
+#                 "digit",
+#                 "punctuation",
+#                 "symbol"
+#             ],
+#             "type": "ngram"
+#         }
+#     }
+#   }
+# }
+# EOF
 
 # followed by opening of the index. It is important to open the index up for any indexing and search operations to occur.
 curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
