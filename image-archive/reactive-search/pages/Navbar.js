@@ -3,26 +3,6 @@ import { DataSearch } from "@appbaseio/reactivesearch";
 import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
 
 
-// function custQuery(value, props) {
-// COLON DELIMITED SEARCH
-// Examle FIELD:SEARCH
-//   if (value.length == 0) {
-//     return;
-//   }
-//   if (!value.includes(":")) {
-//     return;
-//   }
-
-//   var res = value.split(":");
-//   var field = res[0];
-//   var search = res[1];
-//   var query = { [field]: search };
-
-//   return {
-//     match: query
-//   };
-// }
-
 function custQueryAllFields(value, props) {
   // Match everything if nothing specified
   if (value==='') {
@@ -31,26 +11,23 @@ function custQueryAllFields(value, props) {
       };
   }
 
+  var fields = ['*'];
+  if (value.indexOf("fields:")===0) {
+    fields = value.split(" ")[0].replace('fields:','').split(","); // Use first part as the fields
+    value = value.split(" ").slice(1).join(" "); // Use the other parts as the string query value
+  }
+
   // Query String Query
   return {
+    "allow_partial_search_results": false, // Does nothing, must be string-query parameter in URL. See: https://github.com/appbaseio/reactivesearch/issues/945#issuecomment-483427469
     "query": {
-        "query_string" : {
-            "query" : value
-        }
+      "query_string" : {
+        "fields" : fields,
+        "query" : value
+      }
     }
   };
-
-  // Old DSL way
-  return {
-    query: { multi_match: { query: value } }
-  };
 }
-
-// function custQueryAllFields(value, props) {
-//   return {
-//     "query":{"match_all":{}}
-//   };
-// }
 
 var today = new Date();
 var expiry = new Date(today.getTime() + 30 * 24 * 3600 * 1000); // plus 30 days
@@ -58,6 +35,14 @@ function setCookie(name, value)
 {
   document.cookie=name + "=" + escape(value) + "; path=/; expires=" + expiry.toGMTString();
 }
+
+function deleteLoadingAnimation() {
+  var elem = document.getElementById("loading_animation");
+  if (elem) {
+    elem.style.height = '0px';
+  }
+}
+var queryError;
 
 const components = {
   dataSearch: {
@@ -81,14 +66,41 @@ const components = {
 class Navbar extends Component {
   constructor(props) {
     super(props);
+    this.beforeValueChange = this.beforeValueChange.bind(this);
+    // components.dataSearch.beforeValueChange = this.beforeValueChange; // NOTE THIS IS NOT USED BECAUSE: https://github.com/appbaseio/reactivesearch/issues/945#issuecomment-483427469  
     this.LogOut = this.LogOut.bind(this);
-
-
     this.toggle = this.toggle.bind(this);
     this.state = {
-      dropdownOpen: false
+      dropdownOpen: false,
+      queryError: false
     };
 
+  }
+
+  // NOTE THIS IS NOT USED BECAUSE: https://github.com/appbaseio/reactivesearch/issues/945#issuecomment-483427469
+  beforeValueChange(value) {
+    return new Promise((resolve, reject) => {
+      // console.log(value)
+      // Validate Custom Query
+      var elem = document.getElementsByClassName("search-bar");
+      // if (Math.round(Math.random()))
+      var validationError = false; // TODO: check with ES to validate the string query
+      if (validationError)
+      { 
+        this.state.queryError = true;
+        if (elem) {
+          elem[0].style.border = '2px solid #f95959';
+        }
+        setTimeout(deleteLoadingAnimation, 1111);
+        console.log('error in string query');
+      } else {
+        if (elem) {
+          elem[0].style.border = '2px solid #86ddf8';
+        }
+        this.state.queryError = false;
+      }
+      resolve();
+    })
   }
 
   toggle() {
@@ -96,7 +108,6 @@ class Navbar extends Component {
       dropdownOpen: !this.state.dropdownOpen
     });
   }
-
 
   LogOut(event) {
     setCookie('token','');
@@ -141,7 +152,6 @@ class Navbar extends Component {
                     <h3 className="header-text">
                       Diagnostic Imaging Archive
                     </h3>
-
                   </DropdownToggle>
                   <DropdownMenu>
                     {/* <DropdownItem header>Header</DropdownItem> */}
@@ -188,7 +198,10 @@ class Navbar extends Component {
               <div className="row btn-group">
               <button type="button" className="btn btn-secondary app-button disabled">Collections</button>
               <button type="button" className="btn btn-secondary app-button disabled">Download</button>
-              <button type="button" className="btn btn-secondary app-button" onClick={this.LogOut}>Log Out</button>
+              <button type="button" className="btn btn-secondary app-button"> 
+                <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax" target="_blank" style={{color:"inherit"}}>Help</a>
+              </button>
+              <button type="button" className="btn btn-secondary app-button" onClick={this.LogOut}>Logout</button>
               </div>
             </div>
            
@@ -196,7 +209,7 @@ class Navbar extends Component {
 
           <footer className="header-footer">
             <div className="search-container">
-            <DataSearch {...components.dataSearch} />
+              <DataSearch {...components.dataSearch} />
             </div>
           </footer>
         </div>
