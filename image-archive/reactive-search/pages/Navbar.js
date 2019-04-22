@@ -11,20 +11,24 @@ function custQueryAllFields(value, props) {
       };
   }
 
-  var fields = ['*'];
+  // Hanle possible leading "fields:" to allow user to specify what fields to look in for rest of search query
+  var fields = null;
   if (value.indexOf("fields:")===0) {
     fields = value.split(" ")[0].replace('fields:','').split(","); // Use first part as the fields
     value = value.split(" ").slice(1).join(" "); // Use the other parts as the string query value
+  }
+
+  var query = {"query" : value };
+
+  if (fields !== null) {
+    query.fields = fields;
   }
 
   // Query String Query
   return {
     "allow_partial_search_results": false, // Does nothing, must be string-query parameter in URL. See: https://github.com/appbaseio/reactivesearch/issues/945#issuecomment-483427469
     "query": {
-      "query_string" : {
-        "fields" : fields,
-        "query" : value
-      }
+      "query_string" : query
     }
   };
 }
@@ -198,8 +202,8 @@ class Navbar extends Component {
               <div className="row btn-group">
               <button type="button" className="btn btn-secondary app-button disabled">Collections</button>
               <button type="button" className="btn btn-secondary app-button disabled">Download</button>
-              <button type="button" className="btn btn-secondary app-button"> 
-                <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax" target="_blank" style={{color:"inherit"}}>Help</a>
+              <button type="button" className="btn btn-secondary app-button" style={{padding:"0px"}}> 
+                <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax" target="_blank" style={{color:"inherit", padding:"12px"}}>Help</a>
               </button>
               <button type="button" className="btn btn-secondary app-button" onClick={this.LogOut}>Logout</button>
               </div>

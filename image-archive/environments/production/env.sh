@@ -1,3 +1,4 @@
+export ENVIRON='production'
 export PUBLIC_IP='172.20.4.83'
 export ELASTIC_IP='172.20.4.83'
 export FALLBACK_ELASTIC_IP='172.20.4.83'

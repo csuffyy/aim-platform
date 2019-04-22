@@ -180,9 +180,12 @@ def load_images():
       except:
         log.warning('Didn\'t understand value: %s = \'%s\'' % ('PatientAge', dicom_metadata['PatientAge']))
         log.warning('Problem image was: %s\n' % filepath)
-      # DEMO ONLY!!!! Add random age
-      # if 'PatientAgeInt' not in dicom_metadata:
-      #   dicom_metadata['PatientAgeInt'] = random.randint(1,20)
+      if ENVIRON=='local':
+        if 'PatientAgeInt' not in dicom_metadata:
+          # DEMO ONLY!!!! Add random age
+          dicom_metadata['PatientAgeInt'] = random.randint(1,18)
+        if 'PatientSex' not in dicom_metadata:
+          dicom_metadata['PatientSex'] = 'Male' if random.randint(0,1) else 'Female'
 
       thumbnail_filepath = save_thumbnail_of_dicom(dicom, filepath)
       if not thumbnail_filepath:
@@ -232,6 +235,7 @@ if __name__ == '__main__':
   output_path = args.output_path
 
 
+  ENVIRON = os.environ['ENVIRON']
   ELASTIC_IP = os.environ['ELASTIC_IP']
   ELASTIC_PORT = os.environ['ELASTIC_PORT']
   FALLBACK_ELASTIC_IP = os.environ['FALLBACK_ELASTIC_IP']
