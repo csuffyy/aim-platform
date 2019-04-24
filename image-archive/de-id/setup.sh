@@ -8,7 +8,7 @@ sudo apt-get install -y python3.7-dev libpython3.7-dev python3-pip
 # virtualenv -p python3.7 venv
 # cd venv/
 # . bin/activate
-pip3 install numpy IPython scikit-image matplotlib pandas Pillow click pydicom pytesseract opencv-python python-Levenshtein fuzzywuzzy elasticsearch dateparser
+pip3 install numpy IPython scikit-image matplotlib pandas Pillow click pydicom deid pytesseract opencv-python python-Levenshtein fuzzywuzzy elasticsearch dateparser
 
 # Install GDCM
 sudo apt-get install python-gdcm # for pydicom
@@ -24,3 +24,6 @@ sudo cp /usr/local/lib/libgdcm* /usr/local/lib/python3.7/dist-packages/
 # cp /usr/local/lib/libgdcm* ./lib/python3.7/site-packages/
 
 
+# Developer helper tools:
+# sudo apt-get install vtk-dicom-tools
+# dicomdump file1.dcm 

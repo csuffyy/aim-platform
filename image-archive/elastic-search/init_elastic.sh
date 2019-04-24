@@ -174,9 +174,6 @@ curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT
 }
 EOF
 
-# followed by opening of the index. It is important to open the index up for any indexing and search operations to occur.
-curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
-
 # Increase number of allowed fields
 curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
 {
@@ -191,36 +188,8 @@ curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$EL
     }
 }'
 
-
-# curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_mapping/$ELASTIC_DOC_TYPE -w "\n" -d  @- << EOF
-# {
-#   "properties": {
-#     "Modality": {
-#       "type": "text",
-#       "fields": {
-#         "autosuggest": {
-#           "type": "text",
-#           "analyzer": "autosuggest_analyzer",
-#           "search_analyzer": "simple"
-#         }
-#       }
-#     }
-#   }
-# }
-# EOF
-
-# sleep 2
-# curl -s -X GET http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX 
-# curl -s -X GET http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX | jq
-
-
-
-
-
-
-
-
-
+# followed by opening of the index. It is important to open the index up for any indexing and search operations to occur.
+curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
 
 ##
 ## Create Reports Index
@@ -304,11 +273,6 @@ curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT
 }
 EOF
 
-# followed by opening of the index. It is important to open the index up for any indexing and search operations to occur.
-curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
-
-## Global settings
-#
 # Increase number of allowed fields
 curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
 {
@@ -323,11 +287,54 @@ curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$EL
     }
 }'
 
-# Return not 200 OK when partial query failure 
+# followed by opening of the index. It is important to open the index up for any indexing and search operations to occur.
+curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
+
+##
+## Create linking Index
+##
+
+ELASTIC_INDEX="${LINKING_ELASTIC_INDEX:-linking}"
+ELASTIC_DOC_TYPE="${LINKING_ELASTIC_DOC_TYPE:-linking}"
+
+# Create index
+
+curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX -w "\n" -d  @- << EOF
+{
+  "mappings": {
+    "$ELASTIC_DOC_TYPE": {
+      "properties": {
+        "orig": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "new": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+EOF
+
+curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_close -w "\n"
+
+# Reduce replica count to 0 to prefer performance over availability
 curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
 {
-    "persistent" : {
-        "search.default_allow_partial_results" : "false"
+    "index" : {
+        "number_of_replicas" : 0
     }
-}
-'
+}'
+
+# followed by opening of the index. It is important to open the index up for any indexing and search operations to occur.
+curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"

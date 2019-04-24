@@ -227,13 +227,12 @@ if __name__ == '__main__':
   # Set up command line arguments
   parser = argparse.ArgumentParser(description='Load dicoms to Elastic.')
   parser.add_argument('input_filenames', help='File containing dicom file names.')
-  parser.add_argument('output_path', help='File containing dicom file names.')
+  parser.add_argument('output_path', help='Save output to')
   parser.add_argument('-n', '--num', type=int, default=500,
                       help='Bulk chunksize.')
   args = parser.parse_args()
   input_filenames = args.input_filenames  # Includes full path
   output_path = args.output_path
-
 
   ENVIRON = os.environ['ENVIRON']
   ELASTIC_IP = os.environ['ELASTIC_IP']
@@ -242,14 +241,9 @@ if __name__ == '__main__':
   FALLBACK_ELASTIC_PORT = os.environ['FALLBACK_ELASTIC_PORT']
   INDEX_NAME = os.environ['ELASTIC_INDEX']
   DOC_TYPE = os.environ['ELASTIC_DOC_TYPE']
-  FILESERVER_IP = os.environ['FILESERVER_IP']
-  FILESERVER_PORT = os.environ['FILESERVER_PORT']
   FILESERVER_TOKEN = os.getenv('FILESERVER_TOKEN','')
   FILESERVER_DICOM_PATH = os.environ['FILESERVER_DICOM_PATH']
   FILESERVER_THUMBNAIL_PATH = os.environ['FILESERVER_THUMBNAIL_PATH']
-  STATIC_WEBSERVER_URL = os.environ['STATIC_WEBSERVER_URL'] # Example: 'http://192.168.136.128:3000/'
-  DWV_URL = os.environ['DWV_URL'] # Example: 'http://192.168.136.128:8080/'
-
 
   # output_path = '/hpf/largeprojects/diagimage_common/shared/thumbnails'
   # output_path = '/home/chuynh/aim-platform/image-archive/de-id/jobs/thumbnails'
