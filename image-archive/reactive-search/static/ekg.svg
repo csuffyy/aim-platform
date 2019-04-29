@@ -6,7 +6,7 @@
      xml:space="preserve"
      preserveAspectRatio="none"
      viewBox="0 0 314 208.375"
-     width="150" height="40"
+     width="560" height="180"
      xmlns:xml="http://www.w3.org/XML/1998/namespace">
      <!-- width="157" height="104.175px" -->
   <defs>
@@ -16,7 +16,7 @@
     </pattern>
     <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%" spreadMethod="repeat">
       <stop offset="5%"
-            stop-color="rgb(0,0,0)"
+            stop-color="#333333"
             stop-opacity="0" />
       <stop offset="100%"
             stop-color="#86ddf8"
