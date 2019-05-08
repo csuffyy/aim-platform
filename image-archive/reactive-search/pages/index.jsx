@@ -29,7 +29,7 @@ if (AUTH_TOKEN === undefined) {
 
 var FILESERVER_SECRET = '';
 var FILESERVER_SECRET_DCM = '';
-if (FILESERVER_TOKEN != '') {
+if (FILESERVER_TOKEN != '' && FILESERVER_TOKEN != undefined) {
   FILESERVER_SECRET = '-0TO0-' + AUTH_TOKEN
   FILESERVER_SECRET_DCM = '-0TO0-' + AUTH_TOKEN + '.dcm'
 }

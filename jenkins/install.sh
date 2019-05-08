@@ -74,6 +74,11 @@ sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubun
 sudo apt-get update
 sudo apt-get install -y docker-ce
 
+# Allow running docker commands without sudo (for local development ONLY, used for simple automation)
+sudo groupadd docker
+sudo usermod -aG docker $USER
+gnome-session-quit --no-prompt # this will log you out, you'll have to log back in
+
 # Install Tmuxinator (=>v0.11)
 git clone https://github.com/tmuxinator/tmuxinator
 cd tmuxinator
