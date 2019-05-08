@@ -1,12 +1,12 @@
 #!/bin/bash
 
-HOST_IP="${HOST_IP:-localhost}"
+ELASTIC_IP="${ELASTIC_IP:-localhost}"
 ELASTIC_PORT="${ELASTIC_PORT:-9200}"
 ELASTIC_INDEX="${ELASTIC_INDEX:-image}"
 ELASTIC_DOC_TYPE="${ELASTIC_DOC_TYPE:-image}"
 
 # Create index
-curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX -w "\n" -d  @- << EOF
+curl -s -H 'Content-Type: application/json' -X PUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX -w "\n" -d  @- << EOF
 {
   "mappings": {
     "$ELASTIC_DOC_TYPE": {
@@ -120,10 +120,10 @@ curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT
 }
 EOF
 
-curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_close -w "\n"
+curl -s -X POST http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_close -w "\n"
 
 # followed by the actual addition of analyzers with:
-curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -w "\n" -d  @- << EOF
+curl -s -H 'Content-Type: application/json' -X PUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -w "\n" -d  @- << EOF
 {
   "analysis" : {
     "analyzer":{
@@ -175,13 +175,13 @@ curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT
 EOF
 
 # Increase number of allowed fields
-curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
+curl -H 'Content-Type: application/json' -XPUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
 {
   "index.mapping.total_fields.limit": 100000
 }'
 
 # Reduce replica count to 0 to prefer performance over availability
-curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
+curl -H 'Content-Type: application/json' -XPUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
 {
     "index" : {
         "number_of_replicas" : 0
@@ -189,7 +189,7 @@ curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$EL
 }'
 
 # followed by opening of the index. It is important to open the index up for any indexing and search operations to occur.
-curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
+curl -s -X POST http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
 
 ##
 ## Create Reports Index
@@ -199,7 +199,7 @@ ELASTIC_INDEX="${REPORT_ELASTIC_INDEX:-report}"
 ELASTIC_DOC_TYPE="${REPORT_ELASTIC_DOC_TYPE:-report}"
 
 # Create index
-curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX -w "\n" -d  @- << EOF
+curl -s -H 'Content-Type: application/json' -X PUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX -w "\n" -d  @- << EOF
 {
   "mappings": {
     "$ELASTIC_DOC_TYPE": {
@@ -219,10 +219,10 @@ curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT
 }
 EOF
 
-curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_close -w "\n"
+curl -s -X POST http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_close -w "\n"
 
 # followed by the actual addition of analyzers with:
-curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -w "\n" -d  @- << EOF
+curl -s -H 'Content-Type: application/json' -X PUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -w "\n" -d  @- << EOF
 {
   "analysis" : {
     "analyzer":{
@@ -274,13 +274,13 @@ curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT
 EOF
 
 # Increase number of allowed fields
-curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
+curl -H 'Content-Type: application/json' -XPUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
 {
   "index.mapping.total_fields.limit": 100000
 }'
 
 # Reduce replica count to 0 to prefer performance over availability
-curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
+curl -H 'Content-Type: application/json' -XPUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
 {
     "index" : {
         "number_of_replicas" : 0
@@ -288,7 +288,7 @@ curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$EL
 }'
 
 # followed by opening of the index. It is important to open the index up for any indexing and search operations to occur.
-curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
+curl -s -X POST http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
 
 ##
 ## Create linking Index
@@ -299,7 +299,7 @@ ELASTIC_DOC_TYPE="${LINKING_ELASTIC_DOC_TYPE:-linking}"
 
 # Create index
 
-curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX -w "\n" -d  @- << EOF
+curl -s -H 'Content-Type: application/json' -X PUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX -w "\n" -d  @- << EOF
 {
   "mappings": {
     "$ELASTIC_DOC_TYPE": {
@@ -326,10 +326,10 @@ curl -s -H 'Content-Type: application/json' -X PUT http://$HOST_IP:$ELASTIC_PORT
 }
 EOF
 
-curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_close -w "\n"
+curl -s -X POST http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_close -w "\n"
 
 # Reduce replica count to 0 to prefer performance over availability
-curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
+curl -H 'Content-Type: application/json' -XPUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
 {
     "index" : {
         "number_of_replicas" : 0
@@ -337,4 +337,4 @@ curl -H 'Content-Type: application/json' -XPUT http://$HOST_IP:$ELASTIC_PORT/$EL
 }'
 
 # followed by opening of the index. It is important to open the index up for any indexing and search operations to occur.
-curl -s -X POST http://$HOST_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
+curl -s -X POST http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"

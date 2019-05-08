@@ -5,7 +5,7 @@
 #
 # Usage:
 # source ../environments/local/env.sh
-# python3.7 process_dicoms.py -input_range 1-10 -output_folder ./tmp/
+# python3.7 deid_dicom_header.py -input_range 1-10 -output_folder ./tmp/
 #  | grep -i -e PatientName
 #
 # Documentation:
@@ -28,7 +28,7 @@ from elasticsearch import helpers
 from deid.config import DeidRecipe
 from deid.dicom import get_files, replace_identifiers, get_identifiers
 
-# from IPython import embed
+from IPython import embed
 # embed() # drop into an IPython session
 
 ## Change logging level for deid library (see ./logger/message.py for levels)
@@ -42,6 +42,7 @@ logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
                     # level=logging.DEBUG)
 log = logging.getLogger('main')
 
+save_to_elastic = True
 ENVIRON = os.environ['ENVIRON']
 ELASTIC_IP = os.environ['ELASTIC_IP']
 ELASTIC_PORT = os.environ['ELASTIC_PORT']
@@ -79,18 +80,21 @@ def lookup_linking(orig):
 
 def generate_uid(dicom_dict, function_name, field_name):
   orig = dicom_dict[field_name] if field_name in dicom_dict else ''
-  es_id = dicom_dict['_id'] # ID for elasticsearch document
+  uid = str(uuid.uuid4()) # otherwise generate new id
 
   # Look to find existing linking in ElasticSearch
-  res = lookup_linking(orig)
+  if save_to_elastic:
+    res = lookup_linking(orig)
 
-  if len(res):
-    uid = res[0]['_source']['new'] # use id found in elastic
-  else:
-    uid = str(uuid.uuid4()) # otherwise generate new id
-    res = es.index(body={'orig': orig, 'new': uid, 'id':es_id, 'field': field_name, 'date': datetime.datetime.now(), 'orig_path': dicom_dict['orig_path'], 'new_path': dicom_dict['new_path']}, index=LINKING_INDEX_NAME, doc_type=LINKING_DOC_TYPE)
+    if len(res):
+      uid = res[0]['_source']['new'] # use id found in elastic
+    else:
+      query = {'orig': orig, 'new': uid, 'field': field_name, 'date': datetime.datetime.now(), 'orig_path': dicom_dict['orig_path'], 'new_path': dicom_dict['new_path']}
+      if '_id' in dicom_dict:
+        query['id'] = dicom_dict['_id'] # Use same elasticsearch document ID from input index in the new index
+      res = es.index(body=query, index=LINKING_INDEX_NAME, doc_type=LINKING_DOC_TYPE)
 
-  log.info('[%s] Linking %s:%s-->%s' % (es_id, field_name, orig, uid))
+    log.info('Linking %s:%s-->%s' % (field_name, orig, uid))
 
   return uid
   
@@ -114,35 +118,45 @@ def generate_uid(dicom_dict, function_name, field_name):
 if __name__ == '__main__':
   # Set up command line arguments
   parser = argparse.ArgumentParser(description='Looks up documents in ElasticSearch, finds the DICOM files, processes them, and saves a copy.')
-  parser.add_argument('--input_range', help='Positional document numbers in ElasticSearch. These documents will get processed')
+  parser.add_argument('--input_range', help='Positional document numbers in ElasticSearch (ex. 1-10). These documents will be processed.')
+  parser.add_argument('--input_files', help='List of DICOM files which will be processed.')
+  parser.add_argument('--no_elastic', action='store_true', help='Skip saving metadata to ElasticSearch.')
+  parser.add_argument('--deid_recipe', default='deid.dicom', help='De-id rules.')
   parser.add_argument('--output_folder', help='Save processed DICOM files to this path.')
   args = parser.parse_args()
   output_folder = args.output_folder
+  save_to_elastic = not args.no_elastic
   input_range = args.input_range
-  input_start, input_end = [int(i) for i in input_range.split('-')]
+  input_files = args.input_files
+  deid_recipe = args.deid_recipe
+  recipe = DeidRecipe(deid_recipe) # de-id rules
+
+  if input_files:
+    # # Get List of Dicoms
+    fp = open(input_files) # Open file on read mode
+    dicom_paths = fp.read().split("\n") # Create a list containing all lines
+    fp.close() # Close file
+    dicom_paths = list(filter(None, dicom_paths)) # remove empty lines
+    doc_ids = None
+
+  if save_to_elastic:
+    es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
+
+  if input_range:
+    # Get documents from ElasticSearch
+    input_start, input_end = [int(i) for i in input_range.split('-')]
   
-  recipe = DeidRecipe('deid.dicom') # de-id rules
+    query = {
+      "_source": ["_id", "dicom_filepath"],
+      "from": input_start,
+      "size": input_end
+    }
+    results = es.search(body=query, index=INDEX_NAME, doc_type=DOC_TYPE)
+    log.info("Number of Search Hits: %d" % len(results['hits']['hits']))
+    results = results['hits']['hits']
+    dicom_paths = [res['_source']['dicom_filepath'] for res in results]
 
-  # # # Get List of Dicoms (Local Testing)
-  # fp = open('../reactive-search/static/dicom/file_list.txt') # Open file on read mode
-  # dicom_paths = fp.read().split("\n") # Create a list containing all lines
-  # dicom_paths = list(filter(None, dicom_paths)) # remove empty lines ''
-  # doc_ids = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17]
-  # fp.close() # Close file
-
-  # Get documents from ElasticSearch
-  es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
-  query = {
-    "_source": ["_id", "dicom_filepath"],
-    "from": input_start,
-    "size": input_end
-  }
-  results = es.search(body=query, index=INDEX_NAME, doc_type=DOC_TYPE)
-  log.info("Number of Search Hits: %d" % len(results['hits']['hits']))
-  results = results['hits']['hits']
-
-  dicom_paths = [res['_source']['dicom_filepath'] for res in results]
-  doc_ids = [res['_id'] for res in results]
+    doc_ids = [res['_id'] for res in results]
 
   # Prepare documents for de-identification
   dicom_dicts = get_identifiers(dicom_paths)
@@ -158,13 +172,14 @@ if __name__ == '__main__':
     dicom_dicts[path]['orig_path'] = path
     dicom_dicts[path]['generate_uid'] = generate_uid
     # dicom_dicts[path]['generate_date_uid'] = generate_date_uid
-    dicom_dicts[path]['_id'] = str(doc_ids[idx]) # Store elasticsearch document id
-    log.debug('Processing document "%s" from path: %s' % (doc_ids[idx], path))
+    if save_to_elastic and input_range:
+      dicom_dicts[path]['_id'] = str(doc_ids[idx]) # Store elasticsearch document id
 
   t0 = time.time()
 
   # Loop over dicoms and De-Identify
   for dicom_path, dicom_dict in dicom_dicts.items():
+    log.debug('Processing DICOM path: %s' % path)
     str_linking = []
     date_linking = []
     item = {dicom_path: dicom_dict}

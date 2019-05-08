@@ -21,6 +21,8 @@ const {FILESERVER_TOKEN} = publicRuntimeConfig;
 const {STATIC_WEBSERVER_URL} = publicRuntimeConfig;
 const {DWV_URL} = publicRuntimeConfig;
 
+var lastquery;
+
 if (AUTH_TOKEN === undefined) {
   throw new Error('AUTH_TOKEN is undefined');
 }
@@ -41,234 +43,7 @@ function redSearchBar() {
   }
 }
 
-function transformRequest(aaa) {
-  console.log(aaa)
-}
 
-
-
-const components = {
-  settings: {
-    app: ELASTIC_INDEX,
-    url: ELASTIC_URL,
-    transformRequest: transformRequest,
-    transformResponse: transformRequest,
-    // credentials: "abcdef123:abcdef12-ab12-ab12-ab12-abcdef123456", // DO NOT DELETE THIS COMMENT. ReactiveSearch will break =X!
-    headers: {
-        'X-Requested-With': AUTH_TOKEN // arbitrary headers are not allowed see whitelist in elasticsearch.yml
-    },
-    theme: {
-      typography: {
-        fontFamily:
-          '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Noto Sans", "Ubuntu", "Droid Sans", "Helvetica Neue", sans-serif',
-        fontSize: "16px"
-      },
-      colors: {
-        textColor: "#fff",
-        backgroundColor: "#212121",
-        primaryTextColor: "#fff",
-        primaryColor: "#2196F3",
-        titleColor: "#fff",
-        alertColor: "#d9534f",
-        borderColor: "#666"
-      }
-    }
-  },
-  selectedFilters: {
-    showClearAll: true,
-    clearAllLabel: "Clear filters"
-  },
-  tagCloudDescription: {
-    componentId: "tagCloud",
-    dataField: "descriptions.raw",
-    title: "",
-    size: 200,
-    showCount: true,
-    multiSelect: true,
-    queryFormat: "or",
-    react: {
-      and: [
-        "mainSearch",
-        "results",
-        "gender-list",
-        "bodypart-list",
-        "age-slider",
-        "acquisitiondate-range"
-      ]
-    },
-    showFilter: true,
-    filterLabel: "Description",
-    URLParams: false,
-    loader: ""
-  },
-
-  resultCard: {
-    componentId: "results",
-    // onQueryChange: onQueryChange,
-    dataField: "original_title.search",
-    react: {
-      and: [
-        "mainSearch",
-        "modality-list",
-        "gender-list",
-        "bodypart-list",
-        "age-slider",
-        "acquisitiondate-range",
-        "tagCloud"
-      ]
-    },
-    pagination: true,
-    className: "Result_card",
-    paginationAt: "bottom",
-    pages: 5,
-    size: 10,
-    loader: <object id='loading_animation' type="image/svg+xml" data="static/ekg.svg">Your browser does not support SVG</object>,
-    // sortOptions: [
-    //   {
-    //     dataField: "revenue",
-    //     sortBy: "desc",
-    //     label: "Sort by Revenue(High to Low) \u00A0"
-    //   },
-    //   {
-    //     dataField: "popularity",
-    //     sortBy: "desc",
-    //     label: "Sort by Popularity(High to Low)\u00A0 \u00A0"
-    //   },
-    //   {
-    //     dataField: "vote_average",
-    //     sortBy: "desc",
-    //     label: "Sort by Ratings(High to Low) \u00A0"
-    //   },
-    //   {
-    //     dataField: "original_title.raw",
-    //     sortBy: "asc",
-    //     label: "Sort by Title(A-Z) \u00A0"
-    //   }
-    // ],
-    // onNoResults: 'NO RESULTS OK?',
-    onError: function(res) {
-      console.log('onError');
-      console.log(res);
-      setTimeout(redSearchBar, 111);
-  },
-    onData:   function(res) {
-      // setBlueSearchBar incase it was red because of an error
-      if (typeof window !== 'undefined') {
-        var elem = document.getElementsByClassName("search-bar");
-        if (elem) {
-          elem[0].style.border = '2px solid #86ddf8';
-        }
-      }
-
-    return {
-      description: (
-        <div className="main-description">
-          <div className="ih-item square effect6 top_to_bottom">
-
-            <a
-              target="#"
-              href={
-                DWV_URL + 
-                "index.html?input=" + 
-                STATIC_WEBSERVER_URL +
-                res.dicom_relativepath + FILESERVER_SECRET_DCM
-              }
-            >
-
-              <div className="img">
-                <img
-                  src={STATIC_WEBSERVER_URL + res.thumbnail_filepath + FILESERVER_SECRET}
-                  alt={res.original_title}
-                  className="result-image"
-                />
-                {/* Example src:
-                http://192.168.136.128:3000/static/thumbnails/CT-MONO2-16-ankle.dcm.png */}
-              </div>
-              <div className="info colored">
-                <h3 className="overlay-title">
-                  {res.original_title}
-                  <button
-                    type="button"
-                    className="btn btn-dark"
-                    style={{ marginLeft: "100px" }}
-                    onClick={e => AddToCollection(e, res)}
-                  >
-                    <i className="fa fa-plus" />{" "}
-                  </button>
-                </h3>
-
-                <div className="overlay-description">{res.tagline}</div>
-
-                <div className="overlay-info">
-                  <div className="rating-time-score-container">
-                    <div className="sub-title Modality-data">
-                      <b>
-                        Modality
-                        <span className="details"> {res.Modality} </span>
-                      </b>
-                    </div>
-                    {/*                    <div className="time-data">
-                      <b>
-                        <span className="time">
-                          <i className="fa fa-clock-o" />{" "}
-                        </span>{" "}
-                        <span className="details">{res.time_str}</span>
-                      </b>
-                    </div>*/}
-
-                    {Number.isInteger(res.PatientAgeInt) && (
-                      <div className="sub-title Age-data">
-                        <b>
-                          Age:
-                          <span className="details"> {res.PatientAgeInt}</span>
-                        </b>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="revenue-lang-container">
-                    {res.AcquisitionDate && (
-                      <div className="sub-title AcquisitionDate-data">
-                        <b>
-                          Acquisition Date:
-                          <span className="details">
-                            {" "}
-                            {res.AcquisitionDatePretty}
-                          </span>
-                        </b>
-                      </div>
-                    )}
-
-                    {/*<div className="revenue-data">
-                      <b>
-                        <span> </span>{" "}
-                        <span className="details"> &nbsp;{res.or_revenue}</span>{" "}
-                      </b>
-                    </div>*/}
-                  </div>
-                </div>
-              </div>
-            </a>
-          </div>
-        </div>
-      ),
-      url:
-        DWV_URL + 
-        "index.html?input=" + 
-        STATIC_WEBSERVER_URL +
-        res.dicom_relativepath + FILESERVER_SECRET_DCM
-    }},
-    innerClass: {
-      title: "result-title",
-      listItem: "result-item",
-      list: "list-container",
-      sortOptions: "sort-options",
-      resultStats: "result-stats",
-      resultsInfo: "result-list-info",
-      poweredBy: "powered-by"
-    }
-  }
-};
 
 function AddToCollection(e, res) {
   // console.log(e);
@@ -285,12 +60,238 @@ class Main extends Component {
       isClicked: false,
       message: "🔬Show Filters",
       isDesktop: false,
+      lastquery: 'Not yet set.',
       height: 0, 
       width: 0,
-    };
+      components: {
+        settings: {
+          app: ELASTIC_INDEX,
+          url: ELASTIC_URL,
+          // transformRequest: function(res) {
+          //   this.state.lastquery = res.body;
+          // },
+          // transformResponse: this.transformRequest,
+          // credentials: "abcdef123:abcdef12-ab12-ab12-ab12-abcdef123456", // DO NOT DELETE THIS COMMENT. ReactiveSearch will break =X!
+          headers: {
+              'X-Requested-With': AUTH_TOKEN // arbitrary headers are not allowed see whitelist in elasticsearch.yml
+          },
+          theme: {
+            typography: {
+              fontFamily:
+                '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Noto Sans", "Ubuntu", "Droid Sans", "Helvetica Neue", sans-serif',
+              fontSize: "16px"
+            },
+            colors: {
+              textColor: "#fff",
+              backgroundColor: "#212121",
+              primaryTextColor: "#fff",
+              primaryColor: "#2196F3",
+              titleColor: "#fff",
+              alertColor: "#d9534f",
+              borderColor: "#666"
+            }
+          }
+        },
+        selectedFilters: {
+          showClearAll: true,
+          clearAllLabel: "Clear filters"
+        },
+        tagCloudDescription: {
+          componentId: "tagCloud",
+          dataField: "descriptions.raw",
+          title: "",
+          size: 200,
+          showCount: true,
+          multiSelect: true,
+          queryFormat: "or",
+          react: {
+            and: [
+              "mainSearch",
+              "results",
+              "gender-list",
+              "bodypart-list",
+              "age-slider",
+              "acquisitiondate-range"
+            ]
+          },
+          showFilter: true,
+          filterLabel: "Description",
+          URLParams: false,
+          loader: ""
+        },
+
+        resultCard: {
+          componentId: "results",
+          // onQueryChange: onQueryChange,
+          dataField: "original_title.search",
+          react: {
+            and: [
+              "mainSearch",
+              "modality-list",
+              "gender-list",
+              "bodypart-list",
+              "age-slider",
+              "acquisitiondate-range",
+              "tagCloud"
+            ]
+          },
+          pagination: true,
+          className: "Result_card",
+          paginationAt: "bottom",
+          pages: 5,
+          size: 10,
+          loader: <object id='loading_animation' type="image/svg+xml" data="static/ekg.svg">Your browser does not support SVG</object>,
+          // sortOptions: [
+          //   {
+          //     dataField: "revenue",
+          //     sortBy: "desc",
+          //     label: "Sort by Revenue(High to Low) \u00A0"
+          //   },
+          //   {
+          //     dataField: "popularity",
+          //     sortBy: "desc",
+          //     label: "Sort by Popularity(High to Low)\u00A0 \u00A0"
+          //   },
+          //   {
+          //     dataField: "vote_average",
+          //     sortBy: "desc",
+          //     label: "Sort by Ratings(High to Low) \u00A0"
+          //   },
+          //   {
+          //     dataField: "original_title.raw",
+          //     sortBy: "asc",
+          //     label: "Sort by Title(A-Z) \u00A0"
+          //   }
+          // ],
+          // onNoResults: 'NO RESULTS OK?',
+          onError: function(res) {
+            console.log('onError');
+            console.log(res);
+            setTimeout(redSearchBar, 111);
+        },
+          onData:   function(res) {
+            // setBlueSearchBar incase it was red because of an error
+            if (typeof window !== 'undefined') {
+              var elem = document.getElementsByClassName("search-bar");
+              if (elem) {
+                elem[0].style.border = '2px solid #86ddf8';
+              }
+            }
+
+          return {
+            description: (
+              <div className="main-description">
+                <div className="ih-item square effect6 top_to_bottom">
+
+                  <a
+                    target="#"
+                    href={
+                      DWV_URL + 
+                      "index.html?input=" + 
+                      STATIC_WEBSERVER_URL +
+                      res.dicom_relativepath + FILESERVER_SECRET_DCM
+                    }
+                  >
+
+                    <div className="img">
+                      <img
+                        src={STATIC_WEBSERVER_URL + res.thumbnail_filepath + FILESERVER_SECRET}
+                        alt={res.original_title}
+                        className="result-image"
+                      />
+                      {/* Example src:
+                      http://192.168.136.128:3000/static/thumbnails/CT-MONO2-16-ankle.dcm.png */}
+                    </div>
+                    <div className="info colored">
+                      <h3 className="overlay-title">
+                        {res.original_title}
+                        <button
+                          type="button"
+                          className="btn btn-dark"
+                          style={{ marginLeft: "100px" }}
+                          onClick={e => AddToCollection(e, res)}
+                        >
+                          <i className="fa fa-plus" />{" "}
+                        </button>
+                      </h3>
+
+                      <div className="overlay-description">{res.tagline}</div>
+
+                      <div className="overlay-info">
+                        <div className="rating-time-score-container">
+                          <div className="sub-title Modality-data">
+                            <b>
+                              Modality
+                              <span className="details"> {res.Modality} </span>
+                            </b>
+                          </div>
+                          {/*                    <div className="time-data">
+                            <b>
+                              <span className="time">
+                                <i className="fa fa-clock-o" />{" "}
+                              </span>{" "}
+                              <span className="details">{res.time_str}</span>
+                            </b>
+                          </div>*/}
+
+                          {Number.isInteger(res.PatientAgeInt) && (
+                            <div className="sub-title Age-data">
+                              <b>
+                                Age:
+                                <span className="details"> {res.PatientAgeInt}</span>
+                              </b>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="revenue-lang-container">
+                          {res.AcquisitionDate && (
+                            <div className="sub-title AcquisitionDate-data">
+                              <b>
+                                Acquisition Date:
+                                <span className="details">
+                                  {" "}
+                                  {res.AcquisitionDatePretty}
+                                </span>
+                              </b>
+                            </div>
+                          )}
+
+                          {/*<div className="revenue-data">
+                            <b>
+                              <span> </span>{" "}
+                              <span className="details"> &nbsp;{res.or_revenue}</span>{" "}
+                            </b>
+                          </div>*/}
+                        </div>
+                      </div>
+                    </div>
+                  </a>
+                </div>
+              </div>
+            ),
+            url:
+              DWV_URL + 
+              "index.html?input=" + 
+              STATIC_WEBSERVER_URL +
+              res.dicom_relativepath + FILESERVER_SECRET_DCM
+          }},
+          innerClass: {
+            title: "result-title",
+            listItem: "result-item",
+            list: "list-container",
+            sortOptions: "sort-options",
+            resultStats: "result-stats",
+            resultsInfo: "result-list-info",
+            poweredBy: "powered-by"
+          }
+        }
+      }
+    }
 
     this.updatePredicate = this.updatePredicate.bind(this);
     this.updateDimensions = this.updateDimensions.bind(this);
+    this.transformRequest = this.transformRequest.bind(this);
   }
 
   componentDidMount() {
@@ -306,7 +307,7 @@ class Main extends Component {
       width: window.innerWidth
     });
     const divWidth = document.getElementsByClassName('Result_card')[0].clientWidth;
-    components.resultCard.size = 4 * Math.floor((-150 + divWidth) / 250);
+    this.state.components.resultCard.size = 4 * Math.floor((-150 + divWidth) / 250);
   }
 
   componentWillUnmount() {
@@ -314,10 +315,23 @@ class Main extends Component {
     window.removeEventListener("resize", this.updatePredicate);
   }
 
+  transformRequest (req) {
+    var lastquery = req.body.split("\n");
+    for (var i = 0; i < lastquery.length; i++) { 
+      var line = lastquery[i];
+      if (line.indexOf("query") >= 0) {
+        lastquery = JSON.parse(line).query;
+        lastquery = JSON.stringify({query:lastquery});
+        break;
+      }
+    }
+    this.setState({ lastquery: lastquery });
+    return req;
+  }
+
   updatePredicate() {
     this.setState({ isDesktop: window.innerWidth > 1450 });
   }
-
 
   handleClick() {
     this.setState({
@@ -326,7 +340,8 @@ class Main extends Component {
     });
   }
 
-  static async getInitialProps({res, req}) {
+  getInitialProps({res, req}) {
+    const { components } = this.state;
     // Parse the cookies on the request
     var cookies = cookie.parse(req.headers.cookie || '');
     
@@ -345,7 +360,7 @@ class Main extends Component {
     }
 
     return {
-      store: await initReactivesearch(
+      store: initReactivesearch(
         [
           {
             ...components.selectedFilters,
@@ -359,17 +374,19 @@ class Main extends Component {
           }
         ],
         null,
-        components.settings
+        ...components.settings
       ),
     };
   }
 
+
   render() {
-    const isDesktop = this.state.isDesktop;
+    const { isDesktop, components } = this.state;
+
     return (
       <div className="main-container">
-        <ReactiveBase {...components.settings} initialState={this.props.store}>
-          <Navbar />
+        <ReactiveBase {...components.settings} transformRequest={this.transformRequest} initialState={this.props.store}>
+          <Navbar lastquery={this.state.lastquery} />
 
           <div className="sub-container">
             <Leftbar isClicked={this.state.isClicked} />
