@@ -9,12 +9,12 @@ windows:
       root: ../../elastic-search
       layout: tiled
       panes:
-        - sudo docker rm -f elasticsearch && sudo docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 --env-file `pwd`/es-docker-env-vars -v `pwd`/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml -v /usr/share/elasticsearch/data docker.elastic.co/elasticsearch/elasticsearch:6.6.0 && sleep 15 && source ../environments/local/env.sh && ./init_elastic.sh
-        # - sleep 15 && curl -H 'Content-Type: application/json' -v http://192.168.136.148:9200/movieappfinal/_search?scroll=5m -d '{"query":{"match_all":{}}}' | jq
+        - docker rm -f elasticsearch && docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 --env-file `pwd`/es-docker-env-vars -v `pwd`/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml -v /usr/share/elasticsearch/data docker.elastic.co/elasticsearch/elasticsearch:6.6.0
+        - sleep 15 && source ../environments/local/env.sh && ./init_elastic.sh
   - dejavu: 
       layout: tiled
       panes:
-        - sudo docker run -p 1358:1358 -d appbaseio/dejavu
+        - docker run -p 1358:1358 -d appbaseio/dejavu
         - echo 'http://localhost:1358/'
   - dwv:
       root: ../../dwv/
@@ -34,4 +34,4 @@ windows:
       root: ../../de-id/
       layout: tiled
       panes:
-        - source ../environments/local/env.sh && python3 load_elastic.py ../reactive-search/static/dicom/file_list.txt ../reactive-search/static/thumbnails/
+        - sleep 20 && source ../environments/local/env.sh && python3 load_elastic.py ../reactive-search/static/dicom/file_list.txt ../reactive-search/static/thumbnails/

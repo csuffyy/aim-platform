@@ -15,6 +15,6 @@ export FILESERVER_IP='192.168.136.128'
 export FILESERVER_PORT='3000'
 export FILESERVER_DICOM_PATH='/home/dan/aim-platform/image-archive/reactive-search/'
 export FILESERVER_THUMBNAIL_PATH='static/thumbnails'
-export AUTH_TOKEN=771100
+export AUTH_TOKEN=''
 export STATIC_WEBSERVER_URL='http://192.168.136.128:3000/'
 export DWV_URL='http://192.168.136.128:8080/'
