@@ -27,15 +27,16 @@ module.exports = function(grunt) {
                 options: {
                     port: 8080,
                     hostname: '0.0.0.0',
-                    livereload: true
+                    livereload: false
                 }
             },
             dev: {
                 options: {
                     port: 8080,
                     hostname: '0.0.0.0',
-                    livereload: true,
+                    livereload: false,
                     base: {
+
                         path: './',
                         options: {
                             index: 'index-dev.html'
@@ -49,7 +50,7 @@ module.exports = function(grunt) {
                 files: ['**/*.js', '!**/node_modules/**', '**/node_modules/dwv/**', '*.html'],
                 options: {
                     spawn: false,
-                    livereload: true
+                    livereload: false
                 }
             }
         }

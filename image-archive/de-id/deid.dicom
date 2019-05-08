@@ -1,0 +1,95 @@
+# Documentation
+# https://pydicom.github.io/deid/
+#
+# Adapted from: https://github.com/pydicom/deid/blob/master/deid/data/deid.dicom#L744
+
+FORMAT dicom
+
+%filter whitelist
+
+%filter graylist
+
+%filter blacklist
+
+%header
+
+REPLACE AdditionalPatientHistory func:generate_uid
+REPLACE AdmissionID func:generate_uid
+REPLACE AssignedLocation func:generate_uid
+REPLACE ClinicalTrialProtocolEthicsCommitteeName func:generate_uid
+REPLACE ClinicalTrialSponsorName func:generate_uid
+REPLACE ConsultingPhysicianIdentificationSequence func:generate_uid
+REPLACE ConsultingPhysicianName func:generate_uid
+REPLACE ContactDisplayName func:generate_uid
+REPLACE ContentCreatorName func:generate_uid
+REPLACE CurrentPatientLocation func:generate_uid
+REPLACE EvaluatorName func:generate_uid
+REPLACE FillerOrderNumberImagingServiceRequest func:generate_uid
+REPLACE HumanPerformerName func:generate_uid
+REPLACE IssuerOfPatientID func:generate_uid
+REPLACE NameOfPhysiciansReadingStudy func:generate_uid
+REPLACE NamesOfIntendedRecipientsOfResults func:generate_uid
+REPLACE OperatorsName func:generate_uid
+REPLACE OrderEntererLocation func:generate_uid
+REPLACE OtherPatientIDs func:generate_uid
+REPLACE OtherPatientIDsSequence func:generate_uid
+REPLACE OtherPatientNames func:generate_uid
+REPLACE PatientAddress func:generate_uid
+REPLACE PatientBirthName func:generate_uid
+REPLACE PatientComments func:generate_uid
+REPLACE PatientInstitutionResidence func:generate_uid
+REPLACE PatientMotherBirthName func:generate_uid
+REPLACE PatientName func:generate_uid
+REPLACE PatientsName func:generate_uid
+REPLACE PatientTransportArrangements func:generate_uid
+REPLACE PerformedLocation func:generate_uid
+REPLACE PerformedStationName func:generate_uid
+REPLACE PerformingPhysicianIdentificationSequence func:generate_uid
+REPLACE PerformingPhysicianName func:generate_uid
+REPLACE PerformingPhysicianName func:generate_uid
+REPLACE PersonAddress func:generate_uid
+REPLACE PersonName func:generate_uid
+REPLACE PhysicianApprovingInterpretation func:generate_uid
+REPLACE PhysiciansOfRecord func:generate_uid
+REPLACE PhysiciansOfRecordIdentificationSequence func:generate_uid
+REPLACE PhysiciansReadingStudyIdentificationSequence func:generate_uid
+REPLACE ReasonForStudy func:generate_uid
+REPLACE ReferringPhysicianAddress func:generate_uid
+REPLACE ReferringPhysicianIdentificationSequence func:generate_uid
+REPLACE ReferringPhysicianName func:generate_uid
+REPLACE ReferringPhysicianTelephoneNumbers func:generate_uid
+REPLACE RegionOfResidence func:generate_uid
+REPLACE RequestingPhysician func:generate_uid
+REPLACE RequestingPhysicianIdentificationSequence func:generate_uid
+REPLACE ReviewerName func:generate_uid
+REPLACE ScheduledPerformingPhysicianIdentificationSequence func:generate_uid
+REPLACE ScheduledPerformingPhysicianName func:generate_uid
+REPLACE ScheduledStudyLocation func:generate_uid
+REPLACE ScheduledStudyLocationAETitle func:generate_uid
+REPLACE SecondaryReviewerName func:generate_uid
+REPLACE SourceApplicatorName func:generate_uid
+REPLACE startswith:PatientTelephoneNumber func:generate_uid
+REPLACE contains:Date func:generate_uid
+REPLACE contains:date func:generate_uid
+REPLACE contains:Person func:generate_uid
+REPLACE contains:person func:generate_uid
+
+# These fields are extra important
+REPLACE PatientID func:generate_uid
+REPLACE AccessionNumber func:generate_uid
+REPLACE StudyID func:generate_uid
+REPLACE StudyInstanceUID func:generate_uid
+
+
+# This PHI is included by request
+# REMOVE PatientSex # Anna
+# REMOVE InstitutionName # Anna
+# REMOVE InstitutionalDepartmentName # Anna
+
+ADD DeidentificationAction var:_id
+
+ADD PatientIdentityRemoved Yes
+
+
+%labels
+ADD VERSION 1.0

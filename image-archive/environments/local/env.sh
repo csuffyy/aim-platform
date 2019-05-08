@@ -1,3 +1,4 @@
+export ENVIRON='local'
 export PUBLIC_IP='192.168.136.128'
 export ELASTIC_IP='192.168.136.128'
 export FALLBACK_ELASTIC_IP='192.168.136.128'
@@ -5,6 +6,8 @@ export FALLBACK_ELASTIC_PORT=9200
 export ELASTIC_PORT=9200
 export ELASTIC_INDEX='image'
 export ELASTIC_DOC_TYPE='image'
+export LINKING_ELASTIC_INDEX='linking'
+export LINKING_ELASTIC_DOC_TYPE='linking'
 export ELASTIC_URL='http://192.168.136.128:9200/'
 export REPORT_ELASTIC_INDEX='report'
 export REPORT_ELASTIC_DOC_TYPE='report'

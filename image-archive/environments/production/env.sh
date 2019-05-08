@@ -1,3 +1,4 @@
+export ENVIRON='production'
 export PUBLIC_IP='172.20.4.83'
 export ELASTIC_IP='172.20.4.83'
 export FALLBACK_ELASTIC_IP='172.20.4.83'
@@ -6,6 +7,8 @@ export ELASTIC_PORT=9200
 export ELASTIC_INDEX='image'
 export ELASTIC_DOC_TYPE='image'
 export ELASTIC_URL='https://elasticimages.ccm.sickkids.ca'
+export LINKING_ELASTIC_INDEX='linking'
+export LINKING_ELASTIC_DOC_TYPE='linking'
 export REPORT_ELASTIC_INDEX='report'
 export REPORT_ELASTIC_DOC_TYPE='report'
 export ES_JAVA_OPTS='-Xms32g -Xmx32g'

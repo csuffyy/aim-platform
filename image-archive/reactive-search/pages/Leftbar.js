@@ -120,11 +120,11 @@ const components = {
     filterLabel: "Age",
     range: {
       start: 0,
-      end: 100
+      end: 30
     },
     rangeLabels: {
       start: "0",
-      end: "100"
+      end: "30"
     },
     react: {
       and: [
@@ -286,24 +286,17 @@ class Leftbar extends Component {
 
         <hr className="blue" />
 
-        {/* A JSX comment 
         <div className="filter-heading center">
           <b>
             <i className="fa fa-address-card" /> Patient Age
           </b>
         </div>
 
+        <RangeSlider {...components.rangeSliderAge} />
 
-        <div>
-           <input type="checkbox" onChange={ this.handleChecked }/>
-           <p>This box is {show_rangeSliderAge}</p>
-        </div>
-        {show_rangeSliderAge === 'checked' &&
-          <RangeSlider {...components.rangeSliderAge} />
-        }
+        <div style={{height:'6px'}}></div>
+
         <hr className="blue" />
-        */}
-
 
         <div className="filter-heading center">
           <b>

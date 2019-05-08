@@ -1,3 +1,9 @@
+#!/bin/bash
+
+###############################
+# Jenkins Dependencies
+###############################
+
 # Source OpenStack CLI info
 export OS_USERNAME=
 export OS_PASSWORD=
@@ -6,8 +12,6 @@ export OS_AUTH_URL=https://os.hpc4health.ca:5000/v3/
 export OS_PROJECT_DOMAIN_NAME="Default"
 export OS_USER_DOMAIN_NAME="Default"
 export OS_IDENTITY_API_VERSION=3
-
-
 
 # Create Jenkins VM
 INSTANCE_NAME='AIM-Jenkins'
@@ -60,6 +64,10 @@ open $FLOATING_IP:8080
 # staticMethod jenkins.model.Jenkins getInstance
 # staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.Object java.lang.String
 
+###############################
+# Application Dependencies
+###############################
+
 # Install Docker
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
@@ -72,7 +80,11 @@ cd tmuxinator
 gem install tmuxinator
 tmuxinator -v
 
-# Setup Worker Node For Elastic
+###############################
+# Production Server Dependencies
+###############################
+
+# Create elastic folder
 su ubuntu
 mkdir ~/esdata
 chown -R ubuntu:ubuntu ~/esdata

@@ -32,10 +32,27 @@ if (FILESERVER_TOKEN != '') {
   FILESERVER_SECRET_DCM = '-0TO0-' + AUTH_TOKEN + '.dcm'
 }
 
+function redSearchBar() {
+  if (typeof window !== 'undefined') {
+    var elem = document.getElementsByClassName("search-bar");
+    if (elem) {
+      elem[0].style.border = '2px solid #f95959';
+    }
+  }
+}
+
+function transformRequest(aaa) {
+  console.log(aaa)
+}
+
+
+
 const components = {
   settings: {
     app: ELASTIC_INDEX,
     url: ELASTIC_URL,
+    transformRequest: transformRequest,
+    transformResponse: transformRequest,
     // credentials: "abcdef123:abcdef12-ab12-ab12-ab12-abcdef123456", // DO NOT DELETE THIS COMMENT. ReactiveSearch will break =X!
     headers: {
         'X-Requested-With': AUTH_TOKEN // arbitrary headers are not allowed see whitelist in elasticsearch.yml
@@ -105,7 +122,7 @@ const components = {
     paginationAt: "bottom",
     pages: 5,
     size: 10,
-    loader: <object type="image/svg+xml" data="static/ekg.svg">Your browser does not support SVG</object>,
+    loader: <object id='loading_animation' type="image/svg+xml" data="static/ekg.svg">Your browser does not support SVG</object>,
     // sortOptions: [
     //   {
     //     dataField: "revenue",
@@ -128,7 +145,21 @@ const components = {
     //     label: "Sort by Title(A-Z) \u00A0"
     //   }
     // ],
+    // onNoResults: 'NO RESULTS OK?',
+    onError: function(res) {
+      console.log('onError');
+      console.log(res);
+      setTimeout(redSearchBar, 111);
+  },
     onData:   function(res) {
+      // setBlueSearchBar incase it was red because of an error
+      if (typeof window !== 'undefined') {
+        var elem = document.getElementsByClassName("search-bar");
+        if (elem) {
+          elem[0].style.border = '2px solid #86ddf8';
+        }
+      }
+
     return {
       description: (
         <div className="main-description">
