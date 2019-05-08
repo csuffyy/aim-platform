@@ -180,9 +180,12 @@ def load_images():
       except:
         log.warning('Didn\'t understand value: %s = \'%s\'' % ('PatientAge', dicom_metadata['PatientAge']))
         log.warning('Problem image was: %s\n' % filepath)
-      # DEMO ONLY!!!! Add random age
-      # if 'PatientAgeInt' not in dicom_metadata:
-      #   dicom_metadata['PatientAgeInt'] = random.randint(1,20)
+      if ENVIRON=='local':
+        if 'PatientAgeInt' not in dicom_metadata:
+          # DEMO ONLY!!!! Add random age
+          dicom_metadata['PatientAgeInt'] = random.randint(1,18)
+        if 'PatientSex' not in dicom_metadata:
+          dicom_metadata['PatientSex'] = 'Male' if random.randint(0,1) else 'Female'
 
       thumbnail_filepath = save_thumbnail_of_dicom(dicom, filepath)
       if not thumbnail_filepath:
@@ -193,13 +196,10 @@ def load_images():
       # Save Path of DICOM
       # Example: 172.20.4.85:8000/static/dicom/OT-MONO2-8-hip.dcm-0TO0-771100.dcm
       dicom_filename = os.path.basename(filepath)
-      dicom_token = FILESERVER_TOKEN
-      if FILESERVER_TOKEN != '': # when using a token, add .dcm to the end of the URL so that DWV will accept the file
-        dicom_token = FILESERVER_TOKEN + '.dcm'
       dicom_metadata['dicom_filename'] = dicom_filename
       dicom_metadata['dicom_filepath'] = filepath
       dicom_relativepath = filepath.replace(FILESERVER_DICOM_PATH,'') # remove part of path up to where the webserver is located
-      dicom_metadata['dicom_relativepath'] = '{path}{token}'.format(path=dicom_relativepath, token=dicom_token)
+      dicom_metadata['dicom_relativepath'] = dicom_relativepath
 
       # Save Path of Thumbnail
       # Example: http://172.20.4.85:8000/static/thumbnails/2011/testplot.png-0TO0-771100
@@ -207,7 +207,8 @@ def load_images():
       parent_folder_name = os.path.basename(os.path.dirname(thumbnail_filepath))
       thumbnail_relative_path = os.path.join(FILESERVER_THUMBNAIL_PATH, parent_folder_name, thumbnail_filename) # relative to static webserver
       dicom_metadata['thumbnail_filename'] = thumbnail_filename
-      dicom_metadata['thumbnail_filepath'] = '{filename}{token}'.format(filename=thumbnail_relative_path, token=FILESERVER_TOKEN)
+      dicom_metadata['thumbnail_filepath'] = thumbnail_relative_path
+      dicom_metadata['thumbnail_relativepath'] = thumbnail_relative_path
 
       dicom_metadata['original_title'] = 'Dicom'
       dicom_metadata['_index'] = INDEX_NAME
@@ -224,14 +225,14 @@ if __name__ == '__main__':
   # Set up command line arguments
   parser = argparse.ArgumentParser(description='Load dicoms to Elastic.')
   parser.add_argument('input_filenames', help='File containing dicom file names.')
-  parser.add_argument('output_path', help='File containing dicom file names.')
+  parser.add_argument('output_path', help='Save output to')
   parser.add_argument('-n', '--num', type=int, default=500,
                       help='Bulk chunksize.')
   args = parser.parse_args()
   input_filenames = args.input_filenames  # Includes full path
   output_path = args.output_path
 
-
+  ENVIRON = os.environ['ENVIRON']
   ELASTIC_IP = os.environ['ELASTIC_IP']
   ELASTIC_PORT = os.environ['ELASTIC_PORT']
   FALLBACK_ELASTIC_IP = os.environ['FALLBACK_ELASTIC_IP']
@@ -243,9 +244,6 @@ if __name__ == '__main__':
   FILESERVER_TOKEN = os.getenv('FILESERVER_TOKEN','')
   FILESERVER_DICOM_PATH = os.environ['FILESERVER_DICOM_PATH']
   FILESERVER_THUMBNAIL_PATH = os.environ['FILESERVER_THUMBNAIL_PATH']
-  STATIC_WEBSERVER_URL = os.environ['STATIC_WEBSERVER_URL'] # Example: 'http://192.168.136.128:3000/'
-  DWV_URL = os.environ['DWV_URL'] # Example: 'http://192.168.136.128:8080/'
-
 
   # output_path = '/hpf/largeprojects/diagimage_common/shared/thumbnails'
   # output_path = '/home/chuynh/aim-platform/image-archive/de-id/jobs/thumbnails'
