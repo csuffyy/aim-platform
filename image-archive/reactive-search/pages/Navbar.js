@@ -1,6 +1,8 @@
 import React, { Component } from "react";
 import { DataSearch } from "@appbaseio/reactivesearch";
 import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
+import ModalExample from "./Modal.jsx";
+
 
 
 function custQueryAllFields(value, props) {
@@ -199,13 +201,13 @@ class Navbar extends Component {
               </div>
                 </div>
               </div>
+
               <div className="row btn-group">
-              <button type="button" className="btn btn-secondary app-button disabled">Collections</button>
-              <button type="button" className="btn btn-secondary app-button disabled">Download</button>
-              <button type="button" className="btn btn-secondary app-button" style={{padding:"0px"}}> 
-                <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax" target="_blank" style={{color:"inherit", padding:"12px"}}>Help</a>
-              </button>
-              <button type="button" className="btn btn-secondary app-button" onClick={this.LogOut}>Logout</button>
+                <ModalExample lastQuery={this.props.lastquery} buttonLabel="Download"/>
+                <button type="button" className="btn btn-secondary app-button" style={{padding:"0px"}}> 
+                  <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax" target="_blank" style={{color:"inherit", padding:"12px"}}>Help</a>
+                </button>
+                <button type="button" className="btn btn-secondary app-button" onClick={this.LogOut}>Logout</button>
               </div>
             </div>
            

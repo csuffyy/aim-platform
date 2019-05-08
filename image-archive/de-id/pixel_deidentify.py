@@ -96,7 +96,7 @@ def calc_timing_stats(times_per_image):
   elif OUTPUT in ['gifs','dcm']:
     plt.savefig('%s_timing.png' % output_path)
 
-def orc(metadata, image, times, ocr_num=None):
+def ocr(metadata, image, times, ocr_num=None):
   times['ocr%d_before' % ocr_num] = datetime.now()
   # Do OCR
   tesseract_config = '--oem %d --psm 3' % ocr_num
@@ -117,9 +117,9 @@ def match(metadata, search_strings, detection, times, ocr_num=None):
     return
 
   times['match%d_before' % ocr_num] = datetime.now()
-  match_confs = []
-  match_texts = []
-  match_bool = []
+  match_confs = [] # confidence
+  match_texts = [] # closest match
+  match_bool = [] # whether it's a positive match
   for i in range(0,len(detection)):
     text = detection.text.iloc[i]
     valid = True
@@ -331,7 +331,7 @@ try:
       if only_one and filename != only_one:
         continue
 
-      # DICOM Metadata
+      # Get Pixels
       if not 'pixel_array' in dicom or not 'PatientName' in dicom or not 'PatientID' in dicom:
         img = dicom.pixel_array
       else:
@@ -398,6 +398,7 @@ try:
       selem = disk(10)
       img = white_tophat(img, selem)
 
+      # Upscale image to improve OCR
       im_resized = cv2.resize(img, dsize=(img.shape[1]*RESIZE_FACTOR, img.shape[0]*RESIZE_FACTOR), interpolation=cv2.INTER_CUBIC)
       times['preprocess_image_after'] = datetime.now()
 
@@ -419,11 +420,11 @@ try:
                          }])
 
       # OCR, Match, Deidentify
-      # detection0 = orc(metadata, im_resized, times, ocr_num=0)
+      # detection0 = ocr(metadata, im_resized, times, ocr_num=0)
       # match(metadata, PHI, detection0, times, ocr_num=0)
-      # detection1 = orc(metadata, im_resized, times, ocr_num=1)
+      # detection1 = ocr(metadata, im_resized, times, ocr_num=1)
       # match(metadata, PHI, detection1, times, ocr_num=1)
-      detection2 = orc(metadata, im_resized, times, ocr_num=2)
+      detection2 = ocr(metadata, im_resized, times, ocr_num=2)
       match(metadata, PHI, detection2, times, ocr_num=2)
       # detection = pd.concat([detection0, detection1, detection2], ignore_index=True, sort=True)
       # detection = detection0
@@ -433,14 +434,14 @@ try:
       # Try more preprocessing if we didn't find as many PHI as expected in ultrasound
       if not np.sum(detection.match_bool) >= len(PHI) and dicom.Modality == 'US':
         log.info('Trying more preprocessing.')
-        # Sharpen
         image = Image.fromarray(img,'L')
         image = image.filter( ImageFilter.GaussianBlur(radius=1.5))
+        # Blur
         image = image.filter( ImageFilter.EDGE_ENHANCE_MORE )
         img = np.array(image)
         im_resized = cv2.resize(img, dsize=(img.shape[1]*RESIZE_FACTOR, img.shape[0]*RESIZE_FACTOR), interpolation=cv2.INTER_CUBIC)
 
-        detection_more = orc(metadata, im_resized, times, ocr_num=2)
+        detection_more = ocr(metadata, im_resized, times, ocr_num=2)
         match(metadata, PHI, detection_more, times, ocr_num=2)
         detection = pd.concat([detection_more, detection], ignore_index=True, sort=True)
 
