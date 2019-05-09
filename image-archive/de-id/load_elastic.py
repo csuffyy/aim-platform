@@ -32,6 +32,13 @@ from matplotlib import pyplot as plt
 # matplotlib.use('TkAgg')
 
 
+logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
+                    datefmt='%H:%M:%S',
+                    # level=logging.DEBUG)
+                    # level=logging.WARN)
+                    level=logging.INFO)
+log = logging.getLogger('main')
+
 def save_thumbnail_of_dicom(dicom, filepath):
   try:
     img = dicom.pixel_array
@@ -100,7 +107,6 @@ def load_images():
       dicom_metadata = {}
       [dicom_metadata.__setitem__(key,str(dicom.get(key))) for key in dicom.dir() if key not in ['PixelData']]
 
-      log.info('\n\n')
       log.info('Processing: %s' % filepath)
       for key, value in dicom_metadata.items():
         if hasattr(dicom_metadata[key], '_list'):
@@ -251,13 +257,7 @@ if __name__ == '__main__':
   if not os.path.isdir(output_path):
     os.makedirs(output_path)
 
-  logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
-                      datefmt='%H:%M:%S',
-                      level=logging.WARN)
-                      # level=logging.INFO)
-                      # level=logging.DEBUG)
-  log = logging.getLogger('main')
-
+  log.info('Connecting to ElasticSearch at %s:%s/%s' % (ELASTIC_IP, ELASTIC_PORT, INDEX_NAME))
   es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
 
   # Test ElasticSearch connection and fallback if it fails
@@ -290,7 +290,8 @@ if __name__ == '__main__':
   # Bulk load elastic
   print('Bulk chunk_size = {}'.format(args.num))
   # res = helpers.bulk(es, load_images(), chunk_size=args.num, max_chunk_bytes=500000000, max_retries=1) # 500 MB
-  res = helpers.bulk(es, load_images(), chunk_size=args.num, max_chunk_bytes=500000000, max_retries=1, raise_on_error=False, raise_on_exception=False) # 500 MB
+  # res = helpers.bulk(es, load_images(), chunk_size=args.num, max_chunk_bytes=500000000, max_retries=1, raise_on_error=False, raise_on_exception=False) # 500 MB
+  res = helpers.bulk(es, load_images(), index=INDEX_NAME, doc_type=DOC_TYPE, chunk_size=args.num, max_chunk_bytes=500000000, max_retries=1, raise_on_error=True, raise_on_exception=True) # 500 MB, with errors raised
   log.info('Bulk insert result: %s, %s' % (res[0], res[1]))
 
   # Update Index

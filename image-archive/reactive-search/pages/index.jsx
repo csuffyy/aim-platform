@@ -52,6 +52,232 @@ function AddToCollection(e, res) {
   // CALL API
 }
 
+
+const components = {
+  settings: {
+    app: ELASTIC_INDEX,
+    url: ELASTIC_URL,
+    // transformRequest: function(res) {
+    //   this.state.lastquery = res.body;
+    // },
+    // transformResponse: this.transformRequest,
+    // credentials: "abcdef123:abcdef12-ab12-ab12-ab12-abcdef123456", // DO NOT DELETE THIS COMMENT. ReactiveSearch will break =X!
+    headers: {
+        'X-Requested-With': AUTH_TOKEN // arbitrary headers are not allowed see whitelist in elasticsearch.yml
+    },
+    theme: {
+      typography: {
+        fontFamily:
+          '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Noto Sans", "Ubuntu", "Droid Sans", "Helvetica Neue", sans-serif',
+        fontSize: "16px"
+      },
+      colors: {
+        textColor: "#fff",
+        backgroundColor: "#212121",
+        primaryTextColor: "#fff",
+        primaryColor: "#2196F3",
+        titleColor: "#fff",
+        alertColor: "#d9534f",
+        borderColor: "#666"
+      }
+    }
+  },
+  selectedFilters: {
+    showClearAll: true,
+    clearAllLabel: "Clear filters"
+  },
+  tagCloudDescription: {
+    componentId: "tagCloud",
+    dataField: "descriptions.raw",
+    title: "",
+    size: 200,
+    showCount: true,
+    multiSelect: true,
+    queryFormat: "or",
+    react: {
+      and: [
+        "mainSearch",
+        "results",
+        "gender-list",
+        "bodypart-list",
+        "age-slider",
+        "acquisitiondate-range"
+      ]
+    },
+    showFilter: true,
+    filterLabel: "Description",
+    URLParams: false,
+    loader: ""
+  },
+
+  resultCard: {
+    componentId: "results",
+    // onQueryChange: onQueryChange,
+    dataField: "original_title.search",
+    react: {
+      and: [
+        "mainSearch",
+        "modality-list",
+        "gender-list",
+        "bodypart-list",
+        "age-slider",
+        "acquisitiondate-range",
+        "tagCloud"
+      ]
+    },
+    pagination: true,
+    className: "Result_card",
+    paginationAt: "bottom",
+    pages: 5,
+    size: 10,
+    loader: <object id='loading_animation' type="image/svg+xml" data="static/ekg.svg">Your browser does not support SVG</object>,
+    // sortOptions: [
+    //   {
+    //     dataField: "revenue",
+    //     sortBy: "desc",
+    //     label: "Sort by Revenue(High to Low) \u00A0"
+    //   },
+    //   {
+    //     dataField: "popularity",
+    //     sortBy: "desc",
+    //     label: "Sort by Popularity(High to Low)\u00A0 \u00A0"
+    //   },
+    //   {
+    //     dataField: "vote_average",
+    //     sortBy: "desc",
+    //     label: "Sort by Ratings(High to Low) \u00A0"
+    //   },
+    //   {
+    //     dataField: "original_title.raw",
+    //     sortBy: "asc",
+    //     label: "Sort by Title(A-Z) \u00A0"
+    //   }
+    // ],
+    // onNoResults: 'NO RESULTS OK?',
+    onError: function(res) {
+      console.log('onError');
+      console.log(res);
+      setTimeout(redSearchBar, 111);
+  },
+    onData:   function(res) {
+      // setBlueSearchBar incase it was red because of an error
+      if (typeof window !== 'undefined') {
+        var elem = document.getElementsByClassName("search-bar");
+        if (elem) {
+          elem[0].style.border = '2px solid #86ddf8';
+        }
+      }
+
+    return {
+      description: (
+        <div className="main-description">
+          <div className="ih-item square effect6 top_to_bottom">
+
+            <a
+              target="#"
+              href={
+                DWV_URL + 
+                "index.html?input=" + 
+                STATIC_WEBSERVER_URL +
+                res.dicom_relativepath + FILESERVER_SECRET_DCM
+              }
+            >
+
+              <div className="img">
+                <img
+                  src={STATIC_WEBSERVER_URL + res.thumbnail_filepath + FILESERVER_SECRET}
+                  alt={res.original_title}
+                  className="result-image"
+                />
+                {/* Example src:
+                http://192.168.136.128:3000/static/thumbnails/CT-MONO2-16-ankle.dcm.png */}
+              </div>
+              <div className="info colored">
+                <h3 className="overlay-title">
+                  {res.original_title}
+                  <button
+                    type="button"
+                    className="btn btn-dark"
+                    style={{ marginLeft: "100px" }}
+                    onClick={e => AddToCollection(e, res)}
+                  >
+                    <i className="fa fa-plus" />{" "}
+                  </button>
+                </h3>
+
+                <div className="overlay-description">{res.tagline}</div>
+
+                <div className="overlay-info">
+                  <div className="rating-time-score-container">
+                    <div className="sub-title Modality-data">
+                      <b>
+                        Modality
+                        <span className="details"> {res.Modality} </span>
+                      </b>
+                    </div>
+                    {/*                    <div className="time-data">
+                      <b>
+                        <span className="time">
+                          <i className="fa fa-clock-o" />{" "}
+                        </span>{" "}
+                        <span className="details">{res.time_str}</span>
+                      </b>
+                    </div>*/}
+
+                    {Number.isInteger(res.PatientAgeInt) && (
+                      <div className="sub-title Age-data">
+                        <b>
+                          Age:
+                          <span className="details"> {res.PatientAgeInt}</span>
+                        </b>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="revenue-lang-container">
+                    {res.AcquisitionDate && (
+                      <div className="sub-title AcquisitionDate-data">
+                        <b>
+                          Acquisition Date:
+                          <span className="details">
+                            {" "}
+                            {res.AcquisitionDatePretty}
+                          </span>
+                        </b>
+                      </div>
+                    )}
+
+                    {/*<div className="revenue-data">
+                      <b>
+                        <span> </span>{" "}
+                        <span className="details"> &nbsp;{res.or_revenue}</span>{" "}
+                      </b>
+                    </div>*/}
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+      ),
+      url:
+        DWV_URL + 
+        "index.html?input=" + 
+        STATIC_WEBSERVER_URL +
+        res.dicom_relativepath + FILESERVER_SECRET_DCM
+    }},
+    innerClass: {
+      title: "result-title",
+      listItem: "result-item",
+      list: "list-container",
+      sortOptions: "sort-options",
+      resultStats: "result-stats",
+      resultsInfo: "result-list-info",
+      poweredBy: "powered-by"
+    }
+  }
+};
+
 class Main extends Component {
   constructor(props) {
     super(props);
@@ -63,230 +289,7 @@ class Main extends Component {
       lastquery: 'Not yet set.',
       height: 0, 
       width: 0,
-      components: {
-        settings: {
-          app: ELASTIC_INDEX,
-          url: ELASTIC_URL,
-          // transformRequest: function(res) {
-          //   this.state.lastquery = res.body;
-          // },
-          // transformResponse: this.transformRequest,
-          // credentials: "abcdef123:abcdef12-ab12-ab12-ab12-abcdef123456", // DO NOT DELETE THIS COMMENT. ReactiveSearch will break =X!
-          headers: {
-              'X-Requested-With': AUTH_TOKEN // arbitrary headers are not allowed see whitelist in elasticsearch.yml
-          },
-          theme: {
-            typography: {
-              fontFamily:
-                '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Noto Sans", "Ubuntu", "Droid Sans", "Helvetica Neue", sans-serif',
-              fontSize: "16px"
-            },
-            colors: {
-              textColor: "#fff",
-              backgroundColor: "#212121",
-              primaryTextColor: "#fff",
-              primaryColor: "#2196F3",
-              titleColor: "#fff",
-              alertColor: "#d9534f",
-              borderColor: "#666"
-            }
-          }
-        },
-        selectedFilters: {
-          showClearAll: true,
-          clearAllLabel: "Clear filters"
-        },
-        tagCloudDescription: {
-          componentId: "tagCloud",
-          dataField: "descriptions.raw",
-          title: "",
-          size: 200,
-          showCount: true,
-          multiSelect: true,
-          queryFormat: "or",
-          react: {
-            and: [
-              "mainSearch",
-              "results",
-              "gender-list",
-              "bodypart-list",
-              "age-slider",
-              "acquisitiondate-range"
-            ]
-          },
-          showFilter: true,
-          filterLabel: "Description",
-          URLParams: false,
-          loader: ""
-        },
-
-        resultCard: {
-          componentId: "results",
-          // onQueryChange: onQueryChange,
-          dataField: "original_title.search",
-          react: {
-            and: [
-              "mainSearch",
-              "modality-list",
-              "gender-list",
-              "bodypart-list",
-              "age-slider",
-              "acquisitiondate-range",
-              "tagCloud"
-            ]
-          },
-          pagination: true,
-          className: "Result_card",
-          paginationAt: "bottom",
-          pages: 5,
-          size: 10,
-          loader: <object id='loading_animation' type="image/svg+xml" data="static/ekg.svg">Your browser does not support SVG</object>,
-          // sortOptions: [
-          //   {
-          //     dataField: "revenue",
-          //     sortBy: "desc",
-          //     label: "Sort by Revenue(High to Low) \u00A0"
-          //   },
-          //   {
-          //     dataField: "popularity",
-          //     sortBy: "desc",
-          //     label: "Sort by Popularity(High to Low)\u00A0 \u00A0"
-          //   },
-          //   {
-          //     dataField: "vote_average",
-          //     sortBy: "desc",
-          //     label: "Sort by Ratings(High to Low) \u00A0"
-          //   },
-          //   {
-          //     dataField: "original_title.raw",
-          //     sortBy: "asc",
-          //     label: "Sort by Title(A-Z) \u00A0"
-          //   }
-          // ],
-          // onNoResults: 'NO RESULTS OK?',
-          onError: function(res) {
-            console.log('onError');
-            console.log(res);
-            setTimeout(redSearchBar, 111);
-        },
-          onData:   function(res) {
-            // setBlueSearchBar incase it was red because of an error
-            if (typeof window !== 'undefined') {
-              var elem = document.getElementsByClassName("search-bar");
-              if (elem) {
-                elem[0].style.border = '2px solid #86ddf8';
-              }
-            }
-
-          return {
-            description: (
-              <div className="main-description">
-                <div className="ih-item square effect6 top_to_bottom">
-
-                  <a
-                    target="#"
-                    href={
-                      DWV_URL + 
-                      "index.html?input=" + 
-                      STATIC_WEBSERVER_URL +
-                      res.dicom_relativepath + FILESERVER_SECRET_DCM
-                    }
-                  >
-
-                    <div className="img">
-                      <img
-                        src={STATIC_WEBSERVER_URL + res.thumbnail_filepath + FILESERVER_SECRET}
-                        alt={res.original_title}
-                        className="result-image"
-                      />
-                      {/* Example src:
-                      http://192.168.136.128:3000/static/thumbnails/CT-MONO2-16-ankle.dcm.png */}
-                    </div>
-                    <div className="info colored">
-                      <h3 className="overlay-title">
-                        {res.original_title}
-                        <button
-                          type="button"
-                          className="btn btn-dark"
-                          style={{ marginLeft: "100px" }}
-                          onClick={e => AddToCollection(e, res)}
-                        >
-                          <i className="fa fa-plus" />{" "}
-                        </button>
-                      </h3>
-
-                      <div className="overlay-description">{res.tagline}</div>
-
-                      <div className="overlay-info">
-                        <div className="rating-time-score-container">
-                          <div className="sub-title Modality-data">
-                            <b>
-                              Modality
-                              <span className="details"> {res.Modality} </span>
-                            </b>
-                          </div>
-                          {/*                    <div className="time-data">
-                            <b>
-                              <span className="time">
-                                <i className="fa fa-clock-o" />{" "}
-                              </span>{" "}
-                              <span className="details">{res.time_str}</span>
-                            </b>
-                          </div>*/}
-
-                          {Number.isInteger(res.PatientAgeInt) && (
-                            <div className="sub-title Age-data">
-                              <b>
-                                Age:
-                                <span className="details"> {res.PatientAgeInt}</span>
-                              </b>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="revenue-lang-container">
-                          {res.AcquisitionDate && (
-                            <div className="sub-title AcquisitionDate-data">
-                              <b>
-                                Acquisition Date:
-                                <span className="details">
-                                  {" "}
-                                  {res.AcquisitionDatePretty}
-                                </span>
-                              </b>
-                            </div>
-                          )}
-
-                          {/*<div className="revenue-data">
-                            <b>
-                              <span> </span>{" "}
-                              <span className="details"> &nbsp;{res.or_revenue}</span>{" "}
-                            </b>
-                          </div>*/}
-                        </div>
-                      </div>
-                    </div>
-                  </a>
-                </div>
-              </div>
-            ),
-            url:
-              DWV_URL + 
-              "index.html?input=" + 
-              STATIC_WEBSERVER_URL +
-              res.dicom_relativepath + FILESERVER_SECRET_DCM
-          }},
-          innerClass: {
-            title: "result-title",
-            listItem: "result-item",
-            list: "list-container",
-            sortOptions: "sort-options",
-            resultStats: "result-stats",
-            resultsInfo: "result-list-info",
-            poweredBy: "powered-by"
-          }
-        }
-      }
+      components: components
     }
 
     this.updatePredicate = this.updatePredicate.bind(this);
@@ -340,16 +343,12 @@ class Main extends Component {
     });
   }
 
-  getInitialProps({res, req}) {
-    const { components } = this.state;
+  static async getInitialProps({res, req}) {
     // Parse the cookies on the request
     var cookies = cookie.parse(req.headers.cookie || '');
     
     // Get the visitor name set in the cookie
     var token = cookies.token;
-
-    // Set a header
-    // res.setHeader('X-Foo', 'bar');
 
     // Redirect to login if no token
     if (token !== AUTH_TOKEN) {
@@ -374,7 +373,7 @@ class Main extends Component {
           }
         ],
         null,
-        ...components.settings
+        components.settings
       ),
     };
   }

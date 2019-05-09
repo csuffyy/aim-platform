@@ -51,9 +51,9 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
                     datefmt='%H:%M:%S',
-                    level=logging.INFO)
+                    level=logging.DEBUG)
+                    # level=logging.INFO)
                     # level=logging.WARN)
-                    # level=logging.DEBUG)
 log = logging.getLogger('main')
 
 ENVIRON = os.environ['ENVIRON']
@@ -126,6 +126,13 @@ def get_pixels(dicom):
 
   return (img, img_orig) # return greyscale image and original rgb image
 
+def flatten(l):
+  for el in l:
+    if isinstance(el, collections.Iterable) and not isinstance(el, (str, bytes)):
+      yield from flatten(el)
+    else:
+      yield el
+
 def tophat_proprocess(img):
   # TopHat to strengthen text
   selem = disk(10)
@@ -142,13 +149,20 @@ def blur_sharpen_preprocess(img):
   return img
 
 def get_PHI(dicom):
+  PHI = []
   # Build list of PHI to look for: MNR, FirstName, LastName
-  name_parts = re.split('\^| ',str(dicom.PatientName)) # PatientName is typically: FirstName^LastName
-  PHI = [dicom.PatientID, name_parts]
+  PatientName = dicom.get('PatientName')
+  PatientID = dicom.get('PatientID')
+  if PatientName:
+    name_parts = re.split('\^| ',str(dicom.PatientName)) # PatientName is typically: FirstName^LastName
+    PHI = [PHI, name_parts]
+  if PatientID:
+    PHI = [PHI, PatientID]
   PHI = list(flatten(PHI))
   PHI = [x.upper() for x in PHI] # ensure upper case
 
 def ocr(img, ocr_num=None):
+  log.debug('Starting OCR...')
   # Do OCR
   tesseract_config = '--oem %d --psm 3' % ocr_num
   detection = pytesseract.image_to_data(img,config=tesseract_config, output_type=pytesseract.Output.DICT)
@@ -161,7 +175,7 @@ def ocr(img, ocr_num=None):
   return detection
 
 def match(search_strings, detection, ocr_num=None):
-  if detection.empty:
+  if detection.empty or search_strings is None or search_strings == []:
     return
 
   match_confs = [] # confidence
@@ -176,7 +190,10 @@ def match(search_strings, detection, ocr_num=None):
       valid = False
 
     if valid:
-      match_text, match_conf = process.extractOne(text, search_strings, scorer=fuzz.ratio)
+      try:
+        match_text, match_conf = process.extractOne(text, search_strings, scorer=fuzz.ratio)
+      except:
+        embed()
       match_texts.append(match_text)
       match_confs.append(match_conf)
       if match_conf > MATCH_CONF_THRESH:
@@ -194,14 +211,14 @@ def match(search_strings, detection, ocr_num=None):
 
   return detection
 
-def pixel_deidentify(dicom, img_orig, detection, ocr_num=None):
+def pixel_deidentify(dicom, img_orig, detection, output_filepath, input_filepath):
   removals = []
   yellow = 'rgb(255, 255, 0)' # yellow color
-  black = 'rgb(0, 0, 0)' # yellow color
+  black = 'rgb(0, 0, 0)' # yellow input_color
   dicom_pixels = dicom.pixel_array
 
-  image_orig = Image.fromarray(im_orig)
-  image_color = Image.fromarray(im_orig)
+  image_orig = Image.fromarray(img_orig)
+  image_color = Image.fromarray(img_orig)
   draw_color = ImageDraw.Draw(image_color)
 
   # Draw Annotations
@@ -247,60 +264,73 @@ def pixel_deidentify(dicom, img_orig, detection, ocr_num=None):
       })
 
   if len(removals)==0:
-    log.warning('No detected text closely matches the PHI: %s' % filename)
+    log.warning('No detected text closely matches the PHI: %s' % input_filepath)
 
   # Display
   if OUTPUT == 'screen':
-    image.show()
+    image_color.show()
   elif OUTPUT == 'gifs':
-    image = image.convert('RGB')
+    image_orig = image_orig.convert('RGB')
+    image_color = image_color.convert('RGB')
     frames = [image_color, image_orig]
-    frames[0].save('%s_%s_vis.gif' % (output_path, filename), format='GIF', append_images=frames[1:], save_all=True, duration=1000, loop=0)
+    frames[0].save('%s.gif' % output_filepath, format='GIF', append_images=frames[1:], save_all=True, duration=1000, loop=0)
+    log.debug('Saved GIF: %s.gif' % output_filepath)
 
   # Store updated pixels in DICOM
   if dicom.file_meta.TransferSyntaxUID.is_compressed:
     dicom.decompress()
   dicom.PixelData = dicom_pixels.tobytes()
 
-  return (removals, dicom)
+  return (dicom, removals)
 
-def pixel_deid(dicom):
+def pixel_deid(dicom, output_filepath, input_filepath):
+  log.debug('Pixel_deid for file: %s' % input_filepath)
+
   # Get Pixels
+  log.debug('Getting pixels...')
   img_bw, img_orig = get_pixels(dicom)
-  if not img_bw:
+  if img_bw is None:
     return
 
   # Get PHI
   PHI = get_PHI(dicom)
 
   # Preprocess Pixels (Variety #1)
+  log.debug('Processing 1...')
   img_enhanced = tophat_proprocess(img_bw)
 
   # Detect Text with OCR
-  detection = ocr(img_enhanced, times, ocr_num=2)
+  detection = ocr(img_enhanced, ocr_num=2)
 
   # Detect if image has so much text that it's probably a requisition and should be rejected or so little text that it should be accepted without PHI matching
 
 
   # Match Detected Text to PHI
+  log.debug('Matching 1...')
   detection = match(PHI, detection, ocr_num=2)
 
   # Preprocess Pixels (Variety #2)
-  img_enhanced = blur_sharpen_preprocess(img)
+  log.debug('Processing 2...')
+  img_enhanced = blur_sharpen_preprocess(img_bw)
 
   # Detect Text with OCR
-  detection2 = ocr(img_enhanced, times, ocr_num=2)
+  detection2 = ocr(img_enhanced, ocr_num=2)
 
   # Match Detected Text to PHI
+  log.debug('Matching 2...')
   detection2 = match(PHI, detection2, ocr_num=2)
+
+  if detection is None and detection2 is None:
+    return dicom
   
   # Combine detection results of different preprocessing
-  detection = pd.concat([detection_more, detection], ignore_index=True, sort=True)
+  detection = pd.concat([detection, detection2], ignore_index=True, sort=True)
 
   # Clean Image Pixels
-  dicom, removals = pixel_deidentify(dicom, img_orig, detection, ocr_num=0)
+  dicom, removals = pixel_deidentify(dicom, img_orig, detection, output_filepath, input_filepath)
+  log.info('Finished Processing: %s' % input_filepath)
 
-  log.info('Finished Processing: %s' % filepath)
+  return dicom
 
 def lookup_linking(orig):
   # Look to find existing linking in ElasticSearch
@@ -430,6 +460,7 @@ if __name__ == '__main__':
     item = {dicom_path: dicom_dict}
 
     # De-Identify Metadata
+    log.debug('De-identifying DICOM header...')
     cleaned_files = replace_identifiers(dicom_files=dicom_path,
                                         deid=recipe,
                                         ids=item,
@@ -448,20 +479,18 @@ if __name__ == '__main__':
     # es.indices.refresh(index=LINKING_INDEX_NAME)
 
     for dicom in cleaned_files:
-      # De-identify Pixels
-      dicom = pixel_deid(dicom)
-
-      # Save thumbnail of DICOM to disk
-
-      # Save DICOM to disk
       filename = os.path.basename(dicom_path)
       folder_prefix = os.path.basename(os.path.dirname(dicom_path))
       folderpath = os.path.join(output_folder, folder_prefix)
-      filepath = os.path.join(folderpath, filename)
+      output_filepath = os.path.join(folderpath, filename)
       if not os.path.exists(folderpath):
           os.makedirs(folderpath)
-      dicom.save_as(filepath)
-      save_thumbnail_of_dicom(dicom, filepath)
+
+      # De-identify Pixels
+      dicom = pixel_deid(dicom, output_filepath, dicom_path)
+      # Save DICOM to disk
+      dicom.save_as(output_filepath)
+      log.debug('Saved DICOM: %s' % output_filepath)
 
   # from IPython import embed
   # embed() # drop into an IPython session
