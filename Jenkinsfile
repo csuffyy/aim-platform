@@ -79,7 +79,7 @@ pipeline {
           sh 'patch --verbose --ignore-whitespace -p 10 -F 10 node_modules/@appbaseio/reactivesearch/lib/server/index.js < server-side-provide-headers-to-elastic.patch'
           sh 'patch --verbose --ignore-whitespace -p 10 -F 10 node_modules/@appbaseio/reactivesearch/lib/components/result/ReactiveList.js < comma-seperated-numbers.patch'
           sh 'npm run dev &'
-cp -r image-archive/reactive-search/appbase-js/* image-archive/reactive-search/node_modules/appbase-js/
+          cp -r image-archive/reactive-search/appbase-js/* image-archive/reactive-search/node_modules/appbase-js/
           // sh """bash -c 'source ../environments/production/env.sh; while [[ "`curl --cookie "token=${env.AUTH_TOKEN}" -s -o /dev/null -w ''%{http_code}'' localhost:3000`" != "200" ]]; do echo "trying again"; sleep 5; done; echo "ReactiveSearch UP"'"""
         }
       }
