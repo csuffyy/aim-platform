@@ -111,11 +111,12 @@ sudo cp /usr/local/lib/libgdcm* /usr/local/lib/python3.7/dist-packages/
 # sudo apt-get install vtk-dicom-tools
 # dicomdump file1.dcm
 
-# Install yarn
+# Install Yarn
 curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
 echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
 sudo apt update
 sudo apt install yarn nodejs
+cp -r image-archive/reactive-search/appbase-js/* image-archive/reactive-search/node_modules/appbase-js/
 
 ###############################
 # Production Server Dependencies
