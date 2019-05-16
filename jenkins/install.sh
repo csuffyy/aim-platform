@@ -78,6 +78,11 @@ sudo apt-get install -y docker-ce
 echo vm.max_map_count=262144 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p    # for Elastic Compute
 echo fs.inotify.max_user_watches=582222 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p    # for NodeJS to watch more files
 
+# Allow running docker commands without sudo (for local development ONLY, used for simple automation)
+sudo groupadd docker
+sudo usermod -aG docker $USER
+gnome-session-quit --no-prompt # this will log you out, you'll have to log back in
+
 # Install Tmuxinator (=>v0.11)
 git clone https://github.com/tmuxinator/tmuxinator
 cd tmuxinator
@@ -154,3 +159,4 @@ systemctl restart apache2
 
 # install secrets
 sudo echo "export AUTH_TOKEN='771100'" > /etc/secrets.sh
+sudo echo "export FILESERVER_TOKEN='771100'" > /etc/secrets.sh
