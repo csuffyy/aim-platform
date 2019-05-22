@@ -39,6 +39,7 @@ def update_dicoms(report, dicom_filepaths):
       loc = (loc_group, loc_element)
       value = "Report %s: %s" % (key, str(value)) # Append key name to start of value because dicom uses hexadecimal instead of key names
       # ds[loc] = pydicom.DataElement(loc, dicom_datatype, value)
+      print('Inserting Value: %s' % value)
       ds[loc] = pydicom.DataElement(loc, dicom_datatype, value)
       # embed()
       # ds[0x0019, 0x0030] = pydicom.DataElement(0x00190030, 'LO', 'Assumed TransferSyntaxUID')
