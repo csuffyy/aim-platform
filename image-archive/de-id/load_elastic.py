@@ -4,6 +4,8 @@
 # Usage:
 # source ../environments/local/env.sh
 # python3 load_elastic.py ../images/sample-dicom/image_list.txt ../reactive-search/static/thumbnails/
+# or
+# python3 load_elastic.py /home/dan/aim-platform/image-archive/reactive-search/static/dicom/Favourite_Images/file_list.txt ../reactive-search/static/thumbnails/
 
 # module load python/3.7.1_GDCM
 
@@ -31,6 +33,13 @@ import matplotlib
 from matplotlib import pyplot as plt
 # matplotlib.use('TkAgg')
 
+
+logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
+                    datefmt='%H:%M:%S',
+                    # level=logging.DEBUG)
+                    # level=logging.WARN)
+                    level=logging.INFO)
+log = logging.getLogger('main')
 
 def save_thumbnail_of_dicom(dicom, filepath):
   try:
@@ -100,7 +109,6 @@ def load_images():
       dicom_metadata = {}
       [dicom_metadata.__setitem__(key,str(dicom.get(key))) for key in dicom.dir() if key not in ['PixelData']]
 
-      log.info('\n\n')
       log.info('Processing: %s' % filepath)
       for key, value in dicom_metadata.items():
         if hasattr(dicom_metadata[key], '_list'):
@@ -152,7 +160,6 @@ def load_images():
         log.warning('Didn\'t understand value: %s = \'%s\'' % ('AcquisitionDate', dicom_metadata['AcquisitionDate']))
         log.warning('Problem image was: %s\n' % filepath)
         dicom_metadata.pop('AcquisitionDatePretty', None) # remove bad formatted metadata
-      # PatientAgeInt (Method 1: diff between birth and acquisition dates)
 
       # # Convert any values that can be displayed as a string (things that need to be numbers should follow this)
       # for k, v in dicom_metadata.items():
@@ -160,6 +167,7 @@ def load_images():
       #   if not isinstance(v,str) and '__str__' in dir(v):
       #     dicom_metadata[k] = dicom_metadata[key].__str__()
 
+      # PatientAgeInt (Method 1: diff between birth and acquisition dates)
       try:
         if 'PatientBirthDate' in dicom_metadata and 'AcquisitionDate' in dicom_metadata:
           PatientBirthDate = datetime.strptime(dicom_metadata['PatientBirthDate'], '%Y%m%d')
@@ -226,7 +234,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Load dicoms to Elastic.')
   parser.add_argument('input_filenames', help='File containing dicom file names.')
   parser.add_argument('output_path', help='Save output to')
-  parser.add_argument('-n', '--num', type=int, default=500,
+  parser.add_argument('-n', '--num', type=int, default=1,
                       help='Bulk chunksize.')
   args = parser.parse_args()
   input_filenames = args.input_filenames  # Includes full path
@@ -251,13 +259,7 @@ if __name__ == '__main__':
   if not os.path.isdir(output_path):
     os.makedirs(output_path)
 
-  logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
-                      datefmt='%H:%M:%S',
-                      level=logging.WARN)
-                      # level=logging.INFO)
-                      # level=logging.DEBUG)
-  log = logging.getLogger('main')
-
+  log.info('Connecting to ElasticSearch at %s:%s/%s' % (ELASTIC_IP, ELASTIC_PORT, INDEX_NAME))
   es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
 
   # Test ElasticSearch connection and fallback if it fails
@@ -290,7 +292,8 @@ if __name__ == '__main__':
   # Bulk load elastic
   print('Bulk chunk_size = {}'.format(args.num))
   # res = helpers.bulk(es, load_images(), chunk_size=args.num, max_chunk_bytes=500000000, max_retries=1) # 500 MB
-  res = helpers.bulk(es, load_images(), chunk_size=args.num, max_chunk_bytes=500000000, max_retries=1, raise_on_error=False, raise_on_exception=False) # 500 MB
+  # res = helpers.bulk(es, load_images(), chunk_size=args.num, max_chunk_bytes=500000000, max_retries=1, raise_on_error=False, raise_on_exception=False) # 500 MB
+  res = helpers.bulk(es, load_images(), index=INDEX_NAME, doc_type=DOC_TYPE, chunk_size=args.num, max_chunk_bytes=500000000, max_retries=1, raise_on_error=True, raise_on_exception=True) # 500 MB, with errors raised
   log.info('Bulk insert result: %s, %s' % (res[0], res[1]))
 
   # Update Index

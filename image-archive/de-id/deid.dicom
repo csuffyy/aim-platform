@@ -68,9 +68,8 @@ REPLACE ScheduledStudyLocation func:generate_uid
 REPLACE ScheduledStudyLocationAETitle func:generate_uid
 REPLACE SecondaryReviewerName func:generate_uid
 REPLACE SourceApplicatorName func:generate_uid
+REPLACE PatientBirthDate func:generate_uid
 REPLACE startswith:PatientTelephoneNumber func:generate_uid
-REPLACE contains:Date func:generate_uid
-REPLACE contains:date func:generate_uid
 REPLACE contains:Person func:generate_uid
 REPLACE contains:person func:generate_uid
 
@@ -80,14 +79,17 @@ REPLACE AccessionNumber func:generate_uid
 REPLACE StudyID func:generate_uid
 REPLACE StudyInstanceUID func:generate_uid
 
-
 # This PHI is included by request
 # REMOVE PatientSex # Anna
 # REMOVE InstitutionName # Anna
 # REMOVE InstitutionalDepartmentName # Anna
+# REPLACE AcquisitionDate func:generate_uid 
+## These conflict with the included PHI dates
+# REPLACE contains:Date func:generate_uid
+# REPLACE contains:date func:generate_uid
 
+# Extra Fields Added
 ADD DeidentificationAction var:_id
-
 ADD PatientIdentityRemoved Yes
 
 

@@ -17,6 +17,7 @@ export FILESERVER_PORT='8000'
 export FILESERVER_DICOM_PATH='/hpf/largeprojects/diagimage_common/'
 export FILESERVER_THUMBNAIL_PATH='shared/thumbnails'
 export AUTH_TOKEN='771100'
+export FILESERVER_TOKEN=''
 export STATIC_WEBSERVER_URL='https://staticimages.ccm.sickkids.ca/'
 export DWV_URL='https://dwvimages.ccm.sickkids.ca/'
 source /etc/secrets.sh

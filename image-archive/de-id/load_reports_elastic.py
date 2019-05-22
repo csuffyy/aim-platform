@@ -1,8 +1,7 @@
 #!/bin/python
 #
 # Usage:
-# source ../environments/local/env.sh
-# python3 load_reports_elastic.py ../reports/sample/report_list
+# source ../environments/local/env.sh && python3 load_reports_elastic.py ../reports/sample/report_list
 
 import os 
 import glob
