@@ -103,6 +103,7 @@ def add_derived_fields(dicom):
       if 'Y' in PatientAge:
         age = PatientAge.split('Y')
         age = int(age[0])
+      dicom.PatientAge = str(age)
   except:
     log.warning('Falling back for PatientAge')
   # PatientAgeInt (Method 2: diff between birth and acquisition dates)
@@ -113,11 +114,11 @@ def add_derived_fields(dicom):
       AcquisitionDate = datetime.datetime.strptime(AcquisitionDate, '%Y%m%d')
     age = AcquisitionDate - PatientBirthDate
     age = round(age.days / 365,2) # age in years with two decimal place precision
+    dicom.PatientAge = str(age)
   except:
     log.warning('Couldn\'t calculate PatientAge')
     log.warning('Problem image was: %s\n' % filepath)
 
-  dicom.PatientAge = str(age)
   return dicom
 
 def get_pixels(input_filepath):

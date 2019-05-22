@@ -6,8 +6,8 @@ cd ~/aim-platform/image-archive
 git pull
 
 # Create Elastic index to store de-id mappings
-source ./environments/production/env.sh
 source ./environments/local/env.sh
+source ./environments/production/env.sh
 export ELASTIC_IP='192.168.100.61' # special elastic location via tunnel when in HPF
 export LINKING_ELASTIC_INDEX=linking-anna-alex-abhi-2
 export LINKING_ELASTIC_DOC_TYPE=linking-anna-alex-abhi-2
@@ -31,13 +31,15 @@ elasticdump \
 split -l 100 list_of_dicom_paths.txt Subset_list_of_dicom_paths_
 
 # Create and submit de-id job qsub script
-NUM_JOBS_TOTAL=$(ls Subset* | wc -l)
+NUM_JOBS_TOTAL=$(ls ~/Subset* | wc -l)
 COUNT=0
-for FILENAME in Subset_*; do
+for FILENAME in ~/Subset_*; do
+  # echo $FILENAME
+# done
   cat <<EOT > qsub-deid-temp.sh
 #!/bin/bash
 
-#PBS -l mem=2gb,vmem=2gb
+#PBS -l mem=4gb,vmem=4gb
 #PBS -l nodes=1:ppn=2
 #PBS -l walltime=100:00:00
 #PBS -j oe
@@ -52,11 +54,12 @@ export LINKING_ELASTIC_DOC_TYPE=linking-anna-alex-abhi-2
 
 module load python/3.7.1_GDCM
 
-python3.7 ~/aim-platform/image-archive/de-id/deid_dicom_header.py --input_files $FILENAME --output_folder $OUTPUT_PATH --deid_recipe ~/aim-platform/image-archive/de-id/deid.dicom
+python3.7 ~/aim-platform/image-archive/de-id/deid_dicoms.py --input_files $FILENAME --output_folder $OUTPUT_PATH --deid_recipe ~/aim-platform/image-archive/de-id/deid.dicom --no-pixel
 EOT
   qsub qsub-deid-temp.sh
   COUNT=$((COUNT+1))
   echo "Submitted Job $COUNT of $NUM_JOBS_TOTAL. Processing file: $FILENAME"
+  break
   sleep 0.05
 done
 
