@@ -35,6 +35,7 @@ REPLACE OtherPatientIDs func:generate_uid
 REPLACE OtherPatientIDsSequence func:generate_uid
 REPLACE OtherPatientNames func:generate_uid
 REPLACE PatientAddress func:generate_uid
+REPLACE PatientBirthDate func:generate_uid
 REPLACE PatientBirthName func:generate_uid
 REPLACE PatientComments func:generate_uid
 REPLACE PatientInstitutionResidence func:generate_uid

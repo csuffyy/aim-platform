@@ -54,7 +54,7 @@ export LINKING_ELASTIC_DOC_TYPE=linking-anna-alex-abhi-2
 
 module load python/3.7.1_GDCM
 
-python3.7 ~/aim-platform/image-archive/de-id/deid_dicoms.py --input_files $FILENAME --output_folder $OUTPUT_PATH --deid_recipe ~/aim-platform/image-archive/de-id/deid.dicom --no-pixel
+python3.7 ~/aim-platform/image-archive/de-id/deid_dicoms.py --input_files $FILENAME --output_folder $OUTPUT_PATH --deid_recipe ~/aim-platform/image-archive/de-id/deid.dicom --no_pixel
 EOT
   qsub qsub-deid-temp.sh
   COUNT=$((COUNT+1))
