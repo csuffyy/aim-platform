@@ -534,7 +534,7 @@ if __name__ == '__main__':
                                         remove_private=False)
                                         # overwrite=True,
                                         # output_folder=output_folder)
-    dicom = cleaned_files[0] # we only pass in one at a time
+    cleaned_dicom = cleaned_files[0] # we only pass in one at a time
 
     # # Insert linkings into master linking list in ElasticSearch
     # docs = (linking for linking in str_linking)
@@ -555,15 +555,23 @@ if __name__ == '__main__':
         os.makedirs(folderpath)
 
     # Process Dicom (Derive new fields and De-identify Pixels)
-    dicom = process_dicom(dicom_path, output_filepath)
+    dicom = process_dicom(dicom_path, output_filepath) # note this opens the dicom again and thus contains PHI
+
+    # TODO: UNCOMMENT!
+    # Store updated pixels in DICOM
+    # if cleaned_dicom.file_meta.TransferSyntaxUID.is_compressed:
+    #   cleaned_dicom.decompress()
+    # cleaned_dicom.PixelData = dicom.PixelData
+
+    # Store derived data in DICOM
+    cleaned_dicom.PatientAge = dicom.get('PatientAge')
 
     # Save DICOM to disk
-    dicom.save_as(output_filepath)
+    cleaned_dicom.save_as(output_filepath)
     log.info('Saved DICOM: %s' % output_filepath)
 
   # from IPython import embed
   # embed() # drop into an IPython session
-
 
   # Print Summary
   elapsed_time = time.time() - t0

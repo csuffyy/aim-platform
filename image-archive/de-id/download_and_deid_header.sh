@@ -39,7 +39,7 @@ for FILENAME in ~/Subset_*; do
   cat <<EOT > qsub-deid-temp.sh
 #!/bin/bash
 
-#PBS -l mem=4gb,vmem=4gb
+#PBS -l mem=16gb,vmem=16gb
 #PBS -l nodes=1:ppn=2
 #PBS -l walltime=100:00:00
 #PBS -j oe
@@ -59,7 +59,6 @@ EOT
   qsub qsub-deid-temp.sh
   COUNT=$((COUNT+1))
   echo "Submitted Job $COUNT of $NUM_JOBS_TOTAL. Processing file: $FILENAME"
-  break
   sleep 0.05
 done
 
