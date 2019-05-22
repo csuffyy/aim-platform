@@ -68,6 +68,10 @@ open $FLOATING_IP:8080
 # Application Dependencies
 ###############################
 
+# Download our project code
+cd ~
+git clone https://github.com/aim-sk/aim-platform
+
 # Install Docker
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
@@ -81,7 +85,9 @@ echo fs.inotify.max_user_watches=582222 | sudo tee -a /etc/sysctl.conf && sudo s
 # Allow running docker commands without sudo (for local development ONLY, used for simple automation)
 sudo groupadd docker
 sudo usermod -aG docker $USER
-gnome-session-quit --no-prompt # this will log you out, you'll have to log back in
+docker run hello-world # if this doesn't work and asks for permissions, do the next command "gnome-session-quit"
+# gnome-session-quit --no-prompt # this will log you out, you'll have to log back in
+
 
 # Install Tmuxinator (=>v0.11)
 git clone https://github.com/tmuxinator/tmuxinator
@@ -121,6 +127,11 @@ echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/source
 sudo apt update
 sudo apt install yarn nodejs
 cp -r image-archive/reactive-search/appbase-js/* image-archive/reactive-search/node_modules/appbase-js/
+
+# Start our entire application 
+cd ~/aim-platform/image-archive
+./start_aim.sh
+
 
 ###############################
 # Install Imaging Archive
