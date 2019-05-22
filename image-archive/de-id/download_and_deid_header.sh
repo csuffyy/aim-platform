@@ -7,6 +7,7 @@ git pull
 
 # Create Elastic index to store de-id mappings
 source ./environments/production/env.sh
+source ./environments/local/env.sh
 export ELASTIC_IP='192.168.100.61' # special elastic location via tunnel when in HPF
 export LINKING_ELASTIC_INDEX=linking-anna-alex-abhi
 export LINKING_ELASTIC_DOC_TYPE=linking-anna-alex-abhi
@@ -58,3 +59,5 @@ EOT
   echo "Submitted Job $COUNT of $NUM_JOBS_TOTAL. Processing file: $FILENAME"
   sleep 0.05
 done
+
+

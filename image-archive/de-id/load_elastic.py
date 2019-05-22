@@ -4,6 +4,8 @@
 # Usage:
 # source ../environments/local/env.sh
 # python3 load_elastic.py ../images/sample-dicom/image_list.txt ../reactive-search/static/thumbnails/
+# or
+# python3 load_elastic.py /home/dan/aim-platform/image-archive/reactive-search/static/dicom/Favourite_Images/file_list.txt ../reactive-search/static/thumbnails/
 
 # module load python/3.7.1_GDCM
 
@@ -158,7 +160,6 @@ def load_images():
         log.warning('Didn\'t understand value: %s = \'%s\'' % ('AcquisitionDate', dicom_metadata['AcquisitionDate']))
         log.warning('Problem image was: %s\n' % filepath)
         dicom_metadata.pop('AcquisitionDatePretty', None) # remove bad formatted metadata
-      # PatientAgeInt (Method 1: diff between birth and acquisition dates)
 
       # # Convert any values that can be displayed as a string (things that need to be numbers should follow this)
       # for k, v in dicom_metadata.items():
@@ -166,6 +167,7 @@ def load_images():
       #   if not isinstance(v,str) and '__str__' in dir(v):
       #     dicom_metadata[k] = dicom_metadata[key].__str__()
 
+      # PatientAgeInt (Method 1: diff between birth and acquisition dates)
       try:
         if 'PatientBirthDate' in dicom_metadata and 'AcquisitionDate' in dicom_metadata:
           PatientBirthDate = datetime.strptime(dicom_metadata['PatientBirthDate'], '%Y%m%d')
@@ -232,7 +234,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Load dicoms to Elastic.')
   parser.add_argument('input_filenames', help='File containing dicom file names.')
   parser.add_argument('output_path', help='Save output to')
-  parser.add_argument('-n', '--num', type=int, default=500,
+  parser.add_argument('-n', '--num', type=int, default=1,
                       help='Bulk chunksize.')
   args = parser.parse_args()
   input_filenames = args.input_filenames  # Includes full path
