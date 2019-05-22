@@ -205,3 +205,10 @@ systemctl restart apache2
 # install secrets
 sudo echo "export AUTH_TOKEN='771100'" > /etc/secrets.sh
 sudo echo "export FILESERVER_TOKEN='771100'" > /etc/secrets.sh
+
+# Make colour of bottom bar on Tmux red
+cat <<EOT>> ~/.tmux.conf
+set -g default-terminal "screen-256color"
+set -g status-bg red
+set -g status-fg white
+EOT
