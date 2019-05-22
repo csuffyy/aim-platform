@@ -68,6 +68,7 @@ REPLACE ScheduledStudyLocation func:generate_uid
 REPLACE ScheduledStudyLocationAETitle func:generate_uid
 REPLACE SecondaryReviewerName func:generate_uid
 REPLACE SourceApplicatorName func:generate_uid
+REPLACE PatientBirthDate func:generate_uid
 REPLACE startswith:PatientTelephoneNumber func:generate_uid
 REPLACE contains:Person func:generate_uid
 REPLACE contains:person func:generate_uid
@@ -82,7 +83,6 @@ REPLACE StudyInstanceUID func:generate_uid
 # REMOVE PatientSex # Anna
 # REMOVE InstitutionName # Anna
 # REMOVE InstitutionalDepartmentName # Anna
-# REPLACE PatientBirthDate func:generate_uid
 # REPLACE AcquisitionDate func:generate_uid 
 ## These conflict with the included PHI dates
 # REPLACE contains:Date func:generate_uid
