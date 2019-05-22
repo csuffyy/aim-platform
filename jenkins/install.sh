@@ -74,6 +74,10 @@ sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubun
 sudo apt-get update
 sudo apt-get install -y docker-ce
 
+# System config settings
+echo vm.max_map_count=262144 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p    # for Elastic Compute
+echo fs.inotify.max_user_watches=582222 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p    # for NodeJS to watch more files
+
 # Allow running docker commands without sudo (for local development ONLY, used for simple automation)
 sudo groupadd docker
 sudo usermod -aG docker $USER
@@ -109,7 +113,40 @@ sudo cp /usr/local/lib/libgdcm* /usr/local/lib/python3.7/dist-packages/
 
 # Developer helper tools:
 # sudo apt-get install vtk-dicom-tools
-# dicomdump file1.dcm 
+# dicomdump file1.dcm
+
+# Install Yarn
+curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+sudo apt update
+sudo apt install yarn nodejs
+cp -r image-archive/reactive-search/appbase-js/* image-archive/reactive-search/node_modules/appbase-js/
+
+###############################
+# Install Imaging Archive
+###############################
+
+#Install ElasticSearch
+cd image-archive/elastic-search/
+sudo docker rm -f elasticsearch || true
+./start_elastic.sh
+bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:9200`" != "200" ]]; do echo "trying again"; sleep 5; done; curl localhost:9200; echo "ELASTIC UP"'
+sudo docker logs elasticsearch
+./init_elastic.sh
+
+#Install DWV
+cd image-archive/dwv/
+yarn install
+yarn run start &
+bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:8080`" != "200" ]]; do echo "trying again"; sleep 5; done; curl localhost:8080; echo "DWV UP"'
+
+#Install ReactiveSearch
+cd image-archive/reactive-search/
+npm install --verbose --color false 2>&1
+patch --verbose --ignore-whitespace -p 10 -F 10 node_modules/@appbaseio/reactivesearch/lib/server/index.js < server-side-provide-headers-to-elastic.patch
+patch --verbose --ignore-whitespace -p 10 -F 10 node_modules/@appbaseio/reactivesearch/lib/components/result/ReactiveList.js < comma-seperated-numbers.patch
+npm run dev &
+cp -r image-archive/reactive-search/appbase-js/* image-archive/reactive-search/node_modules/appbase-js/
 
 ###############################
 # Production Server Dependencies

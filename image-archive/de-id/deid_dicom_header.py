@@ -204,6 +204,7 @@ if __name__ == '__main__':
 
     for ds in cleaned_files:
       # De-identify Pixels
+      embed()
 
       # Save DICOMs to disk
       filename = os.path.basename(dicom_path)

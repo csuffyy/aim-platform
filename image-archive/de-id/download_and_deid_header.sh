@@ -9,8 +9,8 @@ git pull
 source ./environments/production/env.sh
 source ./environments/local/env.sh
 export ELASTIC_IP='192.168.100.61' # special elastic location via tunnel when in HPF
-export LINKING_ELASTIC_INDEX=linking-anna-alex-abhi
-export LINKING_ELASTIC_DOC_TYPE=linking-anna-alex-abhi
+export LINKING_ELASTIC_INDEX=linking-anna-alex-abhi-2
+export LINKING_ELASTIC_DOC_TYPE=linking-anna-alex-abhi-2
 ./elastic-search/init_elastic.sh
 
 # Make output path
@@ -47,8 +47,8 @@ set -x
 
 source ~/aim-platform/image-archive/environments/production/env.sh
 export ELASTIC_IP='192.168.100.61' # special elastic location via tunnel when in HPF
-export LINKING_ELASTIC_INDEX=linking-anna-alex-abhi
-export LINKING_ELASTIC_DOC_TYPE=linking-anna-alex-abhi
+export LINKING_ELASTIC_INDEX=linking-anna-alex-abhi-2
+export LINKING_ELASTIC_DOC_TYPE=linking-anna-alex-abhi-2
 
 module load python/3.7.1_GDCM
 
