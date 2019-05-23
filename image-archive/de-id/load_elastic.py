@@ -277,6 +277,8 @@ if __name__ == '__main__':
   # Get the list of dicom files to be scanned
   with open(input_filenames, 'r') as f:
     files = f.read().split('\n')
+
+  files = [os.path.abspath(os.path.expanduser(os.path.expandvars(file))) for file in files]
     # files = files[0:5000]
     # del files[-1]  # Remove blank item
 

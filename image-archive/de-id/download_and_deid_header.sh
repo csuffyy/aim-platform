@@ -28,7 +28,7 @@ elasticdump \
 | jq ._source.dicom_filepath | tee list_of_dicom_paths.txt
 
 # Split list of dicoms into smaller amounts (to be run in parallel)
-split -l 100 list_of_dicom_paths.txt Subset_list_of_dicom_paths_
+split -l 1000 list_of_dicom_paths.txt Subset_list_of_dicom_paths_
 
 # Create and submit de-id job qsub script
 NUM_JOBS_TOTAL=$(ls ~/Subset* | wc -l)
