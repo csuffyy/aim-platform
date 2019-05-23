@@ -333,7 +333,7 @@ def clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath):
   return (dicom, removals)
 
 def process_dicom(input_filepath, output_filepath):
-  log.info('Processing file (deriving fields and De-identifying pixels: %s' % input_filepath)
+  log.info('Processing file : %s' % input_filepath)
 
   # Get Pixels
   img_bw, img_orig, dicom = get_pixels(input_filepath)
@@ -410,6 +410,7 @@ def lookup_linking(orig):
   return res
 
 def generate_uid(dicom_dict, function_name, field_name):
+  """ This function generates a uuid to put in place of PHI and trackes the linking between UUID and PHI by inserting into ElasticSearch """
   orig = dicom_dict[field_name] if field_name in dicom_dict else ''
   uid = str(uuid.uuid4()) # otherwise generate new id
 
@@ -418,8 +419,10 @@ def generate_uid(dicom_dict, function_name, field_name):
     res = lookup_linking(orig)
 
     if len(res):
-      uid = res[0]['_source']['new'] # use id found in elastic
+      # use id found in elastic
+      uid = res[0]['_source']['new']
     else:
+      # otherwise insert a new linking
       query = {'orig': orig, 'new': uid, 'field': field_name, 'date': datetime.datetime.now(), 'orig_path': dicom_dict['orig_path'], 'new_path': dicom_dict['new_path']}
       if '_id' in dicom_dict:
         query['id'] = dicom_dict['_id'] # Use same elasticsearch document ID from input index in the new index
@@ -428,23 +431,7 @@ def generate_uid(dicom_dict, function_name, field_name):
     log.debug('Linking %s:%s-->%s' % (field_name, orig, uid))
 
   return uid
-  
-# def generate_date_uid(dicom_dict, function_name, field_name):
-#   orig = dicom_dict[field_name] if field_name in dicom_dict else ''
-#   es_id = dicom_dict['_id'] # ID for elasticsearch document
 
-#   # Look to find existing linking in ElasticSearch
-#   res = lookup_linking(orig)
-
-#   if len(res):
-#     uid = res[0]['_source']['new'] # use id found in elastic
-#   else:
-#     uid=datetime.date(randint(1000,9999), randint(1,12),randint(1,28))
-#     res = es.index(body={'orig': orig, 'new_date': uid, 'id':es_id, 'field': field_name, 'date': datetime.datetime.now(), 'dicom_filepath': dicom_dict['dicom_filepath']}, index=LINKING_INDEX_NAME, doc_type=LINKING_DOC_TYPE)
-
-#   log.info('[%s] Linking %s:%s-->%s' % (es_id, field_name, orig, uid))
-
-#   return uid
 
 if __name__ == '__main__':
   # Set up command line arguments
@@ -464,19 +451,22 @@ if __name__ == '__main__':
   input_range = args.input_range
   input_files = args.input_files
   deid_recipe = args.deid_recipe
-  recipe = DeidRecipe(deid_recipe) # de-id rules
 
+  recipe = DeidRecipe(deid_recipe) # de-id rules
+  es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
+
+  if save_to_elastic:
+    es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
+
+  # Get List of Dicoms from a file
   if input_files:
-    # # Get List of Dicoms
     fp = open(input_files) # Open file on read mode
     dicom_paths = fp.read().split("\n") # Create a list containing all lines
     fp.close() # Close file
     dicom_paths = list(filter(None, dicom_paths)) # remove empty lines
     doc_ids = None
-
-  # Get documents from ElasticSearch
-  es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
-  if input_dicom_filename:
+  # Lookup one input file from Elastic
+  elif input_dicom_filename:
     query = {
       "_source": ["_id", "dicom_filepath"],
       "query": {
@@ -485,6 +475,7 @@ if __name__ == '__main__':
         }
       }
     }
+  # Lookup many input files from Elastic
   elif input_range:
     input_start, input_end = [int(i) for i in input_range.split('-')]
     query = {
@@ -492,6 +483,7 @@ if __name__ == '__main__':
       "from": input_start,
       "size": input_end
     }
+  # Actually get documents from ElasticSearch
   if input_dicom_filename or input_range:
     results = es.search(body=query, index=INDEX_NAME, doc_type=DOC_TYPE)
     log.info("Number of Search Hits: %d" % len(results['hits']['hits']))
@@ -502,30 +494,24 @@ if __name__ == '__main__':
   # Prepare documents for de-identification
   dicom_dicts = get_identifiers(dicom_paths)
   for idx, path in enumerate(dicom_dicts):
-    # Remember, the action is: 
-    # REPLACE StudyInstanceUID func:generate_uid
-    # so the key needs to be generate_uid
     filename = os.path.basename(path)
     folder_prefix = os.path.basename(os.path.dirname(path))
     folderpath = os.path.join(output_folder, folder_prefix)
     filepath = os.path.join(folderpath, filename)
     dicom_dicts[path]['new_path'] = filepath
     dicom_dicts[path]['orig_path'] = path
-    dicom_dicts[path]['generate_uid'] = generate_uid
-    # dicom_dicts[path]['generate_date_uid'] = generate_date_uid
-    if save_to_elastic and input_range:
-      dicom_dicts[path]['_id'] = str(doc_ids[idx]) # Store elasticsearch document id
+    dicom_dicts[path]['generate_uid'] = generate_uid # Remember, the action found in deid.dicom is "REPLACE StudyInstanceUID func:generate_uid" so the key here needs to be "generate_uid"
+    if save_to_elastic and input_range: 
+      dicom_dicts[path]['_id'] = str(doc_ids[idx]) # Store elasticsearch document id so it has the same ID in a new index
 
   t0 = time.time()
 
-  # Loop over dicoms and De-Identify
+  # MAIN LOOP: Process each dicom
   for dicom_path, dicom_dict in dicom_dicts.items():
-    log.info('Processing DICOM path: %s' % path)
-    str_linking = []
-    date_linking = []
+    log.debug('Processing DICOM path: %s' % path)
     item = {dicom_path: dicom_dict}
 
-    # De-Identify Metadata
+    # De-Identify Metadata (and link it)
     log.info('De-identifying DICOM header...')
     cleaned_files = replace_identifiers(dicom_files=dicom_path,
                                         deid=recipe,
@@ -534,19 +520,10 @@ if __name__ == '__main__':
                                         remove_private=False)
                                         # overwrite=True,
                                         # output_folder=output_folder)
-    cleaned_dicom = cleaned_files[0] # we only pass in one at a time
+    
+    cleaned_header_dicom = cleaned_files[0] # we only pass in one at a time
 
-    # # Insert linkings into master linking list in ElasticSearch
-    # docs = (linking for linking in str_linking)
-    # res = helpers.bulk(es, docs, index=LINKING_INDEX_NAME, doc_type=LINKING_DOC_TYPE, chunk_size=1000, max_chunk_bytes=500000000, max_retries=1, raise_on_error=True, raise_on_exception=True) # 500 MB
-    # log.info("Inserted %s linkings into ElasticSearch" % res[0])
-
-    # import time
-    # time.sleep(.5)
-    # es.indices.refresh(index=LINKING_INDEX_NAME)
-
-
-    # Make output folder
+    # Create output folder
     filename = os.path.basename(dicom_path)
     folder_prefix = os.path.basename(os.path.dirname(dicom_path))
     folderpath = os.path.join(output_folder, folder_prefix)
@@ -554,8 +531,8 @@ if __name__ == '__main__':
     if not os.path.exists(folderpath):
         os.makedirs(folderpath)
 
-    # Process Dicom (Derive new fields and De-identify Pixels)
-    dicom = process_dicom(dicom_path, output_filepath) # note this opens the dicom again and thus contains PHI
+    # Process Dicom (Derive new fields, De-identify Pixels, etc)
+    cleaed_pixels_dicom = process_dicom(dicom_path, output_filepath) # note this opens the dicom again (in a way that can access pixels) and thus contains PHI
 
     # TODO: UNCOMMENT!
     # Store updated pixels in DICOM
@@ -564,14 +541,11 @@ if __name__ == '__main__':
     # cleaned_dicom.PixelData = dicom.PixelData
 
     # Store derived data in DICOM
-    cleaned_dicom.PatientAge = dicom.get('PatientAge')
+    cleaned_header_dicom.PatientAge = cleaed_pixels_dicom.get('PatientAge')
 
     # Save DICOM to disk
-    cleaned_dicom.save_as(output_filepath)
+    cleaned_header_dicom.save_as(output_filepath)
     log.info('Saved DICOM: %s' % output_filepath)
-
-  # from IPython import embed
-  # embed() # drop into an IPython session
 
   # Print Summary
   elapsed_time = time.time() - t0
