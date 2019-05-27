@@ -19,9 +19,8 @@ DICOM_BASE_PATH = '../reactive-search/'
 
 def update_dicoms(report, dicom_filepaths):
   """Add report info to metadata in dicom on disk"""
-  # todo: FIND UNUSED GROUP
-  # todo: FIND UNUSED KEY
-  # todo: SHOULD I MODIFY IN PLACE OR?
+  # TODO: check for unused group
+  # TODO: check for unused key
 
   # Loop over images. There may be multiple images related to the report
   for filepath in dicom_filepaths:

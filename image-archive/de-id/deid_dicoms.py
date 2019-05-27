@@ -540,6 +540,12 @@ if __name__ == '__main__':
     #   cleaned_dicom.decompress()
     # cleaned_dicom.PixelData = dicom.PixelData
 
+    ## Process Radiology Text Report
+    # if path to radiology report exists in dicom
+    #   check if file on disk does already exists for a de-identified version of the report, if it does not then...
+    #     access the de-identified report text in the dicom and save it to a file on disk
+
+
     # Store derived data in DICOM
     cleaned_header_dicom.PatientAge = cleaed_pixels_dicom.get('PatientAge')
 
