@@ -65,25 +65,26 @@ logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
                     # level=logging.WARN)
 log = logging.getLogger('main')
 
-ENVIRON = os.environ['ENVIRON']
+# Settings
 ELASTIC_IP = os.environ['ELASTIC_IP']
 ELASTIC_PORT = os.environ['ELASTIC_PORT']
-FALLBACK_ELASTIC_IP = os.environ['FALLBACK_ELASTIC_IP']
-FALLBACK_ELASTIC_PORT = os.environ['FALLBACK_ELASTIC_PORT']
 INDEX_NAME = os.environ['ELASTIC_INDEX']
 DOC_TYPE = os.environ['ELASTIC_DOC_TYPE']
 LINKING_INDEX_NAME = os.environ['LINKING_ELASTIC_INDEX']
 LINKING_DOC_TYPE = os.environ['LINKING_ELASTIC_DOC_TYPE']
-FILESERVER_TOKEN = os.getenv('FILESERVER_TOKEN','')
-FILESERVER_DICOM_PATH = os.environ['FILESERVER_DICOM_PATH']
-FILESERVER_THUMBNAIL_PATH = os.environ['FILESERVER_THUMBNAIL_PATH']
-
-save_to_elastic = True
-
 RESIZE_FACTOR = 4 # how much to blow up image to make OCR work better
 MATCH_CONF_THRESH = 50
 OUTPUT = 'gifs'
 OUTPUT = 'screen'
+log.info("Settings: %s=%s" % ('ELASTIC_IP', ELASTIC_IP))
+log.info("Settings: %s=%s" % ('ELASTIC_PORT', ELASTIC_PORT))
+log.info("Settings: %s=%s" % ('INDEX_NAME', INDEX_NAME))
+log.info("Settings: %s=%s" % ('DOC_TYPE', DOC_TYPE))
+log.info("Settings: %s=%s" % ('LINKING_INDEX_NAME', LINKING_INDEX_NAME))
+log.info("Settings: %s=%s" % ('LINKING_DOC_TYPE', LINKING_DOC_TYPE))
+log.info("Settings: %s=%s" % ('RESIZE_FACTOR', RESIZE_FACTOR))
+log.info("Settings: %s=%s" % ('MATCH_CONF_THRESH', MATCH_CONF_THRESH))
+log.info("Settings: %s=%s" % ('OUTPUT', OUTPUT))
 
 if OUTPUT == 'screen':
   matplotlib.use('TkAgg')
@@ -92,6 +93,8 @@ elif OUTPUT in ['gifs']:
 
 
 def add_derived_fields(dicom):
+  log.info('Adding derived fields.')
+
   # Calculate PatientAge
   PatientBirthDate = dicom.get('PatientBirthDate')
   AcquisitionDate = dicom.get('AcquisitionDate')
@@ -115,14 +118,15 @@ def add_derived_fields(dicom):
     age = AcquisitionDate - PatientBirthDate
     age = round(age.days / 365,2) # age in years with two decimal place precision
     dicom.PatientAge = str(age)
+    log.debug('Calculated PatientAge to be: %s' % age)
   except:
     log.warning('Couldn\'t calculate PatientAge')
-    log.warning('Problem image was: %s\n' % filepath)
+    log.warning('Problem image was: %s' % filepath)
 
   return dicom
 
 def get_pixels(input_filepath):
-  log.warning('Getting pixels for in DICOM: %s' % input_filepath)
+  log.info('Getting pixels for in DICOM: %s' % input_filepath)
   dicom = pydicom.dcmread(input_filepath, force=True)
 
   # Guess a transfer syntax if none is available
@@ -332,20 +336,12 @@ def clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath):
 
   return (dicom, removals)
 
-def process_dicom(input_filepath, output_filepath):
-  log.info('Processing file : %s' % input_filepath)
-
+def process_pixels(input_filepath, output_filepath):
   # Get Pixels
   img_bw, img_orig, dicom = get_pixels(input_filepath)
 
   if img_bw is None:
     return
-
-  # Add derived fields
-  dicom = add_derived_fields(dicom)
-
-  if no_pixels:
-    return dicom
 
   # Get PHI
   PHI = get_PHI(dicom)
@@ -451,9 +447,15 @@ if __name__ == '__main__':
   input_range = args.input_range
   input_files = args.input_files
   deid_recipe = args.deid_recipe
+  log.info("Settings: %s=%s" % ('output_folder', output_folder))
+  log.info("Settings: %s=%s" % ('save_to_elastic', save_to_elastic))
+  log.info("Settings: %s=%s" % ('no_pixels', no_pixels))
+  log.info("Settings: %s=%s" % ('input_dicom_filename', input_dicom_filename))
+  log.info("Settings: %s=%s" % ('input_range', input_range))
+  log.info("Settings: %s=%s" % ('input_files', input_files))
+  log.info("Settings: %s=%s" % ('deid_recipe', deid_recipe))
 
   recipe = DeidRecipe(deid_recipe) # de-id rules
-  es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
 
   if save_to_elastic:
     es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
@@ -491,8 +493,11 @@ if __name__ == '__main__':
     dicom_paths = [res['_source']['dicom_filepath'] for res in results]
     doc_ids = [res['_id'] for res in results]
 
+  log.info("Number of input files: %d" % len(dicom_paths))
+
   # Prepare documents for de-identification
   dicom_dicts = get_identifiers(dicom_paths)
+  # TODO: DON"T USE LOOP HERE
   for idx, path in enumerate(dicom_dicts):
     filename = os.path.basename(path)
     folder_prefix = os.path.basename(os.path.dirname(path))
@@ -529,25 +534,29 @@ if __name__ == '__main__':
     folderpath = os.path.join(output_folder, folder_prefix)
     output_filepath = os.path.join(folderpath, filename)
     if not os.path.exists(folderpath):
+        log.info('Creating output folder: %s' % folderpath)
         os.makedirs(folderpath)
 
-    # Process Dicom (Derive new fields, De-identify Pixels, etc)
-    cleaed_pixels_dicom = process_dicom(dicom_path, output_filepath) # note this opens the dicom again (in a way that can access pixels) and thus contains PHI
+    # Add derived fields
+    cleaned_header_dicom = add_derived_fields(cleaned_header_dicom)
 
-    # TODO: UNCOMMENT!
-    # Store updated pixels in DICOM
-    # if cleaned_dicom.file_meta.TransferSyntaxUID.is_compressed:
-    #   cleaned_dicom.decompress()
-    # cleaned_dicom.PixelData = dicom.PixelData
+    # Process pixels (de-id pixels and save debug gif)
+    if not no_pixels:
+      cleaed_pixels_dicom = process_pixels(dicom_path, output_filepath) # note this opens the dicom again (in a way that can access pixels) and thus contains PHI
 
     ## Process Radiology Text Report
     # if path to radiology report exists in dicom
     #   check if file on disk does already exists for a de-identified version of the report, if it does not then...
     #     access the de-identified report text in the dicom and save it to a file on disk
 
-
     # Store derived data in DICOM
     cleaned_header_dicom.PatientAge = cleaed_pixels_dicom.get('PatientAge')
+
+    # TODO: UNCOMMENT!
+    # Store updated pixels in DICOM
+    # if cleaned_header_dicom.file_meta.TransferSyntaxUID.is_compressed:
+    #   cleaned_header_dicom.decompress()
+    # cleaned_header_dicom.PixelData = dicom.PixelData
 
     # Save DICOM to disk
     cleaned_header_dicom.save_as(output_filepath)
