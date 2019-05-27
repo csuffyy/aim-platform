@@ -544,11 +544,19 @@ if __name__ == '__main__':
     if not no_pixels:
       cleaed_pixels_dicom = process_pixels(dicom_path, output_filepath) # note this opens the dicom again (in a way that can access pixels) and thus contains PHI
 
-      # TODO: UNCOMMENT!
-      # Store updated pixels in DICOM
-      # if cleaned_header_dicom.file_meta.TransferSyntaxUID.is_compressed:
-      #   cleaned_header_dicom.decompress()
-      # cleaned_header_dicom.PixelData = dicom.PixelData
+    ## Process Radiology Text Report
+    # if path to radiology report exists in dicom
+    #   check if file on disk does already exists for a de-identified version of the report, if it does not then...
+    #     access the de-identified report text in the dicom and save it to a file on disk
+
+    # Store derived data in DICOM
+    cleaned_header_dicom.PatientAge = cleaed_pixels_dicom.get('PatientAge')
+
+    # TODO: UNCOMMENT!
+    # Store updated pixels in DICOM
+    # if cleaned_header_dicom.file_meta.TransferSyntaxUID.is_compressed:
+    #   cleaned_header_dicom.decompress()
+    # cleaned_header_dicom.PixelData = dicom.PixelData
 
     # Save DICOM to disk
     cleaned_header_dicom.save_as(output_filepath)
