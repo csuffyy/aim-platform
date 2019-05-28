@@ -28,6 +28,7 @@ import pydicom
 import logging
 import datetime
 import argparse
+import datefinder
 import matplotlib
 import pytesseract
 import collections
@@ -40,6 +41,7 @@ from IPython import embed
 from random import randint
 from itertools import chain
 from fuzzywuzzy import fuzz
+from datetime import datetime
 from fuzzywuzzy import process
 from elasticsearch import helpers
 from deid.config import DeidRecipe
@@ -444,6 +446,31 @@ def get_report_as_dict(cleaned_pixels_dicom):
   return report_dict
 
 
+  """
+  @param known_dates: a list of strings of dates
+  @param text: the block of text that will be searched for dates
+  @return Returns if each date in known_dates is in text in the form or a list of booleans
+  """
+  def datematcher(known_dates, text):
+
+    returning = []
+    matches = datefinder.find_dates(text)
+    matches = list(matches)
+
+    for date in known_dates :
+
+      #convert each date in known_dates into a datetime object to be able to compare with the objects in matches
+      datetime_object = datefinder.find_dates(date)
+      datetime_object = list(datetime_object)
+
+      if datetime_object[0] in matches:
+        returning.append(True)
+      else:
+        returning.append(False)
+
+    return returning
+
+
 if __name__ == '__main__':
   # Set up command line arguments
   parser = argparse.ArgumentParser(description='Looks up documents in ElasticSearch, finds the DICOM files, processes them, and saves a copy.')
@@ -558,7 +585,6 @@ if __name__ == '__main__':
     # Process pixels (de-id pixels and save debug gif)
     if not no_pixels:
       cleaned_pixels_dicom = process_pixels(dicom_path, output_filepath) # note this opens the dicom again (in a way that can access pixels) and thus contains PHI
-      get_report_as_dict(cleaned_pixels_dicom) 
 
     ## Process Radiology Text Report
     #embed()
@@ -572,6 +598,10 @@ if __name__ == '__main__':
             report_raw.replace(item, UID)
       # set in dicom
       # save report to disk
+# 1. get report as dict
+# 2. pull out report that
+# 3. sacve raw report to disk
+
 
     # if path to radiology report exists in cleaned_header_dicom then...
     #   get the report text from cleaned_header_dicom, find strings given a list of PHI (get_PHI(dicom)) and replace with from UID from generate_uid(), and then save the de-id report to a file on disk
