@@ -137,6 +137,7 @@ if __name__ == '__main__':
   # Define config
   # To set the start and end of the range of DICOM files to look for matches in
   input_start, input_end = [int(i) for i in input_range.split('-')]
+  size = input_end - input_start + 1
   search_body = {
 
   }
@@ -154,7 +155,7 @@ if __name__ == '__main__':
     index=from_index_name,
     doc_type=from_index_name,
     from_=input_start, #the first report is at 0
-    size=input_end,
+    size=size,
     body=search_body
   )
 

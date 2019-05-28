@@ -28,6 +28,7 @@ import pydicom
 import logging
 import datetime
 import argparse
+import traceback
 import datefinder
 import matplotlib
 import pytesseract
@@ -77,8 +78,6 @@ LINKING_DOC_TYPE = os.environ['LINKING_ELASTIC_DOC_TYPE']
 RESIZE_FACTOR = 4 # how much to blow up image to make OCR work better
 MATCH_CONF_THRESHOLD = 50
 TOO_MUCH_TEXT_THRESHOLD = 0
-OUTPUT = 'gifs'
-OUTPUT = 'screen'
 log.info("Settings: %s=%s" % ('ELASTIC_IP', ELASTIC_IP))
 log.info("Settings: %s=%s" % ('ELASTIC_PORT', ELASTIC_PORT))
 log.info("Settings: %s=%s" % ('INDEX_NAME', INDEX_NAME))
@@ -88,12 +87,6 @@ log.info("Settings: %s=%s" % ('LINKING_DOC_TYPE', LINKING_DOC_TYPE))
 log.info("Settings: %s=%s" % ('RESIZE_FACTOR', RESIZE_FACTOR))
 log.info("Settings: %s=%s" % ('MATCH_CONF_THRESHOLD', MATCH_CONF_THRESHOLD))
 log.info("Settings: %s=%s" % ('TOO_MUCH_TEXT_THRESHOLD', TOO_MUCH_TEXT_THRESHOLD))
-log.info("Settings: %s=%s" % ('OUTPUT', OUTPUT))
-
-if OUTPUT == 'screen':
-  matplotlib.use('TkAgg')
-elif OUTPUT in ['gifs']:
-  matplotlib.use('Agg')
 
 
 def add_derived_fields(dicom):
@@ -149,6 +142,7 @@ def get_pixels(input_filepath):
     return
 
   # Image shape
+  log.info('Got pixels of shape: %s TransferSyntaxUID: %s' % (str(img.shape), dicom.file_meta.TransferSyntaxUID))
   if len(img.shape) not in [2,3]:
     # TODO: Support 3rd physical dimension, z-slices. Assuming dimenions x,y,[color] from here on.
     log.warning('Skipping image becasue shape is not 2d-grey or rgb: %s' % filename)
@@ -159,7 +153,7 @@ def get_pixels(input_filepath):
 
   # Crop the image to 100x100 just for fast algorithm testing
   if fast_crop:
-    img = img[0:100, 0:100]
+    img = img[0:100, 0:133]
 
   # Colorspace
   if 'PhotometricInterpretation' in dicom and 'YBR' in dicom.PhotometricInterpretation:
@@ -277,38 +271,38 @@ def clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath, is
   black = 'rgb(0, 0, 0)' # yellow input_color
   dicom_pixels = dicom.pixel_array
 
-  image_orig = Image.fromarray(img_orig)
-  image_color = Image.fromarray(img_orig)
+  img_dtype = str(img_orig.dtype)
 
-  # Handle limitation in Pillow where it doesn't support 16bit images
+  # Work-around for Pillow which doesn't support 16bit images
   # https://github.com/python-pillow/Pillow/issues/2970
-  if 'uint16' == str(img_orig.dtype):
+  if 'uint16' == img_dtype:
+    cv2.normalize(img_orig, img_orig, 0, 255, cv2.NORM_MINMAX)
+
+    img_orig = img_orig.astype('uint16')
+    image_orig = Image.fromarray(img_orig)
+    image_color = Image.fromarray(img_orig)
+    # embed()
+
     array_buffer = img_orig.tobytes()
     image_orig = Image.new("I", img_orig.T.shape)
     image_orig.frombytes(array_buffer, 'raw', "I;16")
-
     array_buffer = img_orig.tobytes()
     image_color = Image.new("I", img_orig.T.shape)
     image_color.frombytes(array_buffer, 'raw', "I;16")
-
-  if 'int16' == str(img_orig.dtype):
-    # TODO: Find a way to preserve 16 bit precision
-    # a = img_orig.astype('uint16')
-    # a = img_orig.astype('int32') + abs(img_orig.min())
-    # img_orig = a.astype('uint16')
+  elif 'int16' == img_dtype:
+    # Pillow fully doesn't support u16bit images! eek. TODO: Find a way to preserve 16 bit precision. I tried a bunch of stuff but couldn't preserve appearent constrast
     cv2.normalize(img_orig, img_orig, 0, 255, cv2.NORM_MINMAX)
     img_orig = img_orig.astype('uint16')
-
     array_buffer = img_orig.tobytes()
     image_orig = Image.new("I", img_orig.T.shape)
     image_orig.frombytes(array_buffer, 'raw', "I;16")
-
     array_buffer = img_orig.tobytes()
     image_color = Image.new("I", img_orig.T.shape)
     image_color.frombytes(array_buffer, 'raw', "I;16")
-
-    # image_orig = Image.fromarray(img_orig)
-    # image_color = Image.fromarray(img_orig)
+  else:
+    # Let Pillow Decide
+    image_orig = Image.fromarray(img_orig)
+    image_color = Image.fromarray(img_orig)
 
   draw_color = ImageDraw.Draw(image_color)
 
@@ -355,13 +349,14 @@ def clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath, is
       })
 
   # Debug info for amount of text
-  width = 180
+  width = img_orig.shape[1]
   height = 16
-  left = int(img_orig.shape[0]/2) - int(width/2)
-  top = img_orig.shape[1]-50
+  left = 0
+  top = img_orig.shape[0]-height
   xy = [left, top, left+width, top+height]
   choice_str = 'REJECT' if is_mostly_text else 'ACCEPT'
-  annotation = ' %s, %d text score' % (choice_str, amount_of_text_score)
+  filename = os.path.basename(input_filepath)
+  annotation = ' %s, %d text score, %s, %s' % (filename, amount_of_text_score, img_dtype, choice_str)
   font = ImageFont.truetype('Roboto-Regular.ttf', size=14)
   draw_color.rectangle(xy, fill=black, outline=yellow)
   draw_color.multiline_text((left, top), annotation, fill=yellow, font=font, align='left')
@@ -370,9 +365,11 @@ def clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath, is
     log.warning('No detected text closely matches the PHI: %s' % input_filepath)
 
   # Display
-  if OUTPUT == 'screen':
+  if display_on_screen:
+    matplotlib.use('TkAgg')
     image_color.show()
-  elif OUTPUT == 'gifs':
+  if save_gifs:
+    matplotlib.use('Agg')
     image_orig = image_orig.convert('RGB')
     image_color = image_color.convert('RGB')
     frames = [image_color, image_orig]
@@ -380,11 +377,18 @@ def clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath, is
     log.info('Saved GIF: %s.gif' % output_filepath)
 
   # Store updated pixels in DICOM
-  if dicom.file_meta.TransferSyntaxUID.is_compressed:
-    dicom.decompress()
+  dicom = decompress_dicom(dicom)
   dicom.PixelData = dicom_pixels.tobytes()
 
   return (dicom, removals)
+
+def decompress_dicom(dicom):
+  if dicom.file_meta.TransferSyntaxUID.is_compressed:
+    try:
+      dicom.decompress()
+    except:
+      log.warning('Failed to decompress dicom.')
+  return dicom
 
 def amount_of_text(detection):
   # TODO: Normalize by image resolution
@@ -546,6 +550,8 @@ if __name__ == '__main__':
   parser.add_argument('--input_dicom_filename', help='Process only this DICOM by name (looked up in ElasticSearch)')
   parser.add_argument('--ocr_fallback_enabled', action='store_true', help='Only try one pass of OCR to find PHI')
   parser.add_argument('--fast_crop', action='store_true', help='Crop the image to 100x100 just for fast algorithm testing')
+  parser.add_argument('--screen', action='store_true', help='Display output pixels on screen')
+  parser.add_argument('--gifs', action='store_true', help='Save output pixels to gifs')
   args = parser.parse_args()
   output_folder = args.output_folder
   save_to_elastic = not args.no_elastic
@@ -556,6 +562,8 @@ if __name__ == '__main__':
   input_range = args.input_range
   input_files = args.input_files
   deid_recipe = args.deid_recipe
+  display_on_screen = args.screen
+  save_gifs = args.gifs
   log.info("Settings: %s=%s" % ('output_folder', output_folder))
   log.info("Settings: %s=%s" % ('save_to_elastic', save_to_elastic))
   log.info("Settings: %s=%s" % ('no_pixels', no_pixels))
@@ -565,6 +573,8 @@ if __name__ == '__main__':
   log.info("Settings: %s=%s" % ('deid_recipe', deid_recipe))
   log.info("Settings: %s=%s" % ('ocr_fallback_enabled', ocr_fallback_enabled))
   log.info("Settings: %s=%s" % ('fast_crop', fast_crop))
+  log.info("Settings: %s=%s" % ('display_on_screen', display_on_screen))
+  log.info("Settings: %s=%s" % ('save_gifs', save_gifs))
 
   recipe = DeidRecipe(deid_recipe) # de-id rules
 
@@ -591,10 +601,11 @@ if __name__ == '__main__':
   # Lookup many input files from Elastic
   elif input_range:
     input_start, input_end = [int(i) for i in input_range.split('-')]
+    size = input_end - input_start + 1
     query = {
       "_source": ["_id", "dicom_filepath"],
       "from": input_start,
-      "size": input_end,
+      "size": size,
     }
   # Actually get documents from ElasticSearch
   if input_dicom_filename or input_range:
@@ -672,18 +683,28 @@ if __name__ == '__main__':
     # if path to radiology report exists in cleaned_header_dicom then...
     #   get the report text from cleaned_header_dicom, find strings given a list of PHI (get_PHI(dicom)) and replace with from UID from generate_uid(), and then save the de-id report to a file on disk
 
-    # Store derived data in DICOM
-    cleaned_header_dicom.PatientAge = cleaned_pixels_dicom.get('PatientAge')
+    # # Store derived data in DICOM
+    # TODO: DELETE - COMMENTED out because it's already in cleaned_pixels
+    # cleaned_header_dicom.PatientAge = cleaned_pixels_dicom.get('PatientAge')
 
-    # TODO: UNCOMMENT!
-    # Store updated pixels in DICOM
-    # if cleaned_header_dicom.file_meta.TransferSyntaxUID.is_compressed:
-    #   cleaned_header_dicom.decompress()
-    # cleaned_header_dicom.PixelData = dicom.PixelData
+    # # Store updated pixels in DICOM
+    # TODO: DELETE - COMMENTED out because it's already in cleaned_pixels
+    # cleaned_header_dicom = decompress_dicom(cleaned_header_dicom)
+    # cleaned_header_dicom.PixelData = cleaned_pixels_dicom.PixelData
+
+    # TODO: save de-ided PHI into "cleaned_pixels_dicom"
 
     # Save DICOM to disk
-    cleaned_header_dicom.save_as(output_filepath)
-    log.info('Saved DICOM: %s' % output_filepath)
+    try:
+      cleaned_pixels_dicom.save_as(output_filepath)
+      log.info('Saved DICOM: %s' % output_filepath)
+    except Exception as e:
+      print(traceback.format_exc())
+      log.error('Failed to save de-identified dicom to disk: %s\n' % filepath)
+      if 'Pixel Data with undefined length must start with an item tag' in str(e):
+        cleaned_pixels_dicom[(0x7fe0,0x0010)].is_undefined_length = False
+        cleaned_pixels_dicom.save_as(output_filepath)
+        log.error('Successfully recovered from error and saved de-identified dicom to disk: %s\n' % filepath)
 
   # Print Summary
   elapsed_time = time.time() - t0
