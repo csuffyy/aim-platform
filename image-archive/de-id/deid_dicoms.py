@@ -428,6 +428,21 @@ def generate_uid(dicom_dict, function_name, field_name):
 
   return uid
 
+def get_report_as_dict(cleaned_pixels_dicom):
+  report_dict = {}
+  hex_list = [0x0019, 0x0030]
+  report_part = cleaned_pixels_dicom.get(hex_list)
+  while(report_part is not None):
+    seperate_key_value = report_part.value.split(": ")
+    report_dict[seperate_key_value[0].strip('report ')] = ":".join(seperate_key_value[1:])
+
+    #icrements the hexidecimal values and replaces the hex string
+    hex_list[1] += 1
+    #gets the next values for the next possible key and value in the dictionary
+    report_part = cleaned_pixels_dicom.get(hex_list)
+
+  return report_dict
+
 
 if __name__ == '__main__':
   # Set up command line arguments
@@ -487,7 +502,7 @@ if __name__ == '__main__':
     }
   # Actually get documents from ElasticSearch
   if input_dicom_filename or input_range:
-    results = es.search(body=query, index=INDEX_NAME, doc_type=DOC_TYPE)
+    results = es.search(body=query, index=INDEX_NAME)
     log.info("Number of Search Hits: %d" % len(results['hits']['hits']))
     results = results['hits']['hits']
     dicom_paths = [res['_source']['dicom_filepath'] for res in results]
@@ -542,15 +557,27 @@ if __name__ == '__main__':
 
     # Process pixels (de-id pixels and save debug gif)
     if not no_pixels:
-      cleaed_pixels_dicom = process_pixels(dicom_path, output_filepath) # note this opens the dicom again (in a way that can access pixels) and thus contains PHI
+      cleaned_pixels_dicom = process_pixels(dicom_path, output_filepath) # note this opens the dicom again (in a way that can access pixels) and thus contains PHI
+      get_report_as_dict(cleaned_pixels_dicom) 
 
     ## Process Radiology Text Report
-    # if path to radiology report exists in dicom
-    #   check if file on disk does already exists for a de-identified version of the report, if it does not then...
-    #     access the de-identified report text in the dicom and save it to a file on disk
+    #embed()
+      report_raw = cleaned_pixels_dicom.get('0x0019, 0x0030')
+      if ( report_raw != None):
+        PHI = get_PHI(cleaned_pixels_dicom)
+        PHI.append('2035.02.15')
+        for item in PHI:
+          if item in report_raw:
+            UID = generate_uid()
+            report_raw.replace(item, UID)
+      # set in dicom
+      # save report to disk
+
+    # if path to radiology report exists in cleaned_header_dicom then...
+    #   get the report text from cleaned_header_dicom, find strings given a list of PHI (get_PHI(dicom)) and replace with from UID from generate_uid(), and then save the de-id report to a file on disk
 
     # Store derived data in DICOM
-    cleaned_header_dicom.PatientAge = cleaed_pixels_dicom.get('PatientAge')
+      cleaned_header_dicom.PatientAge = cleaned_pixels_dicom.get('PatientAge')
 
     # TODO: UNCOMMENT!
     # Store updated pixels in DICOM
