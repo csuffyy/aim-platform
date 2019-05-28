@@ -8,6 +8,7 @@ import sys
 import json
 import time
 import pydicom
+import argparse
 
 from elasticsearch import Elasticsearch
 from IPython import embed
@@ -79,8 +80,8 @@ def make_update_script_from_report(report):
     key = re.sub(r"[^\w\s]", '', key)
     key = re.sub(r"\s+", '', key)
 
-    # Prefix key with 'rr' which stands for radiology report
-    key = "rr" + key
+    # Prefix key with 'Report' which stands for radiology report
+    key = "Report" + key
 
     # Append the adding of a new new key value to update script
     update_script = update_script + "ctx._source.%s = '%s'; " % (key, value)
@@ -117,15 +118,27 @@ def process_hits(hits):
     # Add report info to metadata in dicom on disk
     update_dicoms(report, dicom_filepaths)
 
+    # Count number of images updated
+    global count
+    count = count + len(dicom_filepaths)
+
+
 if __name__ == '__main__':
   from_index_name = 'report'
   to_index_name = 'image'
 
+  # To get the range for the DICOM files to look for matches
+  parser = argparse.ArgumentParser(description='Associates reports with the DICOM files already in ElasticSearch')
+  parser.add_argument('--input_range', help='Positional document numbers in ElasticSearch (ex. 1-10). These documents will be processed.')
+  args = parser.parse_args()
+  input_range = args.input_range
+  #log.info("Settings: %s=%s" % ('input_range', input_range))
+
   # Define config
-  scroll_size = 5000
+  # To set the start and end of the range of DICOM files to look for matches in
+  input_start, input_end = [int(i) for i in input_range.split('-')]
   search_body = {
-    # All Fields
-    # "_source":[field] # Select only one field instead of all
+
   }
 
   # Init Elasticsearch instance
@@ -140,34 +153,17 @@ if __name__ == '__main__':
   data = es.search(
     index=from_index_name,
     doc_type=from_index_name,
-    scroll='2m',
-    size=scroll_size,
+    from_=input_start, #the first report is at 0
+    size=input_end,
     body=search_body
   )
 
-  # Get the scroll ID
-  sid = data['_scroll_id']
-  scroll_size = len(data['hits']['hits'])
+  t0 = time.time()
+  count = 0
 
-  # Before scroll, process current batch of hits
   process_hits(data['hits']['hits'])
 
-  t0 = time.time()
-  hit_count = data['hits']['total']
-
-  while scroll_size > 0:
-    data = es.scroll(scroll_id=sid, scroll='2m')
-
-    # Process current batch of hits
-    process_hits(data['hits']['hits'])
-
-    # Update the scroll ID
-    sid = data['_scroll_id']
-
-    # Get the number of results that returned in the last scroll
-    scroll_size = len(data['hits']['hits'])
-
   elapsed_time = time.time() - t0
-  dl_rate = hit_count / elapsed_time
-  print('\n{} documents updated in Elastic Search '.format(hit_count) + 'in {:.2f} seconds.'.format(elapsed_time), file=sys.stderr)
+  dl_rate = count / elapsed_time
+  print('\n{} images were updated in Elastic Search '.format(count) + 'in {:.2f} seconds.'.format(elapsed_time), file=sys.stderr)
   print('Update rate (documents/s): {:.2f}'.format(dl_rate), file=sys.stderr)
