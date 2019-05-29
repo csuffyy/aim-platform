@@ -41,7 +41,6 @@ from IPython import embed
 from random import randint
 from itertools import chain
 from fuzzywuzzy import fuzz
-from datetime import datetime
 from fuzzywuzzy import process
 from elasticsearch import helpers
 from deid.config import DeidRecipe
@@ -436,7 +435,7 @@ def get_report_as_dict(cleaned_pixels_dicom):
   report_part = cleaned_pixels_dicom.get(hex_list)
   while(report_part is not None):
     seperate_key_value = report_part.value.split(": ")
-    report_dict[seperate_key_value[0].strip('report ')] = ":".join(seperate_key_value[1:])
+    report_dict[seperate_key_value[0][7:].strip()] = ":".join(seperate_key_value[1:]) #7 means the end of the word report
 
     #icrements the hexidecimal values and replaces the hex string
     hex_list[1] += 1
@@ -446,29 +445,62 @@ def get_report_as_dict(cleaned_pixels_dicom):
   return report_dict
 
 
-  """
-  @param known_dates: a list of strings of dates
-  @param text: the block of text that will be searched for dates
-  @return Returns if each date in known_dates is in text in the form or a list of booleans
-  """
-  def datematcher(known_dates, text):
+"""
+@param known_dates: a list of strings of dates
+@param text: the block of text that will be searched for dates
+@return Returns if each date in known_dates is in text in the form or a list of booleans
+"""
+def datematcher(known_dates, text):
 
-    returning = []
-    matches = datefinder.find_dates(text)
-    matches = list(matches)
+  returning = []
 
-    for date in known_dates :
+  matches = datefinder.find_dates(text, source=True, index=True)
+  matches = list(matches)
 
-      #convert each date in known_dates into a datetime object to be able to compare with the objects in matches
-      datetime_object = datefinder.find_dates(date)
-      datetime_object = list(datetime_object)
+  # print("--------------MATCHES----MATCHES----------")
+  # print(len(matches))
+  # for match in matches:
+  #   print(type(match))
+  #   print(match)
+  # print("--------------MATCHES----MATCHES----------")
+  # print('\n\n\n\n')
 
-      if datetime_object[0] in matches:
-        returning.append(True)
-      else:
-        returning.append(False)
+  for date in known_dates:
+    # print('\n\n\n\n')
+    # print("--------------date w/o modification--------------")
+    # print(date)
+    # print("--------------date w/o modification--------------")
+    # print('\n\n\n\n')
+    #count = 0 #will count if any dates from the text match date
+    datetime_object = datefinder.find_dates(date) #gets the datetime object of date
+    datetime_object = list(datetime_object)
 
-    return returning
+    if datetime_object != []: #there was a date at that PHI position
+      for txt_day in matches:
+        if datetime_object[0] in txt_day: #if the date matches one of the text
+          returning.append(txt_day[1]) #append the line of text where the dates matched
+          #count += 1 #means that a match has been found
+      # if not count: #meaning no matches were found
+      #     returning.append('')
+
+  # print('\n\n\n\n')
+  # print("--------------returning list--------------")
+  # print(returning)
+  # print("--------------returning list--------------")
+  # print('\n\n\n\n')
+  return returning
+
+#############################################OLD CODE################################################
+  # for date in known_dates :
+  #   #convert each date in known_dates into a datetime object to be able to compare with the objects in matches
+  #   datetime_object = datefinder.find_dates(date)
+  #   datetime_object = list(datetime_object)
+
+  #   if datetime_object != [] and datetime_object[0] in matches:
+  #     returning.append(True)
+  #   else:
+  #     returning.append(False)
+#############################################OLD CODE################################################
 
 
 if __name__ == '__main__':
@@ -586,25 +618,91 @@ if __name__ == '__main__':
     if not no_pixels:
       cleaned_pixels_dicom = process_pixels(dicom_path, output_filepath) # note this opens the dicom again (in a way that can access pixels) and thus contains PHI
 
-    ## Process Radiology Text Report
-    #embed()
-      report_raw = cleaned_pixels_dicom.get('0x0019, 0x0030')
-      if ( report_raw != None):
+      ## Process Radiology Text Report
+      #embed()
+      report_raw = cleaned_pixels_dicom.get([0x0019, 0x0030])
+      if (report_raw != None): #check if the report exists
+
         PHI = get_PHI(cleaned_pixels_dicom)
-        PHI.append('2035.02.15')
-        for item in PHI:
-          if item in report_raw:
-            UID = generate_uid()
-            report_raw.replace(item, UID)
-      # set in dicom
-      # save report to disk
-# 1. get report as dict
-# 2. pull out report that
-# 3. sacve raw report to disk
+        PHI.append('2034.06.20')
+        PHI.append('2019.05.01')
+        PHI.append('2035/02/16')
+        PHI.append('PLAST')
+        PHI.append('PFIRST')
+
+        date_edit_possible = []
+
+        for element in PHI:
+          if element in report_raw.value: #if the element is written explcitly in the raw report, replace
+            element_dt_obj = datefinder.find_dates(element)
+            element_dt_obj = list(element_dt_obj)
+            if element_dt_obj == []: #is not a date
+              _dict = {'key': element, 'new_path': output_filepath, 'orig_path': dicom_path}
+            else: #is a date
+              _dict = {'key': element_dt_obj[0].strftime('%Y/%m/%d'), 'new_path': output_filepath, 'orig_path': dicom_path} 
+            
+            UID = generate_uid(_dict, 'nope', 'key')
+            report_raw.value = report_raw.value.replace(element, str(UID))
+            # print(report_raw.value)
+          else:
+              date_edit_possible.append(element)
+
+        if date_edit_possible != []: #there are some elements from PHI list that may just be styled incorrectly
+          # print('\n\n\n\n\n\n\n\n\n\n')
+          # print(date_edit_possible)
+          # print('\n\n\n\n\n\n\n\n\n\n')
+          indirect_dates = datematcher(date_edit_possible, report_raw.value)
+
+          for indirect_day in indirect_dates: #check where the date is and replace it 
+            split_day = re.split('[ :]', indirect_day)
+            print(split_day)
+            for split_piece in split_day:
+              split_dt_obj = datefinder.find_dates(split_piece, source= True)
+              print(split_dt_obj)
+              split_dt_obj = list(split_dt_obj)
+
+              if split_dt_obj != []: #if a date was found
+                print(split_dt_obj)
+                _dict = {'key': split_dt_obj[0][0].strftime('%Y/%m/%d'), 'new_path': output_filepath, 'orig_path': dicom_path}
+                UID = generate_uid(_dict, 'nope', 'key')
+                report_raw.value = report_raw.value.replace(split_dt_obj[0][1], str(UID))
+
+        print('\n\n\n\n\n\n\n\n\n\n')
+        print(report_raw.value)
+
+##############################################OLD CODE###############################################
+        # contained_dates = datematcher(PHI, report_raw.value)
+        # print("--------------REPORT_RAW----REPORT_RAW----------")
+        # print(report_raw.value)
+        # print("--------------REPORT_RAW----REPORT_RAW----------")
+        # for i in range(len(contained_dates)):
+        #   if contained_dates[i]:
+        #     _dict = {'key': PHI[i], 'new_path': output_filepath, 'orig_path': dicom_path}
+        #     UID = generate_uid(_dict, 'nope', 'key')
+        #     print("--------------PHI----PHI----------")
+        #     print(PHI[i])
+        #     print("--------------PHI----PHI----------")
+        #     print("--------------UID----UID----------")
+        #     print(UID)
+        #     print("--------------UID----UID----------")
+        #     report_raw.value = report_raw.value.replace(PHI[i], str(UID))
+        #     print('\n\n\n\n\n\n\n\n\n\n')
+        #     print(report_raw.value)
+##############################################OLD CODE###############################################
 
 
-    # if path to radiology report exists in cleaned_header_dicom then...
-    #   get the report text from cleaned_header_dicom, find strings given a list of PHI (get_PHI(dicom)) and replace with from UID from generate_uid(), and then save the de-id report to a file on disk
+        #THIS FOR SURE WORKS - saves the raw report to a file
+        report_dict = get_report_as_dict(cleaned_pixels_dicom)
+
+        file_to_save = report_dict['filepath']
+        filename = os.path.basename(file_to_save)
+        filename = 'deid' + filename
+        folder_prefix = os.path.basename(os.path.dirname(file_to_save))
+        output_filepath_dict = os.path.join(folderpath, filename)
+
+        file_to_write = open(output_filepath_dict, 'w')
+        file_to_write.write(str(report_dict['Raw']))
+        file_to_write.close()
 
     # Store derived data in DICOM
       cleaned_header_dicom.PatientAge = cleaned_pixels_dicom.get('PatientAge')

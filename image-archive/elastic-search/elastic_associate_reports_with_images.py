@@ -1,6 +1,8 @@
 # Usage:
-# source ./image-archive/environments/local/env.sh
-# python3 elastic_associate_reports_with_images.py
+  #qlogin #Specific to HPF
+  #source ./image-archive/environments/local/env.sh
+  #export ELASTIC_IP='192.168.100.61' #Specific to HPF
+  #python3 ./image-archive/elastic-search/elastic_associate_reports_with_images.py  --input_range 0-4
 
 import re
 import os
