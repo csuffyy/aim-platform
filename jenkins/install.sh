@@ -105,6 +105,13 @@ sudo apt-get install -y python3.7-dev libpython3.7-dev python3-pip tesseract-ocr
 # . bin/activate
 pip3.7 install numpy IPython scikit-image matplotlib pandas Pillow click pydicom deid pytesseract opencv-python python-Levenshtein fuzzywuzzy fuzzywuzzy[speedup] elasticsearch dateparser
 
+pip3.7 install --user Pillow==5.2.0
+apt-get install python-apt
+
+wget https://github.com/tesseract-ocr/tessdata/blob/master/eng.traineddata?raw=true
+sudo cp eng.traineddata?raw=true /usr/share/tesseract-ocr/4.00/tessdata/eng.traineddata
+
+
 # Install GDCM
 sudo apt-get install python-gdcm # for pydicom
 git clone --branch master https://github.com/HealthplusAI/python3-gdcm.git && cd python3-gdcm && dpkg -i build_1-1_amd64.deb && apt-get install -f

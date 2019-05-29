@@ -28,6 +28,8 @@ import pydicom
 import logging
 import datetime
 import argparse
+import traceback
+import datefinder
 import matplotlib
 import pytesseract
 import collections
@@ -73,9 +75,8 @@ DOC_TYPE = os.environ['ELASTIC_DOC_TYPE']
 LINKING_INDEX_NAME = os.environ['LINKING_ELASTIC_INDEX']
 LINKING_DOC_TYPE = os.environ['LINKING_ELASTIC_DOC_TYPE']
 RESIZE_FACTOR = 4 # how much to blow up image to make OCR work better
-MATCH_CONF_THRESH = 50
-OUTPUT = 'gifs'
-OUTPUT = 'screen'
+MATCH_CONF_THRESHOLD = 50
+TOO_MUCH_TEXT_THRESHOLD = 0
 log.info("Settings: %s=%s" % ('ELASTIC_IP', ELASTIC_IP))
 log.info("Settings: %s=%s" % ('ELASTIC_PORT', ELASTIC_PORT))
 log.info("Settings: %s=%s" % ('INDEX_NAME', INDEX_NAME))
@@ -83,13 +84,8 @@ log.info("Settings: %s=%s" % ('DOC_TYPE', DOC_TYPE))
 log.info("Settings: %s=%s" % ('LINKING_INDEX_NAME', LINKING_INDEX_NAME))
 log.info("Settings: %s=%s" % ('LINKING_DOC_TYPE', LINKING_DOC_TYPE))
 log.info("Settings: %s=%s" % ('RESIZE_FACTOR', RESIZE_FACTOR))
-log.info("Settings: %s=%s" % ('MATCH_CONF_THRESH', MATCH_CONF_THRESH))
-log.info("Settings: %s=%s" % ('OUTPUT', OUTPUT))
-
-if OUTPUT == 'screen':
-  matplotlib.use('TkAgg')
-elif OUTPUT in ['gifs']:
-  matplotlib.use('Agg')
+log.info("Settings: %s=%s" % ('MATCH_CONF_THRESHOLD', MATCH_CONF_THRESHOLD))
+log.info("Settings: %s=%s" % ('TOO_MUCH_TEXT_THRESHOLD', TOO_MUCH_TEXT_THRESHOLD))
 
 
 def add_derived_fields(dicom):
@@ -145,15 +141,18 @@ def get_pixels(input_filepath):
     return
 
   # Image shape
-  if img.shape == 0:
-    log.warning('Image size is 0: %s' % filename)
-    # copyfile(filepath, '%s_%s' % (output_path, filename))
-    return
+  log.info('Got pixels of shape: %s TransferSyntaxUID: %s' % (str(img.shape), dicom.file_meta.TransferSyntaxUID))
   if len(img.shape) not in [2,3]:
     # TODO: Support 3rd physical dimension, z-slices. Assuming dimenions x,y,[color] from here on.
-    log.warning('Image shape is not 2d-grey or rgb: %s' % filename)
-    # copyfile(filepath, '%s_%s' % (output_path, filename))
+    log.warning('Skipping image becasue shape is not 2d-grey or rgb: %s' % filename)
     return
+  if len(img.shape) == 3 and img.shape[2] != 3:
+    log.warning('Skipping image becasue shape is z-stack: %s' % filename)
+    return
+
+  # Crop the image to 100x100 just for fast algorithm testing
+  if fast_crop:
+    img = img[0:100, 0:133]
 
   # Colorspace
   if 'PhotometricInterpretation' in dicom and 'YBR' in dicom.PhotometricInterpretation:
@@ -224,6 +223,7 @@ def ocr(img, ocr_num=None):
   detection = pd.DataFrame.from_dict(detection) # convert to dataframe
   detection = detection[detection.text != ''] # remove empty strings
 
+  log.info('OCR Found %d blocks of text' % len(detection))
   if detection.empty:
     log.warning('No text found by OCR')
 
@@ -231,7 +231,7 @@ def ocr(img, ocr_num=None):
 
 def match(search_strings, detection, ocr_num=None):
   if detection.empty or search_strings is None or search_strings == []:
-    return
+    return detection
 
   match_confs = [] # confidence
   match_texts = [] # closest match
@@ -248,7 +248,7 @@ def match(search_strings, detection, ocr_num=None):
       match_text, match_conf = process.extractOne(text, search_strings, scorer=fuzz.ratio)
       match_texts.append(match_text)
       match_confs.append(match_conf)
-      if match_conf > MATCH_CONF_THRESH:
+      if match_conf > MATCH_CONF_THRESHOLD:
         match_bool.append(True)
       else:
         match_bool.append(False)
@@ -263,15 +263,46 @@ def match(search_strings, detection, ocr_num=None):
 
   return detection
 
-def clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath):
+def clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath, is_mostly_text, amount_of_text_score):
   """ Put black boxes in image to "clean" it """
   removals = []
   yellow = 'rgb(255, 255, 0)' # yellow color
   black = 'rgb(0, 0, 0)' # yellow input_color
   dicom_pixels = dicom.pixel_array
 
-  image_orig = Image.fromarray(img_orig)
-  image_color = Image.fromarray(img_orig)
+  img_dtype = str(img_orig.dtype)
+
+  # Work-around for Pillow which doesn't support 16bit images
+  # https://github.com/python-pillow/Pillow/issues/2970
+  if 'uint16' == img_dtype:
+    cv2.normalize(img_orig, img_orig, 0, 255, cv2.NORM_MINMAX)
+
+    img_orig = img_orig.astype('uint16')
+    image_orig = Image.fromarray(img_orig)
+    image_color = Image.fromarray(img_orig)
+    # embed()
+
+    array_buffer = img_orig.tobytes()
+    image_orig = Image.new("I", img_orig.T.shape)
+    image_orig.frombytes(array_buffer, 'raw', "I;16")
+    array_buffer = img_orig.tobytes()
+    image_color = Image.new("I", img_orig.T.shape)
+    image_color.frombytes(array_buffer, 'raw', "I;16")
+  elif 'int16' == img_dtype:
+    # Pillow fully doesn't support u16bit images! eek. TODO: Find a way to preserve 16 bit precision. I tried a bunch of stuff but couldn't preserve appearent constrast
+    cv2.normalize(img_orig, img_orig, 0, 255, cv2.NORM_MINMAX)
+    img_orig = img_orig.astype('uint16')
+    array_buffer = img_orig.tobytes()
+    image_orig = Image.new("I", img_orig.T.shape)
+    image_orig.frombytes(array_buffer, 'raw', "I;16")
+    array_buffer = img_orig.tobytes()
+    image_color = Image.new("I", img_orig.T.shape)
+    image_color.frombytes(array_buffer, 'raw', "I;16")
+  else:
+    # Let Pillow Decide
+    image_orig = Image.fromarray(img_orig)
+    image_color = Image.fromarray(img_orig)
+
   draw_color = ImageDraw.Draw(image_color)
 
   # Draw Annotations
@@ -316,13 +347,28 @@ def clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath):
         'match_text': match_text,
       })
 
+  # Debug info for amount of text
+  width = img_orig.shape[1]
+  height = 16
+  left = 0
+  top = img_orig.shape[0]-height
+  xy = [left, top, left+width, top+height]
+  choice_str = 'REJECT' if is_mostly_text else 'ACCEPT'
+  filename = os.path.basename(input_filepath)
+  annotation = ' %s, %d text score, %s, %s' % (filename, amount_of_text_score, img_dtype, choice_str)
+  font = ImageFont.truetype('Roboto-Regular.ttf', size=14)
+  draw_color.rectangle(xy, fill=black, outline=yellow)
+  draw_color.multiline_text((left, top), annotation, fill=yellow, font=font, align='left')
+
   if len(removals)==0:
     log.warning('No detected text closely matches the PHI: %s' % input_filepath)
 
   # Display
-  if OUTPUT == 'screen':
+  if display_on_screen:
+    matplotlib.use('TkAgg')
     image_color.show()
-  elif OUTPUT == 'gifs':
+  if save_gifs:
+    matplotlib.use('Agg')
     image_orig = image_orig.convert('RGB')
     image_color = image_color.convert('RGB')
     frames = [image_color, image_orig]
@@ -330,21 +376,44 @@ def clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath):
     log.info('Saved GIF: %s.gif' % output_filepath)
 
   # Store updated pixels in DICOM
-  if dicom.file_meta.TransferSyntaxUID.is_compressed:
-    dicom.decompress()
+  dicom = decompress_dicom(dicom)
   dicom.PixelData = dicom_pixels.tobytes()
 
   return (dicom, removals)
 
+def decompress_dicom(dicom):
+  if dicom.file_meta.TransferSyntaxUID.is_compressed:
+    try:
+      dicom.decompress()
+    except:
+      log.warning('Failed to decompress dicom.')
+  return dicom
+
+def amount_of_text(detection):
+  # TODO: Normalize by image resolution
+
+  # Score amount of text
+  score = 0
+  for index, row in detection.iterrows():
+    score += row.conf*len(row.text) # the amount of text is scored by multiply the number of characters by the confidence of the detected text block
+
+  # Check if amount of text is greater than threshold
+  is_mostly_text = False
+  if score > TOO_MUCH_TEXT_THRESHOLD:
+    is_mostly_text = True
+
+  return (is_mostly_text, score)
+
 def process_pixels(input_filepath, output_filepath):
   # Get Pixels
-  img_bw, img_orig, dicom = get_pixels(input_filepath)
-
-  if img_bw is None:
+  ret = get_pixels(input_filepath)
+  if ret is None:
     return
+  img_bw, img_orig, dicom = ret
 
   # Get PHI
   PHI = get_PHI(dicom)
+  PHI.append('Image')
 
   # Preprocess Pixels (Variety #1)
   log.info('Processing 1...')
@@ -355,31 +424,30 @@ def process_pixels(input_filepath, output_filepath):
 
   # Detect if image has so much text that it's probably a requisition and should be rejected or so little text that it should be accepted without PHI matching
 
+  # Score if this image has too much text
+  is_mostly_text, amount_of_text_score = amount_of_text(detection)
 
   # Match Detected Text to PHI
   log.info('Matching 1...')
   detection = match(PHI, detection, ocr_num=2)
 
-  # Preprocess Pixels (Variety #2)
-  log.info('Processing 2...')
-  img_enhanced = blur_sharpen_preprocess(img_bw)
+  if ocr_fallback_enabled:
+    # Preprocess Pixels (Variety #2)
+    log.info('Processing 2...')
+    img_enhanced = blur_sharpen_preprocess(img_bw)
 
-  # Detect Text with OCR
-  detection2 = ocr(img_enhanced, ocr_num=2)
+    # Detect Text with OCR
+    detection2 = ocr(img_enhanced, ocr_num=2)
 
-  # Match Detected Text to PHI
-  log.info('Matching 2...')
-  detection2 = match(PHI, detection2, ocr_num=2)
+    # Match Detected Text to PHI
+    log.info('Matching 2...')
+    detection2 = match(PHI, detection2, ocr_num=2)
 
-  if detection is None and detection2 is None:
-    log.warn('Cleaned 0 PHI areas in pixels.')
-    return dicom
-  
-  # Combine detection results of different preprocessing
-  detection = pd.concat([detection, detection2], ignore_index=True, sort=True)
+    # Combine detection results of different preprocessing
+    detection = pd.concat([detection, detection2], ignore_index=True, sort=True)
 
   # Clean Image Pixels
-  dicom, removals = clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath)
+  dicom, removals = clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath, is_mostly_text, amount_of_text_score)
   log.info('Cleaned %s PHI areas in pixels.' % len(removals))
 
   return dicom
@@ -428,25 +496,71 @@ def generate_uid(dicom_dict, function_name, field_name):
 
   return uid
 
+def get_report_as_dict(cleaned_pixels_dicom):
+  report_dict = {}
+  hex_list = [0x0019, 0x0030]
+  report_part = cleaned_pixels_dicom.get(hex_list)
+  while(report_part is not None):
+    seperate_key_value = report_part.value.split(": ")
+    report_dict[seperate_key_value[0][7:].strip()] = ":".join(seperate_key_value[1:]) #7 means the end of the word report
+
+    #icrements the hexidecimal values and replaces the hex string
+    hex_list[1] += 1
+    #gets the next values for the next possible key and value in the dictionary
+    report_part = cleaned_pixels_dicom.get(hex_list)
+
+  return report_dict
+
+
+"""
+@param known_dates: a list of strings of dates
+@param text: the block of text that will be searched for dates
+@return Returns if each date in known_dates is in text in the form or a list of booleans
+"""
+def datematcher(known_dates, text):
+
+  returning = []
+
+  matches = datefinder.find_dates(text, source=True, index=True)
+  matches = list(matches)
+
+  for date in known_dates:
+    datetime_object = datefinder.find_dates(date) #gets the datetime object of date
+    datetime_object = list(datetime_object)
+
+    if datetime_object != []: #there was a date at that PHI position
+      for txt_day in matches:
+        if datetime_object[0] in txt_day: #if the date matches one of the text
+          returning.append(txt_day[1]) #append the line of text where the dates matched
+
+  return returning
 
 if __name__ == '__main__':
   # Set up command line arguments
   parser = argparse.ArgumentParser(description='Looks up documents in ElasticSearch, finds the DICOM files, processes them, and saves a copy.')
   parser.add_argument('--input_range', help='Positional document numbers in ElasticSearch (ex. 1-10). These documents will be processed.')
-  parser.add_argument('--input_files', help='List of DICOM files which will be processed.')
+  parser.add_argument('--input_files', help='Pass in file that contains list of DICOM files which will be processed.')
   parser.add_argument('--no_elastic', action='store_true', help='Skip saving metadata to ElasticSearch.')
   parser.add_argument('--no_pixels', action='store_true', help='Skip de-identification of pixels.')
   parser.add_argument('--deid_recipe', default='deid.dicom', help='De-id rules.')
   parser.add_argument('--output_folder', help='Save processed DICOM files to this path.')
   parser.add_argument('--input_dicom_filename', help='Process only this DICOM by name (looked up in ElasticSearch)')
+  parser.add_argument('--ocr_fallback_enabled', action='store_true', help='Only try one pass of OCR to find PHI')
+  parser.add_argument('--fast_crop', action='store_true', help='Crop the image to 100x100 just for fast algorithm testing')
+  parser.add_argument('--screen', action='store_true', help='Display output pixels on screen')
+  parser.add_argument('--gifs', action='store_true', help='Save output pixels to gifs')
   args = parser.parse_args()
   output_folder = args.output_folder
   save_to_elastic = not args.no_elastic
+  ocr_fallback_enabled = args.ocr_fallback_enabled
+  fast_crop = args.fast_crop
   no_pixels = args.no_pixels
   input_dicom_filename = args.input_dicom_filename
   input_range = args.input_range
   input_files = args.input_files
   deid_recipe = args.deid_recipe
+  display_on_screen = args.screen
+  save_gifs = args.gifs
   log.info("Settings: %s=%s" % ('output_folder', output_folder))
   log.info("Settings: %s=%s" % ('save_to_elastic', save_to_elastic))
   log.info("Settings: %s=%s" % ('no_pixels', no_pixels))
@@ -454,6 +568,10 @@ if __name__ == '__main__':
   log.info("Settings: %s=%s" % ('input_range', input_range))
   log.info("Settings: %s=%s" % ('input_files', input_files))
   log.info("Settings: %s=%s" % ('deid_recipe', deid_recipe))
+  log.info("Settings: %s=%s" % ('ocr_fallback_enabled', ocr_fallback_enabled))
+  log.info("Settings: %s=%s" % ('fast_crop', fast_crop))
+  log.info("Settings: %s=%s" % ('display_on_screen', display_on_screen))
+  log.info("Settings: %s=%s" % ('save_gifs', save_gifs))
 
   recipe = DeidRecipe(deid_recipe) # de-id rules
 
@@ -480,47 +598,42 @@ if __name__ == '__main__':
   # Lookup many input files from Elastic
   elif input_range:
     input_start, input_end = [int(i) for i in input_range.split('-')]
+    size = input_end - input_start + 1
     query = {
       "_source": ["_id", "dicom_filepath"],
       "from": input_start,
-      "size": input_end
+      "size": size,
     }
   # Actually get documents from ElasticSearch
   if input_dicom_filename or input_range:
-    results = es.search(body=query, index=INDEX_NAME, doc_type=DOC_TYPE)
+    results = es.search(body=query, index=INDEX_NAME)
     log.info("Number of Search Hits: %d" % len(results['hits']['hits']))
     results = results['hits']['hits']
     dicom_paths = [res['_source']['dicom_filepath'] for res in results]
     doc_ids = [res['_id'] for res in results]
 
   log.info("Number of input files: %d" % len(dicom_paths))
-
-  # Prepare documents for de-identification
-  dicom_dicts = get_identifiers(dicom_paths)
-  # TODO: DON"T USE LOOP HERE
-  for idx, path in enumerate(dicom_dicts):
-    filename = os.path.basename(path)
-    folder_prefix = os.path.basename(os.path.dirname(path))
-    folderpath = os.path.join(output_folder, folder_prefix)
-    filepath = os.path.join(folderpath, filename)
-    dicom_dicts[path]['new_path'] = filepath
-    dicom_dicts[path]['orig_path'] = path
-    dicom_dicts[path]['generate_uid'] = generate_uid # Remember, the action found in deid.dicom is "REPLACE StudyInstanceUID func:generate_uid" so the key here needs to be "generate_uid"
-    if save_to_elastic and input_range: 
-      dicom_dicts[path]['_id'] = str(doc_ids[idx]) # Store elasticsearch document id so it has the same ID in a new index
-
   t0 = time.time()
 
   # MAIN LOOP: Process each dicom
-  for dicom_path, dicom_dict in dicom_dicts.items():
-    log.debug('Processing DICOM path: %s' % path)
-    item = {dicom_path: dicom_dict}
+  for idx, dicom_path in enumerate(dicom_paths):
+    log.info('Processing DICOM path: %s' % dicom_path)
 
     # De-Identify Metadata (and link it)
+    dicom_dict = get_identifiers([dicom_path])
+    filename = os.path.basename(dicom_path)
+    folder_prefix = os.path.basename(os.path.dirname(dicom_path))
+    folderpath = os.path.join(output_folder, folder_prefix)
+    filepath = os.path.join(folderpath, filename)
+    dicom_dict[dicom_path]['new_path'] = filepath
+    dicom_dict[dicom_path]['orig_path'] = dicom_path
+    dicom_dict[dicom_path]['generate_uid'] = generate_uid # Remember, the action found in deid.dicom is "REPLACE StudyInstanceUID func:generate_uid" so the key here needs to be "generate_uid"
+    if save_to_elastic and input_range: 
+      dicom_dict[dicom_path]['_id'] = str(doc_ids[idx]) # Store elasticsearch document id so it has the same ID in a new index
     log.info('De-identifying DICOM header...')
     cleaned_files = replace_identifiers(dicom_files=dicom_path,
                                         deid=recipe,
-                                        ids=item,
+                                        ids=dicom_dict,
                                         save=False,
                                         remove_private=False)
                                         # overwrite=True,
@@ -542,29 +655,98 @@ if __name__ == '__main__':
 
     # Process pixels (de-id pixels and save debug gif)
     if not no_pixels:
-      cleaed_pixels_dicom = process_pixels(dicom_path, output_filepath) # note this opens the dicom again (in a way that can access pixels) and thus contains PHI
+      cleaned_pixels_dicom = process_pixels(dicom_path, output_filepath) # note this opens the dicom again (in a way that can access pixels) and thus contains PHI
+      if cleaned_pixels_dicom is None:
+        log.warning('Couldnt read pixels so skipping: %s' % dicom_path)
+        continue
 
-    ## Process Radiology Text Report
-    # if path to radiology report exists in dicom
-    #   check if file on disk does already exists for a de-identified version of the report, if it does not then...
-    #     access the de-identified report text in the dicom and save it to a file on disk
+      ## Process Radiology Text Report
+      #embed()
+      report_raw = cleaned_pixels_dicom.get([0x0019, 0x0030])
+      if (report_raw != None): #check if the report exists
 
-    # Store derived data in DICOM
-    cleaned_header_dicom.PatientAge = cleaed_pixels_dicom.get('PatientAge')
+        PHI = get_PHI(cleaned_pixels_dicom)
+        PHI.append('2034.06.20')
+        PHI.append('2019.05.01')
+        PHI.append('2035/02/16')
+        PHI.append('11.02.35')
+        PHI.append('2035/02/15')
+        PHI.append('PLAST')
+        PHI.append('PFIRST')
 
-    # TODO: UNCOMMENT!
-    # Store updated pixels in DICOM
-    # if cleaned_header_dicom.file_meta.TransferSyntaxUID.is_compressed:
-    #   cleaned_header_dicom.decompress()
-    # cleaned_header_dicom.PixelData = dicom.PixelData
+        date_edit_possible = []
+
+        for element in PHI:
+          if element in report_raw.value: #if the element is written explcitly in the raw report, replace
+            element_dt_obj = datefinder.find_dates(element)
+            element_dt_obj = list(element_dt_obj)
+            if element_dt_obj == []: #is not a date
+              _dict = {'key': element, 'new_path': output_filepath, 'orig_path': dicom_path}
+            else: #is a date
+              _dict = {'key': element_dt_obj[0].strftime('%Y/%m/%d'), 'new_path': output_filepath, 'orig_path': dicom_path} 
+            
+            UID = generate_uid(_dict, 'nope', 'key')
+            report_raw.value = report_raw.value.replace(element, str(UID))
+          else:
+              date_edit_possible.append(element)
+
+        if date_edit_possible != []: #there are some elements from PHI list that may just be styled incorrectly
+          indirect_dates = datematcher(date_edit_possible, report_raw.value)
+
+          for indirect_day in indirect_dates: #check where the date is and replace it 
+            split_day = re.split('[ :]', indirect_day)
+            for split_piece in split_day:
+              split_dt_obj = datefinder.find_dates(split_piece, source= True)
+              split_dt_obj = list(split_dt_obj)
+
+              if split_dt_obj != []: #if a date was found
+                _dict = {'key': split_dt_obj[0][0].strftime('%Y/%m/%d'), 'new_path': output_filepath, 'orig_path': dicom_path}
+                UID = generate_uid(_dict, 'nope', 'key')
+                report_raw.value = report_raw.value.replace(split_dt_obj[0][1], str(UID))
+
+        print('\n\n\n\n\n\n\n\n\n\n')
+        print(report_raw.value)
+
+
+        #THIS FOR SURE WORKS - saves the raw report to a file
+        report_dict = get_report_as_dict(cleaned_pixels_dicom)
+
+        file_to_save = report_dict['filepath']
+        filename = os.path.basename(file_to_save)
+        filename = 'deid' + filename
+        folder_prefix = os.path.basename(os.path.dirname(file_to_save))
+        output_filepath_dict = os.path.join(folderpath, filename)
+
+        file_to_write = open(output_filepath_dict, 'w')
+        file_to_write.write(str(report_dict['Raw']))
+        file_to_write.close()
+
+    # # Store derived data in DICOM
+    # TODO: DELETE - COMMENTED out because it's already in cleaned_pixels
+    # cleaned_header_dicom.PatientAge = cleaned_pixels_dicom.get('PatientAge')
+
+    # # Store updated pixels in DICOM
+    # TODO: DELETE - COMMENTED out because it's already in cleaned_pixels
+    # cleaned_header_dicom = decompress_dicom(cleaned_header_dicom)
+    # cleaned_header_dicom.PixelData = cleaned_pixels_dicom.PixelData
+
+    # TODO: save de-ided PHI into "cleaned_pixels_dicom"
 
     # Save DICOM to disk
-    cleaned_header_dicom.save_as(output_filepath)
-    log.info('Saved DICOM: %s' % output_filepath)
+    try:
+      cleaned_pixels_dicom.save_as(output_filepath)
+      log.info('Saved DICOM: %s' % output_filepath)
+    except Exception as e:
+      print(traceback.format_exc())
+      log.error('Failed to save de-identified dicom to disk: %s\n' % filepath)
+      if 'Pixel Data with undefined length must start with an item tag' in str(e):
+        cleaned_pixels_dicom[(0x7fe0,0x0010)].is_undefined_length = False
+        cleaned_pixels_dicom.save_as(output_filepath)
+        log.error('Successfully recovered from error and saved de-identified dicom to disk: %s\n' % filepath)
 
   # Print Summary
   elapsed_time = time.time() - t0
-  ingest_rate = len(dicom_dicts) / elapsed_time
-  log.info('{} documents processed '.format(len(dicom_dicts)) + 'in {:.2f} seconds.'.format(elapsed_time))
+  ingest_rate = len(dicom_paths) / elapsed_time
+  log.info('{} documents processed '.format(len(dicom_paths)) + 'in {:.2f} seconds.'.format(elapsed_time))
   log.info('Processing rate (documents/s): {:.2f}'.format(ingest_rate))
   log.info('Finished.')
