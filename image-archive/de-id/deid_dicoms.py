@@ -524,21 +524,7 @@ def datematcher(known_dates, text):
   matches = datefinder.find_dates(text, source=True, index=True)
   matches = list(matches)
 
-  # print("--------------MATCHES----MATCHES----------")
-  # print(len(matches))
-  # for match in matches:
-  #   print(type(match))
-  #   print(match)
-  # print("--------------MATCHES----MATCHES----------")
-  # print('\n\n\n\n')
-
   for date in known_dates:
-    # print('\n\n\n\n')
-    # print("--------------date w/o modification--------------")
-    # print(date)
-    # print("--------------date w/o modification--------------")
-    # print('\n\n\n\n')
-    #count = 0 #will count if any dates from the text match date
     datetime_object = datefinder.find_dates(date) #gets the datetime object of date
     datetime_object = list(datetime_object)
 
@@ -546,29 +532,8 @@ def datematcher(known_dates, text):
       for txt_day in matches:
         if datetime_object[0] in txt_day: #if the date matches one of the text
           returning.append(txt_day[1]) #append the line of text where the dates matched
-          #count += 1 #means that a match has been found
-      # if not count: #meaning no matches were found
-      #     returning.append('')
 
-  # print('\n\n\n\n')
-  # print("--------------returning list--------------")
-  # print(returning)
-  # print("--------------returning list--------------")
-  # print('\n\n\n\n')
   return returning
-
-#############################################OLD CODE################################################
-  # for date in known_dates :
-  #   #convert each date in known_dates into a datetime object to be able to compare with the objects in matches
-  #   datetime_object = datefinder.find_dates(date)
-  #   datetime_object = list(datetime_object)
-
-  #   if datetime_object != [] and datetime_object[0] in matches:
-  #     returning.append(True)
-  #   else:
-  #     returning.append(False)
-#############################################OLD CODE################################################
-
 
 if __name__ == '__main__':
   # Set up command line arguments
@@ -704,6 +669,8 @@ if __name__ == '__main__':
         PHI.append('2034.06.20')
         PHI.append('2019.05.01')
         PHI.append('2035/02/16')
+        PHI.append('11.02.35')
+        PHI.append('2035/02/15')
         PHI.append('PLAST')
         PHI.append('PFIRST')
 
@@ -720,52 +687,25 @@ if __name__ == '__main__':
             
             UID = generate_uid(_dict, 'nope', 'key')
             report_raw.value = report_raw.value.replace(element, str(UID))
-            # print(report_raw.value)
           else:
               date_edit_possible.append(element)
 
         if date_edit_possible != []: #there are some elements from PHI list that may just be styled incorrectly
-          # print('\n\n\n\n\n\n\n\n\n\n')
-          # print(date_edit_possible)
-          # print('\n\n\n\n\n\n\n\n\n\n')
           indirect_dates = datematcher(date_edit_possible, report_raw.value)
 
           for indirect_day in indirect_dates: #check where the date is and replace it 
             split_day = re.split('[ :]', indirect_day)
-            print(split_day)
             for split_piece in split_day:
               split_dt_obj = datefinder.find_dates(split_piece, source= True)
-              print(split_dt_obj)
               split_dt_obj = list(split_dt_obj)
 
               if split_dt_obj != []: #if a date was found
-                print(split_dt_obj)
                 _dict = {'key': split_dt_obj[0][0].strftime('%Y/%m/%d'), 'new_path': output_filepath, 'orig_path': dicom_path}
                 UID = generate_uid(_dict, 'nope', 'key')
                 report_raw.value = report_raw.value.replace(split_dt_obj[0][1], str(UID))
 
         print('\n\n\n\n\n\n\n\n\n\n')
         print(report_raw.value)
-
-##############################################OLD CODE###############################################
-        # contained_dates = datematcher(PHI, report_raw.value)
-        # print("--------------REPORT_RAW----REPORT_RAW----------")
-        # print(report_raw.value)
-        # print("--------------REPORT_RAW----REPORT_RAW----------")
-        # for i in range(len(contained_dates)):
-        #   if contained_dates[i]:
-        #     _dict = {'key': PHI[i], 'new_path': output_filepath, 'orig_path': dicom_path}
-        #     UID = generate_uid(_dict, 'nope', 'key')
-        #     print("--------------PHI----PHI----------")
-        #     print(PHI[i])
-        #     print("--------------PHI----PHI----------")
-        #     print("--------------UID----UID----------")
-        #     print(UID)
-        #     print("--------------UID----UID----------")
-        #     report_raw.value = report_raw.value.replace(PHI[i], str(UID))
-        #     print('\n\n\n\n\n\n\n\n\n\n')
-        #     print(report_raw.value)
-##############################################OLD CODE###############################################
 
 
         #THIS FOR SURE WORKS - saves the raw report to a file
