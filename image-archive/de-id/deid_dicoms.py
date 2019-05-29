@@ -279,15 +279,15 @@ def clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath, is
 
     img_orig = img_orig.astype('uint16')
     image_orig = Image.fromarray(img_orig)
-    image_color = Image.fromarray(img_orig)
+    image_PHI = Image.fromarray(img_orig)
     # embed()
 
     array_buffer = img_orig.tobytes()
     image_orig = Image.new("I", img_orig.T.shape)
     image_orig.frombytes(array_buffer, 'raw', "I;16")
     array_buffer = img_orig.tobytes()
-    image_color = Image.new("I", img_orig.T.shape)
-    image_color.frombytes(array_buffer, 'raw', "I;16")
+    image_PHI = Image.new("I", img_orig.T.shape)
+    image_PHI.frombytes(array_buffer, 'raw', "I;16")
   elif 'int16' == img_dtype:
     # Pillow fully doesn't support u16bit images! eek. TODO: Find a way to preserve 16 bit precision. I tried a bunch of stuff but couldn't preserve appearent constrast
     cv2.normalize(img_orig, img_orig, 0, 255, cv2.NORM_MINMAX)
@@ -296,28 +296,33 @@ def clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath, is
     image_orig = Image.new("I", img_orig.T.shape)
     image_orig.frombytes(array_buffer, 'raw', "I;16")
     array_buffer = img_orig.tobytes()
-    image_color = Image.new("I", img_orig.T.shape)
-    image_color.frombytes(array_buffer, 'raw', "I;16")
+    image_PHI = Image.new("I", img_orig.T.shape)
+    image_PHI.frombytes(array_buffer, 'raw', "I;16")
   else:
     # Let Pillow Decide
     image_orig = Image.fromarray(img_orig)
-    image_color = Image.fromarray(img_orig)
+    image_PHI = Image.fromarray(img_orig)
 
-  draw_color = ImageDraw.Draw(image_color)
+  # For debugging purposes, image_PHI is the image with detected PHI overlaid annotations, draw_PHI is a helper object for annotating. It will be used in a gif
+  draw_PHI = ImageDraw.Draw(image_PHI)
+
+  # For debugging purposes, image_all_txt is the image with all detected text overlaid annotations, draw_all_txt is a helper object for annotating. It will be used in a gif
+  image_all_txt = image_PHI.copy()
+  draw_all_txt = ImageDraw.Draw(image_all_txt)
 
   # Draw Annotations
   for index, row in detection.iterrows():
-    if row.match_bool:
-      top = row.top
-      left = row.left
-      height = row.height
-      width = row.width
-      ocr_text = row.text
-      ocr_conf = row.conf
-      match_conf = row.match_conf
-      match_text = row.match_text
+    top = row.top
+    left = row.left
+    height = row.height
+    width = row.width
+    ocr_text = row.text
+    ocr_conf = row.conf
+    match_conf = row.match_conf
+    match_text = row.match_text
 
-      # Black out in actual dicom pixels
+    # Black out in actual dicom pixels
+    if row.match_bool:
       sml_left = int(left / RESIZE_FACTOR)
       sml_top = int(top / RESIZE_FACTOR)
       sml_width = int(width / RESIZE_FACTOR)
@@ -328,14 +333,18 @@ def clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath, is
       dicom_pixels[sml_top:sml_top+sml_height, sml_left] = np.max(dicom_pixels)
       dicom_pixels[sml_top:sml_top+sml_height, sml_left+sml_width] = np.max(dicom_pixels)
 
-      # Black out pixels with debug info overlayed in boxes (for debugging only)
-      annotation = 'ocr: %s, %d\nmatch: %s, %d' % (ocr_text, ocr_conf, match_text, match_conf)
-      xy = [left, top, left+width, top+height]
-      font = ImageFont.truetype('Roboto-Regular.ttf', size=int(height/2.5))
-      draw_color.rectangle(xy, fill=black, outline=yellow)
-      draw_color.multiline_text((left, top), annotation, fill=yellow, font=font)
+    # Black out pixels with debug info overlayed in boxes (for debugging only)
+    annotation = 'ocr: %s, %d\nmatch: %s, %d' % (ocr_text, ocr_conf, match_text, match_conf)
+    xy = [left, top, left+width, top+height]
+    font = ImageFont.truetype('Roboto-Regular.ttf', size=int(height/2.5))
+    draw_all_txt.rectangle(xy, fill=black, outline=yellow)
+    draw_all_txt.multiline_text((left, top), annotation, fill=yellow, font=font)
+    if row.match_bool:
+      draw_PHI.rectangle(xy, fill=black, outline=yellow)
+      draw_PHI.multiline_text((left, top), annotation, fill=yellow, font=font)
 
-      # Store removal details
+    # Store removal details
+    if row.match_bool:
       removals.append({
         'top': top,
         'left': left,
@@ -349,16 +358,23 @@ def clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath, is
 
   # Debug info for amount of text
   width = img_orig.shape[1]
-  height = 16
+  # height = 16
+  height = int(14*img_orig.shape[1]/120/RESIZE_FACTOR)+4
   left = 0
   top = img_orig.shape[0]-height
   xy = [left, top, left+width, top+height]
   choice_str = 'REJECT' if is_mostly_text else 'ACCEPT'
   filename = os.path.basename(input_filepath)
   annotation = ' %s, %d text score, %s, %s' % (filename, amount_of_text_score, img_dtype, choice_str)
-  font = ImageFont.truetype('Roboto-Regular.ttf', size=14)
-  draw_color.rectangle(xy, fill=black, outline=yellow)
-  draw_color.multiline_text((left, top), annotation, fill=yellow, font=font, align='left')
+  metadata_fontsize = int(14*img_orig.shape[1]/120/RESIZE_FACTOR)
+  print(metadata_fontsize)
+  print(metadata_fontsize)
+  print(metadata_fontsize)
+  font = ImageFont.truetype('Roboto-Regular.ttf', size=metadata_fontsize)
+  draw_PHI.rectangle(xy, fill=black, outline=yellow)
+  draw_PHI.multiline_text((left, top), ' PHI' + annotation, fill=yellow, font=font, align='left')
+  draw_all_txt.rectangle(xy, fill=black, outline=yellow)
+  draw_all_txt.multiline_text((left, top), ' ALL' + annotation, fill=yellow, font=font, align='left')
 
   if len(removals)==0:
     log.warning('No detected text closely matches the PHI: %s' % input_filepath)
@@ -366,13 +382,14 @@ def clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath, is
   # Display
   if display_on_screen:
     matplotlib.use('TkAgg')
-    image_color.show()
+    image_PHI.show()
   if save_gifs:
     matplotlib.use('Agg')
     image_orig = image_orig.convert('RGB')
-    image_color = image_color.convert('RGB')
-    frames = [image_color, image_orig]
-    frames[0].save('%s.gif' % output_filepath, format='GIF', append_images=frames[1:], save_all=True, duration=1000, loop=0)
+    image_PHI = image_PHI.convert('RGB')
+    image_all_txt = image_all_txt.convert('RGB')
+    frames = [image_all_txt, image_PHI, image_orig]
+    frames[0].save('%s.gif' % output_filepath, format='GIF', append_images=frames[1:], save_all=True, duration=2222, loop=0)
     log.info('Saved GIF: %s.gif' % output_filepath)
 
   # Store updated pixels in DICOM
@@ -540,6 +557,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Looks up documents in ElasticSearch, finds the DICOM files, processes them, and saves a copy.')
   parser.add_argument('--input_range', help='Positional document numbers in ElasticSearch (ex. 1-10). These documents will be processed.')
   parser.add_argument('--input_files', help='Pass in file that contains list of DICOM files which will be processed.')
+  parser.add_argument('--input_file', help='Pass in a single DICOM file by giving path on disk.')
   parser.add_argument('--no_elastic', action='store_true', help='Skip saving metadata to ElasticSearch.')
   parser.add_argument('--no_pixels', action='store_true', help='Skip de-identification of pixels.')
   parser.add_argument('--deid_recipe', default='deid.dicom', help='De-id rules.')
@@ -558,6 +576,7 @@ if __name__ == '__main__':
   input_dicom_filename = args.input_dicom_filename
   input_range = args.input_range
   input_files = args.input_files
+  input_file = args.input_file
   deid_recipe = args.deid_recipe
   display_on_screen = args.screen
   save_gifs = args.gifs
@@ -567,6 +586,7 @@ if __name__ == '__main__':
   log.info("Settings: %s=%s" % ('input_dicom_filename', input_dicom_filename))
   log.info("Settings: %s=%s" % ('input_range', input_range))
   log.info("Settings: %s=%s" % ('input_files', input_files))
+  log.info("Settings: %s=%s" % ('input_file', input_file))
   log.info("Settings: %s=%s" % ('deid_recipe', deid_recipe))
   log.info("Settings: %s=%s" % ('ocr_fallback_enabled', ocr_fallback_enabled))
   log.info("Settings: %s=%s" % ('fast_crop', fast_crop))
@@ -584,6 +604,10 @@ if __name__ == '__main__':
     dicom_paths = fp.read().split("\n") # Create a list containing all lines
     fp.close() # Close file
     dicom_paths = list(filter(None, dicom_paths)) # remove empty lines
+    doc_ids = None
+  # Lookup one input file from Elastic
+  elif input_file:
+    dicom_paths = [input_file]
     doc_ids = None
   # Lookup one input file from Elastic
   elif input_dicom_filename:
