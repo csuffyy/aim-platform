@@ -164,6 +164,8 @@ npm install --verbose --color false 2>&1
 patch --verbose --ignore-whitespace -p 10 -F 10 node_modules/@appbaseio/reactivesearch/lib/server/index.js < server-side-provide-headers-to-elastic.patch
 patch --verbose --ignore-whitespace -p 10 -F 10 node_modules/@appbaseio/reactivesearch/lib/components/result/ReactiveList.js < comma-seperated-numbers.patch
 patch --verbose --ignore-whitespace -p 10 -F 10 ~/dwv-jqmobile/node_modules/dwv/dist/dwv.js < 0001-increased-text-limit-to-65000.patch
+patch --verbose --ignore-whitespace -p 10 -F 10 ~/.local/lib/python3.7/site-packages/datefinder/constants.py < find-all-dates.patch
+patch --verbose --ignore-whitespace -p 10 -F 10 ~/.local/lib/python3.7/site-packages/datefinder/__init__.py < overflowerror-fix.patch
 npm run dev &
 cp -r image-archive/reactive-search/appbase-js/* image-archive/reactive-search/node_modules/appbase-js/
 
