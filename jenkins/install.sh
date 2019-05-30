@@ -97,7 +97,8 @@ tmuxinator -v
 
 # Install deid dependencies (python and etc.)
 sudo apt-get install -y python3-tk # for matplotlib
-sudo apt-get install -y python3.7-dev libpython3.7-dev python3-pip
+sudo apt-get install -y python3.7-dev libpython3.7-dev python3-pip tesseract-ocr libtesseract-dev tesseract-ocr-eng
+
 # sudo pip3 install virtualenv
 # virtualenv -p python3.7 venv
 # cd venv/
