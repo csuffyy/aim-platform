@@ -8,6 +8,8 @@
 # python3.7 deid_dicoms.py --input_range 1-10 --output_folder ./tmp/
 # OR
 # python3.7 deid_dicoms.py --input_files file_list.txt --output_folder ./tmp/
+# OR
+# python3.5 deid_dicoms.py --input_file /home/dan/823-whole-body-MR-with-PHI.dcm --output_folder ./tmp/ --fast_crop
 #
 # Note:
 # If you get error "OSError: cannot identify image file", try using python3 instead of python3.7
@@ -276,12 +278,9 @@ def clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath, is
   # https://github.com/python-pillow/Pillow/issues/2970
   if 'uint16' == img_dtype:
     cv2.normalize(img_orig, img_orig, 0, 255, cv2.NORM_MINMAX)
-
-    img_orig = img_orig.astype('uint16')
-    image_orig = Image.fromarray(img_orig)
-    image_PHI = Image.fromarray(img_orig)
-    # embed()
-
+    # img_orig = img_orig.astype('uint16')
+    # image_orig = Image.fromarray(img_orig)
+    # image_PHI = Image.fromarray(img_orig)
     array_buffer = img_orig.tobytes()
     image_orig = Image.new("I", img_orig.T.shape)
     image_orig.frombytes(array_buffer, 'raw', "I;16")
@@ -367,9 +366,6 @@ def clean_pixels(dicom, img_orig, detection, output_filepath, input_filepath, is
   filename = os.path.basename(input_filepath)
   annotation = ' %s, %d text score, %s, %s' % (filename, amount_of_text_score, img_dtype, choice_str)
   metadata_fontsize = int(14*img_orig.shape[1]/120/RESIZE_FACTOR)
-  print(metadata_fontsize)
-  print(metadata_fontsize)
-  print(metadata_fontsize)
   font = ImageFont.truetype('Roboto-Regular.ttf', size=metadata_fontsize)
   draw_PHI.rectangle(xy, fill=black, outline=yellow)
   draw_PHI.multiline_text((left, top), ' PHI' + annotation, fill=yellow, font=font, align='left')
@@ -492,24 +488,29 @@ def lookup_linking(orig):
 
 def generate_uid(dicom_dict, function_name, field_name):
   """ This function generates a uuid to put in place of PHI and trackes the linking between UUID and PHI by inserting into ElasticSearch """
-  orig = dicom_dict[field_name] if field_name in dicom_dict else ''
   uid = str(uuid.uuid4()) # otherwise generate new id
+  orig = dicom_dict[field_name] if field_name in dicom_dict else ''
+  if orig == '':
+    return ''
 
   # Look to find existing linking in ElasticSearch
   if save_to_elastic:
     res = lookup_linking(orig)
 
     if len(res):
-      # use id found in elastic
+      # Found existing in elastic, use id already generated
       uid = res[0]['_source']['new']
     else:
-      # otherwise insert a new linking
+      # otherwise insert a new linking for this unseen original value to a uid
       query = {'orig': orig, 'new': uid, 'field': field_name, 'date': datetime.datetime.now(), 'orig_path': dicom_dict['orig_path'], 'new_path': dicom_dict['new_path']}
       if '_id' in dicom_dict:
         query['id'] = dicom_dict['_id'] # Use same elasticsearch document ID from input index in the new index
       res = es.index(body=query, index=LINKING_INDEX_NAME, doc_type=LINKING_DOC_TYPE)
 
     log.debug('Linking %s:%s-->%s' % (field_name, orig, uid))
+
+  # Keep track of what PHI was found
+  found_PHI[field_name] = orig
 
   return uid
 
@@ -527,7 +528,6 @@ def get_report_as_dict(cleaned_pixels_dicom):
     report_part = cleaned_pixels_dicom.get(hex_list)
 
   return report_dict
-
 
 """
 @param known_dates: a list of strings of dates
@@ -643,7 +643,10 @@ if __name__ == '__main__':
   for idx, dicom_path in enumerate(dicom_paths):
     log.info('Processing DICOM path: %s' % dicom_path)
 
-    # De-Identify Metadata (and link it)
+    # Setup
+    found_PHI = {}
+
+    # Prepare to De-Identify Metadata
     dicom_dict = get_identifiers([dicom_path])
     filename = os.path.basename(dicom_path)
     folder_prefix = os.path.basename(os.path.dirname(dicom_path))
@@ -654,6 +657,7 @@ if __name__ == '__main__':
     dicom_dict[dicom_path]['generate_uid'] = generate_uid # Remember, the action found in deid.dicom is "REPLACE StudyInstanceUID func:generate_uid" so the key here needs to be "generate_uid"
     if save_to_elastic and input_range: 
       dicom_dict[dicom_path]['_id'] = str(doc_ids[idx]) # Store elasticsearch document id so it has the same ID in a new index
+    # De-Identify Metadata (and keep track of value replacements ie. linking)
     log.info('De-identifying DICOM header...')
     cleaned_files = replace_identifiers(dicom_files=dicom_path,
                                         deid=recipe,
@@ -677,6 +681,7 @@ if __name__ == '__main__':
     # Add derived fields
     cleaned_header_dicom = add_derived_fields(cleaned_header_dicom)
 
+
     # Process pixels (de-id pixels and save debug gif)
     if not no_pixels:
       cleaned_pixels_dicom = process_pixels(dicom_path, output_filepath) # note this opens the dicom again (in a way that can access pixels) and thus contains PHI
@@ -684,8 +689,38 @@ if __name__ == '__main__':
         log.warning('Couldnt read pixels so skipping: %s' % dicom_path)
         continue
 
+      # Save de-ided PHI into "cleaned_pixels_dicom" variable, this variable is the full dicom but cleaned_header_dicom is not
+      for key in found_PHI:
+        cleaned_pixels_dicom.data_element(key).value = cleaned_header_dicom.data_element(key).value
+
+      embed()
+      # Look for detected PHI in fields outside of expected fields
+      count = 0
+      for field in cleaned_pixels_dicom.iterall():
+        count += 1
+        # Skip pixel data
+        if field.name == 'Pixel Data':
+          continue
+        # Skip objects of this kind because they can't be made into strings, perhaps go deeper
+        if field.value.__class__ == pydicom.sequence.Sequence:
+          continue
+          # only replace PHI longer than 5 characters long
+        print("%s %s" % (field.value.__class__, field))
+        print(str(field.value))
+
+        field.value = '1'
+        cleaned_pixels_dicom.__setitem__(field.tag, field)
+
+
+import importlib
+importlib.reload(pydicom)
+
+        cleaned_pixels_dicom.data_element(key).value = str(field.value)
+        if 'Parallel Reduction Factor Second' in str(field.value):
+          break
+
+
       ## Process Radiology Text Report
-      #embed()
       report_raw = cleaned_pixels_dicom.get([0x0019, 0x0030])
       if (report_raw != None): #check if the report exists
 
@@ -745,16 +780,14 @@ if __name__ == '__main__':
         file_to_write.write(str(report_dict['Raw']))
         file_to_write.close()
 
-    # # Store derived data in DICOM
-    # TODO: DELETE - COMMENTED out because it's already in cleaned_pixels
-    # cleaned_header_dicom.PatientAge = cleaned_pixels_dicom.get('PatientAge')
-
-    # # Store updated pixels in DICOM
-    # TODO: DELETE - COMMENTED out because it's already in cleaned_pixels
-    # cleaned_header_dicom = decompress_dicom(cleaned_header_dicom)
-    # cleaned_header_dicom.PixelData = cleaned_pixels_dicom.PixelData
-
-    # TODO: save de-ided PHI into "cleaned_pixels_dicom"
+#    # # Store derived data in DICOM
+#    # TODO: DELETE - COMMENTED out because it's already in cleaned_pixels
+#    # cleaned_header_dicom.PatientAge = cleaned_pixels_dicom.get('PatientAge')
+#
+#    # # Store updated pixels in DICOM
+#    # TODO: DELETE - COMMENTED out because it's already in cleaned_pixels
+#    # cleaned_header_dicom = decompress_dicom(cleaned_header_dicom)
+#    # cleaned_header_dicom.PixelData = cleaned_pixels_dicom.PixelData
 
     # Save DICOM to disk
     try:
