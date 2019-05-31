@@ -7,9 +7,6 @@ def dicom_to_dict(dicom, log=None, environ=None):
   [dicom_metadata.__setitem__(key,str(dicom.get(key))) for key in dicom.dir() if key not in ['PixelData']]
 
   for key, value in dicom_metadata.items():
-    from IPython import embed
-    embed() # drop into an IPython session
-
     if hasattr(dicom_metadata[key], '_list'):
       # Fix for error: TypeError("Unable to serialize ['ORIGINAL', 'SECONDARY'] (type: <class 'pydicom.multival.MultiValue'>)")
       dicom_metadata[key] = dicom_metadata[key]._list

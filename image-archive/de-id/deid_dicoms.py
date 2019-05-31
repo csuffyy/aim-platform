@@ -712,9 +712,6 @@ if __name__ == '__main__':
         cleaned_pixels_dicom.__setitem__(field.tag, field)
 
 
-import importlib
-importlib.reload(pydicom)
-
         cleaned_pixels_dicom.data_element(key).value = str(field.value)
         if 'Parallel Reduction Factor Second' in str(field.value):
           break
