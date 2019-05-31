@@ -513,10 +513,10 @@ def generate_uid(dicom_dict, function_name, field_name):
 
   return uid
 
-def get_report_as_dict(cleaned_pixels_dicom):
+def get_report_as_dict(dicom):
   report_dict = {}
   hex_list = [0x0019, 0x0030]
-  report_part = cleaned_pixels_dicom.get(hex_list)
+  report_part = dicom.get(hex_list)
   while(report_part is not None):
     seperate_key_value = report_part.value.split(": ")
     report_dict[seperate_key_value[0][7:].strip()] = ":".join(seperate_key_value[1:]) #7 means the end of the word report
@@ -524,20 +524,19 @@ def get_report_as_dict(cleaned_pixels_dicom):
     #icrements the hexidecimal values and replaces the hex string
     hex_list[1] += 1
     #gets the next values for the next possible key and value in the dictionary
-    report_part = cleaned_pixels_dicom.get(hex_list)
+    report_part = dicom.get(hex_list)
 
   return report_dict
 
 """
 @param known_dates: a list of strings of dates
 @param text: the block of text that will be searched for dates
-@return Returns if each date in known_dates is in text in the form or a list of booleans
+@return Returns dates found strings in text that match dates in input known_dates
 """
 def datematcher(known_dates, text):
 
   returning = []
-
-  matches = datefinder.find_dates(text, source=True, index=True)
+  matches = datefinder.find_dates(text, source=True)
   matches = list(matches)
 
   for date in known_dates:
@@ -551,10 +550,10 @@ def datematcher(known_dates, text):
 
   return returning
 
-#
-def match_date_and_exact(cleaned_pixels_dicom, field_tag):
-  field_val = cleaned_pixels_dicom.get(field_tag)
-  #print(field_val.value)
+def match_date_and_exact(dicom, field_tag):
+
+  field_val = dicom.get(field_tag)
+
   if (field_val != None): #check if the field exists
     PHI = get_PHI()
     PHI.append('2034.06.20')
@@ -566,33 +565,27 @@ def match_date_and_exact(cleaned_pixels_dicom, field_tag):
     PHI.append('PFIRST')
 
     exact_match_list = []
-    indirect_match_list = []
+    possible_match_list = []
 
     for element in PHI:
       if element in field_val.value: #meaning that that element can be directly replaced
         exact_match_list.append(element)
       else: #the element cannot be direclty replaced
-        indirect_match_list.append(element)
+        possible_match_list.append(element)
 
-    if exact_match_list != []: #there are exact matches
-      field_val.value = match_exact(cleaned_pixels_dicom, field_tag, exact_match_list)
+    #there are exact matches
+    field_val.value = match_exact(dicom, field_tag, exact_match_list)
+    #there are PHI still left to check after exact matches
+    field_val.value = match_dates(dicom, field_tag, possible_match_list)
 
-
-    if indirect_match_list != []: #there are PHI still left to check after exact matches
-      field_val.value = match_indirect(cleaned_pixels_dicom, field_tag, indirect_match_list)
-
-    #save the edited dicom to the specified file
-    save_to_file(cleaned_pixels_dicom)
-
-
-def match_exact(cleaned_pixels_dicom, field_tag, match_list):
-  dicom_field = cleaned_pixels_dicom.get(field_tag)
+def match_exact(dicom, field_tag, match_list):
+  dicom_field = dicom.get(field_tag)
   field_val = dicom_field.value
 
   for element in match_list:
     element_dt_obj = datefinder.find_dates(element)
     element_dt_obj = list(element_dt_obj)
-    if element_dt_obj == []: #is not a date
+    if element_dt_obj == [] and len(element) >= 3: #is not a date
         _dict = {'key': element, 'new_path': output_filepath, 'orig_path': dicom_path}
     else: #is a date
         _dict = {'key': element_dt_obj[0].strftime('%Y/%m/%d'), 'new_path': output_filepath, 'orig_path': dicom_path}
@@ -603,14 +596,16 @@ def match_exact(cleaned_pixels_dicom, field_tag, match_list):
   return field_val
 
 #maches PHI dates that were not the exact same format as those found in the dicom
-def match_indirect(cleaned_pixels_dicom, field_tag, match_list):
-  dicom_field = cleaned_pixels_dicom.get(field_tag) 
+def match_dates(dicom, field_tag, match_list):
+  dicom_field = dicom.get(field_tag) 
   field_val = dicom_field.value
 
-  indirect_dates = datematcher(match_list, field_val)
+  found_date_strings = datematcher(match_list, field_val)
+  found_date_strings = list(found_date_strings)
 
-  for indirect_day in indirect_dates: #check where the date is and replace it 
-    split_day = re.split('[ :]', indirect_day)
+  for found_date in found_date_strings: #check where the date is and replace it 
+  # Split found date string into parts because sometimes we over detect and include words like "on" so we'll next loop over the parts looking for the just the date
+    split_day = re.split('[ :]', found_date)
     for split_piece in split_day:
       split_dt_obj = datefinder.find_dates(split_piece, source= True)
       split_dt_obj = list(split_dt_obj)
@@ -622,9 +617,9 @@ def match_indirect(cleaned_pixels_dicom, field_tag, match_list):
 
   return field_val
 
-def save_to_file(cleaned_pixels_dicom): #save the edited dicom to the specified file given in the dicom
+def save_report_to_file(dicom): #save the edited file to the specified file given in the dicom
 
-  report_dict = get_report_as_dict(cleaned_pixels_dicom) 
+  report_dict = get_report_as_dict(dicom) 
 
   file_to_save = report_dict['filepath']
   filename = os.path.basename(file_to_save)
@@ -643,7 +638,6 @@ if __name__ == '__main__':
   parser.add_argument('--input_files', help='Pass in file that contains list of DICOM files which will be processed.')
   parser.add_argument('--input_file', help='Pass in a single DICOM file by giving path on disk.')
   parser.add_argument('--no_elastic', action='store_true', help='Skip saving metadata to ElasticSearch.')
-  parser.add_argument('--no_pixels', action='store_true', help='Skip de-identification of pixels.')
   parser.add_argument('--deid_recipe', default='deid.dicom', help='De-id rules.')
   parser.add_argument('--output_folder', help='Save processed DICOM files to this path.')
   parser.add_argument('--input_dicom_filename', help='Process only this DICOM by name (looked up in ElasticSearch)')
@@ -656,7 +650,6 @@ if __name__ == '__main__':
   save_to_elastic = not args.no_elastic
   ocr_fallback_enabled = args.ocr_fallback_enabled
   fast_crop = args.fast_crop
-  no_pixels = args.no_pixels
   input_dicom_filename = args.input_dicom_filename
   input_range = args.input_range
   input_files = args.input_files
@@ -666,7 +659,6 @@ if __name__ == '__main__':
   save_gifs = args.gifs
   log.info("Settings: %s=%s" % ('output_folder', output_folder))
   log.info("Settings: %s=%s" % ('save_to_elastic', save_to_elastic))
-  log.info("Settings: %s=%s" % ('no_pixels', no_pixels))
   log.info("Settings: %s=%s" % ('input_dicom_filename', input_dicom_filename))
   log.info("Settings: %s=%s" % ('input_range', input_range))
   log.info("Settings: %s=%s" % ('input_files', input_files))
@@ -767,125 +759,66 @@ if __name__ == '__main__':
 
 
     # Process pixels (de-id pixels and save debug gif)
-    if not no_pixels:
-      cleaned_pixels_dicom = process_pixels(dicom_path, output_filepath) # note this opens the dicom again (in a way that can access pixels) and thus contains PHI
-      if cleaned_pixels_dicom is None:
-        log.warning('Couldnt read pixels so skipping: %s' % dicom_path)
+    dicom = process_pixels(dicom_path, output_filepath) # note this opens the dicom again (in a way that can access pixels) and thus contains PHI
+    if dicom is None:
+      log.warning('Couldnt read pixels so skipping: %s' % dicom_path)
+      continue
+
+    # Save de-ided PHI into "dicom" variable, this variable is the full dicom but cleaned_header_dicom is not
+    for key in found_PHI.keys():
+      dicom.data_element(key).value = cleaned_header_dicom.data_element(key).value
+
+    # Look for detected PHI in fields outside of expected fields
+    for field in dicom.iterall():
+      # Skip pixel data
+      if field.name == 'Pixel Data':
         continue
 
-      # Save de-ided PHI into "cleaned_pixels_dicom" variable, this variable is the full dicom but cleaned_header_dicom is not
-      for key in found_PHI.keys():
-        cleaned_pixels_dicom.data_element(key).value = cleaned_header_dicom.data_element(key).value
+      if field.value.__class__ == pydicom.valuerep.PersonName3:
+        continue
+      # Skip objects of this kind because they can't be made into strings, perhaps go deeper
+      if field.value.__class__ == pydicom.sequence.Sequence:
+        continue
 
-      # Look for detected PHI in fields outside of expected fields
-      for field in cleaned_pixels_dicom.iterall():
-        # Skip pixel data
-        if field.name == 'Pixel Data':
-          continue
-        # Skip objects of this kind because they can't be made into strings, perhaps go deeper
-        if field.value.__class__ == pydicom.sequence.Sequence:
-          continue
+      if field.value.__class__ == pydicom.multival.MultiValue:
+        continue
 
-          # field.tag
+      if field.value.__class__ == pydicom.valuerep.DSfloat:
+        continue
 
-        #cleaned_pixels_dicom = replace_PHI(cleaned_pixels_dicom, field, get_PHI())
-        #   OLD_VALUE = str(field.value)
-        #   # replace PHI with uid
-        #   field.value = NEW_VALUE
-        #   cleaned_pixels_dicom.__setitem__(field.tag, field)
-        # Note: Make sure case doesn't matter when doing matching (force upper case. note that get_PHI() returns only upper case)
-        # Note: Only match when number of characters is >=5. Reason being we dont to make lots of deteles if a common word like "the" slips into the PHI but on the other hand what about short names? The OCR matching currently requires 2 charaters or more
+      if field.value.__class__ == pydicom.valuerep.IS:
+        continue
+
+      if field.value.__class__ == int:
+        continue
+
+      match_date_and_exact(dicom, field.tag)
+      #save the edited dicom to the specified file
+      save_report_to_file(dicom)
+
+
         # TODO(Dan): see how match() OCR can utilize find_and_replace_PHI()
         # TODO(Dan):  match() OCR should try matching to substrings of longer blocks of text, split on seperators, which? just space or .-/\+_ ? 
 
-      print(field.tag)
-      match_date_and_exact(cleaned_pixels_dicom, [0x0019, 0x0030])
-
-
-#---------------------------------OLD CODE-------------------------------------------------
-
-      # ## Process Radiology Text Report
-      # report_raw = cleaned_pixels_dicom.get([0x0019, 0x0030])
-      # if (report_raw != None): #check if the report exists
-
-      #   PHI = get_PHI()
-      #   PHI.append('2034.06.20')
-      #   PHI.append('2019.05.01')
-      #   PHI.append('2035/02/16')
-      #   PHI.append('11.02.35')
-      #   PHI.append('2035/02/15')
-      #   PHI.append('PLAST')
-      #   PHI.append('PFIRST')
-
-      #   date_edit_possible = []
-
-      #   for element in PHI:
-      #     if element in report_raw.value: #if the element is written explcitly in the raw report, replace
-      #       element_dt_obj = datefinder.find_dates(element)
-      #       element_dt_obj = list(element_dt_obj)
-      #       if element_dt_obj == []: #is not a date
-      #         _dict = {'key': element, 'new_path': output_filepath, 'orig_path': dicom_path}
-      #       else: #is a date
-      #         _dict = {'key': element_dt_obj[0].strftime('%Y/%m/%d'), 'new_path': output_filepath, 'orig_path': dicom_path} 
-            
-      #       UID = generate_uid(_dict, 'nope', 'key')
-      #       report_raw.value = report_raw.value.replace(element, str(UID))
-      #     else:
-      #         date_edit_possible.append(element)
-
-      #   if date_edit_possible != []: #there are some elements from PHI list that may just be styled incorrectly
-      #     indirect_dates = datematcher(date_edit_possible, report_raw.value)
-
-      #     for indirect_day in indirect_dates: #check where the date is and replace it 
-      #       split_day = re.split('[ :]', indirect_day)
-      #       for split_piece in split_day:
-      #         split_dt_obj = datefinder.find_dates(split_piece, source= True)
-      #         split_dt_obj = list(split_dt_obj)
-
-      #         if split_dt_obj != []: #if a date was found
-      #           _dict = {'key': split_dt_obj[0][0].strftime('%Y/%m/%d'), 'new_path': output_filepath, 'orig_path': dicom_path}
-      #           UID = generate_uid(_dict, 'nope', 'key')
-      #           report_raw.value = report_raw.value.replace(split_dt_obj[0][1], str(UID))
-
-      #   print('\n\n\n\n\n\n\n\n\n\n')
-      #   print(report_raw.value)
-
-
-      #   #THIS FOR SURE WORKS - saves the raw report to a file
-      #   report_dict = get_report_as_dict(cleaned_pixels_dicom)
-
-      #   file_to_save = report_dict['filepath']
-      #   filename = os.path.basename(file_to_save)
-      #   filename = 'deid' + filename
-      #   folder_prefix = os.path.basename(os.path.dirname(file_to_save))
-      #   output_filepath_dict = os.path.join(folderpath, filename)
-
-      #   file_to_write = open(output_filepath_dict, 'w')
-      #   file_to_write.write(str(report_dict['Raw']))
-      #   file_to_write.close()
-
-
-#---------------------------------OLD CODE-------------------------------------------------
-
 #    # # Store derived data in DICOM
 #    # TODO: DELETE - COMMENTED out because it's already in cleaned_pixels
-#    # cleaned_header_dicom.PatientAge = cleaned_pixels_dicom.get('PatientAge')
+#    # cleaned_header_dicom.PatientAge = dicom.get('PatientAge')
 #
 #    # # Store updated pixels in DICOM
 #    # TODO: DELETE - COMMENTED out because it's already in cleaned_pixels
 #    # cleaned_header_dicom = decompress_dicom(cleaned_header_dicom)
-#    # cleaned_header_dicom.PixelData = cleaned_pixels_dicom.PixelData
+#    # cleaned_header_dicom.PixelData = dicom.PixelData
 
     # Save DICOM to disk
     try:
-      cleaned_pixels_dicom.save_as(output_filepath)
+      dicom.save_as(output_filepath)
       log.info('Saved DICOM: %s' % output_filepath)
     except Exception as e:
       print(traceback.format_exc())
       log.error('Failed to save de-identified dicom to disk: %s\n' % filepath)
       if 'Pixel Data with undefined length must start with an item tag' in str(e):
-        cleaned_pixels_dicom[(0x7fe0,0x0010)].is_undefined_length = False
-        cleaned_pixels_dicom.save_as(output_filepath)
+        dicom[(0x7fe0,0x0010)].is_undefined_length = False
+        dicom.save_as(output_filepath)
         log.error('Successfully recovered from error and saved de-identified dicom to disk: %s\n' % filepath)
 
   # Print Summary
