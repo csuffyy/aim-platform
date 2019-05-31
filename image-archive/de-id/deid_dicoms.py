@@ -203,18 +203,21 @@ def blur_sharpen_preprocess(img):
   img = np.array(image)
   return img
 
-def get_PHI(dicom):
-  PHI = []
-  # Build list of PHI to look for: MNR, FirstName, LastName
-  PatientName = dicom.get('PatientName')
-  PatientID = dicom.get('PatientID')
-  if PatientName:
-    name_parts = re.split('\^| ',str(dicom.PatientName)) # PatientName is typically: FirstName^LastName
-    PHI = [PHI, name_parts]
-  if PatientID:
-    PHI = [PHI, PatientID]
-  PHI = list(flatten(PHI))
-  PHI = [x.upper() for x in PHI if x is not None] # ensure upper case
+def get_PHI():
+  """ Note: there may be more PHI values than keys because we split name into several values and look for each seperately """
+  PHI = list(found_PHI.values())
+
+  # Split PatientName into parts, each part is PHI
+  if 'PatientName' in found_PHI:
+    name_parts = re.split('\^| ',str(found_PHI['PatientName'])) # PatientName is typically: FirstName^LastName
+    PHI.extend(name_parts)
+
+  # Ensure upper case
+  PHI = [x.upper() for x in PHI if x is not None] 
+
+  if len(PHI) == 0:
+    log.warning('Returning no PHI.')
+
   return PHI
 
 def ocr(img, ocr_num=None):
@@ -424,10 +427,6 @@ def process_pixels(input_filepath, output_filepath):
     return
   img_bw, img_orig, dicom = ret
 
-  # Get PHI
-  PHI = get_PHI(dicom)
-  PHI.append('Image')
-
   # Preprocess Pixels (Variety #1)
   log.info('Processing 1...')
   img_enhanced = tophat_proprocess(img_bw)
@@ -442,7 +441,7 @@ def process_pixels(input_filepath, output_filepath):
 
   # Match Detected Text to PHI
   log.info('Matching 1...')
-  detection = match(PHI, detection, ocr_num=2)
+  detection = match(get_PHI(), detection, ocr_num=2)
 
   if ocr_fallback_enabled:
     # Preprocess Pixels (Variety #2)
@@ -454,7 +453,7 @@ def process_pixels(input_filepath, output_filepath):
 
     # Match Detected Text to PHI
     log.info('Matching 2...')
-    detection2 = match(PHI, detection2, ocr_num=2)
+    detection2 = match(get_PHI(), detection2, ocr_num=2)
 
     # Combine detection results of different preprocessing
     detection = pd.concat([detection, detection2], ignore_index=True, sort=True)
@@ -657,7 +656,7 @@ if __name__ == '__main__':
     dicom_dict[dicom_path]['generate_uid'] = generate_uid # Remember, the action found in deid.dicom is "REPLACE StudyInstanceUID func:generate_uid" so the key here needs to be "generate_uid"
     if save_to_elastic and input_range: 
       dicom_dict[dicom_path]['_id'] = str(doc_ids[idx]) # Store elasticsearch document id so it has the same ID in a new index
-    # De-Identify Metadata (and keep track of value replacements ie. linking)
+    # De-Identify Metadata (and keep track of value replacements ie. linking) (and this will populate the found_PHI global variable)
     log.info('De-identifying DICOM header...')
     cleaned_files = replace_identifiers(dicom_files=dicom_path,
                                         deid=recipe,
@@ -690,38 +689,32 @@ if __name__ == '__main__':
         continue
 
       # Save de-ided PHI into "cleaned_pixels_dicom" variable, this variable is the full dicom but cleaned_header_dicom is not
-      for key in found_PHI:
+      for key in found_PHI.keys():
         cleaned_pixels_dicom.data_element(key).value = cleaned_header_dicom.data_element(key).value
 
-      embed()
       # Look for detected PHI in fields outside of expected fields
-      count = 0
       for field in cleaned_pixels_dicom.iterall():
-        count += 1
         # Skip pixel data
         if field.name == 'Pixel Data':
           continue
         # Skip objects of this kind because they can't be made into strings, perhaps go deeper
         if field.value.__class__ == pydicom.sequence.Sequence:
           continue
-          # only replace PHI longer than 5 characters long
-        print("%s %s" % (field.value.__class__, field))
-        print(str(field.value))
 
-        field.value = '1'
-        cleaned_pixels_dicom.__setitem__(field.tag, field)
-
-
-        cleaned_pixels_dicom.data_element(key).value = str(field.value)
-        if 'Parallel Reduction Factor Second' in str(field.value):
-          break
+        # find_and_replace_PHI(cleaned_pixels_dicom, field, get_PHI())
+        # field.value = NEW_VALUE
+        # cleaned_pixels_dicom.__setitem__(field.tag, field)
+        # Note: Make sure case doesn't matter when doing matching (force upper case. note that get_PHI() returns only upper case)
+        # Note: Only match when number of characters is >=5. Reason being we dont to make lots of deteles if a common word like "the" slips into the PHI but on the other hand what about short names? The OCR matching currently requires 2 charaters or more
+        # TODO(Dan): see how match() OCR can utilize find_and_replace_PHI()
+        # TODO(Dan):  match() OCR should try matching to substrings of longer blocks of text, split on seperators, which? just space or .-/\+_ ? 
 
 
       ## Process Radiology Text Report
       report_raw = cleaned_pixels_dicom.get([0x0019, 0x0030])
       if (report_raw != None): #check if the report exists
 
-        PHI = get_PHI(cleaned_pixels_dicom)
+        PHI = get_PHI()
         PHI.append('2034.06.20')
         PHI.append('2019.05.01')
         PHI.append('2035/02/16')
