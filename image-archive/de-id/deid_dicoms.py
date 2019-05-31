@@ -551,6 +551,91 @@ def datematcher(known_dates, text):
 
   return returning
 
+#
+def match_date_and_exact(cleaned_pixels_dicom, field_tag):
+  field_val = cleaned_pixels_dicom.get(field_tag)
+  #print(field_val.value)
+  if (field_val != None): #check if the field exists
+    PHI = get_PHI()
+    PHI.append('2034.06.20')
+    PHI.append('2019.05.01')
+    PHI.append('2035/02/16')
+    PHI.append('11.02.35')
+    PHI.append('2035/02/15')
+    PHI.append('PLAST')
+    PHI.append('PFIRST')
+
+    exact_match_list = []
+    indirect_match_list = []
+
+    for element in PHI:
+      if element in field_val.value: #meaning that that element can be directly replaced
+        exact_match_list.append(element)
+      else: #the element cannot be direclty replaced
+        indirect_match_list.append(element)
+
+    if exact_match_list != []: #there are exact matches
+      field_val.value = match_exact(cleaned_pixels_dicom, field_tag, exact_match_list)
+
+
+    if indirect_match_list != []: #there are PHI still left to check after exact matches
+      field_val.value = match_indirect(cleaned_pixels_dicom, field_tag, indirect_match_list)
+
+    #save the edited dicom to the specified file
+    save_to_file(cleaned_pixels_dicom)
+
+
+def match_exact(cleaned_pixels_dicom, field_tag, match_list):
+  dicom_field = cleaned_pixels_dicom.get(field_tag)
+  field_val = dicom_field.value
+
+  for element in match_list:
+    element_dt_obj = datefinder.find_dates(element)
+    element_dt_obj = list(element_dt_obj)
+    if element_dt_obj == []: #is not a date
+        _dict = {'key': element, 'new_path': output_filepath, 'orig_path': dicom_path}
+    else: #is a date
+        _dict = {'key': element_dt_obj[0].strftime('%Y/%m/%d'), 'new_path': output_filepath, 'orig_path': dicom_path}
+
+    UID = generate_uid(_dict, 'nope', 'key')
+    field_val = field_val.replace(element, str(UID))
+
+  return field_val
+
+#maches PHI dates that were not the exact same format as those found in the dicom
+def match_indirect(cleaned_pixels_dicom, field_tag, match_list):
+  dicom_field = cleaned_pixels_dicom.get(field_tag) 
+  field_val = dicom_field.value
+
+  indirect_dates = datematcher(match_list, field_val)
+
+  for indirect_day in indirect_dates: #check where the date is and replace it 
+    split_day = re.split('[ :]', indirect_day)
+    for split_piece in split_day:
+      split_dt_obj = datefinder.find_dates(split_piece, source= True)
+      split_dt_obj = list(split_dt_obj)
+
+      if split_dt_obj != []: #if a date was found
+        _dict = {'key': split_dt_obj[0][0].strftime('%Y/%m/%d'), 'new_path': output_filepath, 'orig_path': dicom_path}
+        UID = generate_uid(_dict, 'nope', 'key')
+        field_val = field_val.replace(split_dt_obj[0][1], str(UID))
+
+  return field_val
+
+def save_to_file(cleaned_pixels_dicom): #save the edited dicom to the specified file given in the dicom
+
+  report_dict = get_report_as_dict(cleaned_pixels_dicom) 
+
+  file_to_save = report_dict['filepath']
+  filename = os.path.basename(file_to_save)
+  filename = 'deid' + filename
+  folder_prefix = os.path.basename(os.path.dirname(file_to_save))
+  output_filepath_dict = os.path.join(folderpath, filename)
+
+  file_to_write = open(output_filepath_dict, 'w')
+  file_to_write.write(str(report_dict['Raw']))
+  file_to_write.close()
+
 if __name__ == '__main__':
   # Set up command line arguments
   parser = argparse.ArgumentParser(description='Looks up documents in ElasticSearch, finds the DICOM files, processes them, and saves a copy.')
@@ -701,74 +786,86 @@ if __name__ == '__main__':
         if field.value.__class__ == pydicom.sequence.Sequence:
           continue
 
-        # find_and_replace_PHI(cleaned_pixels_dicom, field, get_PHI())
-        # field.value = NEW_VALUE
-        # cleaned_pixels_dicom.__setitem__(field.tag, field)
+          # field.tag
+
+        #cleaned_pixels_dicom = replace_PHI(cleaned_pixels_dicom, field, get_PHI())
+        #   OLD_VALUE = str(field.value)
+        #   # replace PHI with uid
+        #   field.value = NEW_VALUE
+        #   cleaned_pixels_dicom.__setitem__(field.tag, field)
         # Note: Make sure case doesn't matter when doing matching (force upper case. note that get_PHI() returns only upper case)
         # Note: Only match when number of characters is >=5. Reason being we dont to make lots of deteles if a common word like "the" slips into the PHI but on the other hand what about short names? The OCR matching currently requires 2 charaters or more
         # TODO(Dan): see how match() OCR can utilize find_and_replace_PHI()
         # TODO(Dan):  match() OCR should try matching to substrings of longer blocks of text, split on seperators, which? just space or .-/\+_ ? 
 
+      print(field.tag)
+      match_date_and_exact(cleaned_pixels_dicom, [0x0019, 0x0030])
 
-      ## Process Radiology Text Report
-      report_raw = cleaned_pixels_dicom.get([0x0019, 0x0030])
-      if (report_raw != None): #check if the report exists
 
-        PHI = get_PHI()
-        PHI.append('2034.06.20')
-        PHI.append('2019.05.01')
-        PHI.append('2035/02/16')
-        PHI.append('11.02.35')
-        PHI.append('2035/02/15')
-        PHI.append('PLAST')
-        PHI.append('PFIRST')
+#---------------------------------OLD CODE-------------------------------------------------
 
-        date_edit_possible = []
+      # ## Process Radiology Text Report
+      # report_raw = cleaned_pixels_dicom.get([0x0019, 0x0030])
+      # if (report_raw != None): #check if the report exists
 
-        for element in PHI:
-          if element in report_raw.value: #if the element is written explcitly in the raw report, replace
-            element_dt_obj = datefinder.find_dates(element)
-            element_dt_obj = list(element_dt_obj)
-            if element_dt_obj == []: #is not a date
-              _dict = {'key': element, 'new_path': output_filepath, 'orig_path': dicom_path}
-            else: #is a date
-              _dict = {'key': element_dt_obj[0].strftime('%Y/%m/%d'), 'new_path': output_filepath, 'orig_path': dicom_path} 
+      #   PHI = get_PHI()
+      #   PHI.append('2034.06.20')
+      #   PHI.append('2019.05.01')
+      #   PHI.append('2035/02/16')
+      #   PHI.append('11.02.35')
+      #   PHI.append('2035/02/15')
+      #   PHI.append('PLAST')
+      #   PHI.append('PFIRST')
+
+      #   date_edit_possible = []
+
+      #   for element in PHI:
+      #     if element in report_raw.value: #if the element is written explcitly in the raw report, replace
+      #       element_dt_obj = datefinder.find_dates(element)
+      #       element_dt_obj = list(element_dt_obj)
+      #       if element_dt_obj == []: #is not a date
+      #         _dict = {'key': element, 'new_path': output_filepath, 'orig_path': dicom_path}
+      #       else: #is a date
+      #         _dict = {'key': element_dt_obj[0].strftime('%Y/%m/%d'), 'new_path': output_filepath, 'orig_path': dicom_path} 
             
-            UID = generate_uid(_dict, 'nope', 'key')
-            report_raw.value = report_raw.value.replace(element, str(UID))
-          else:
-              date_edit_possible.append(element)
+      #       UID = generate_uid(_dict, 'nope', 'key')
+      #       report_raw.value = report_raw.value.replace(element, str(UID))
+      #     else:
+      #         date_edit_possible.append(element)
 
-        if date_edit_possible != []: #there are some elements from PHI list that may just be styled incorrectly
-          indirect_dates = datematcher(date_edit_possible, report_raw.value)
+      #   if date_edit_possible != []: #there are some elements from PHI list that may just be styled incorrectly
+      #     indirect_dates = datematcher(date_edit_possible, report_raw.value)
 
-          for indirect_day in indirect_dates: #check where the date is and replace it 
-            split_day = re.split('[ :]', indirect_day)
-            for split_piece in split_day:
-              split_dt_obj = datefinder.find_dates(split_piece, source= True)
-              split_dt_obj = list(split_dt_obj)
+      #     for indirect_day in indirect_dates: #check where the date is and replace it 
+      #       split_day = re.split('[ :]', indirect_day)
+      #       for split_piece in split_day:
+      #         split_dt_obj = datefinder.find_dates(split_piece, source= True)
+      #         split_dt_obj = list(split_dt_obj)
 
-              if split_dt_obj != []: #if a date was found
-                _dict = {'key': split_dt_obj[0][0].strftime('%Y/%m/%d'), 'new_path': output_filepath, 'orig_path': dicom_path}
-                UID = generate_uid(_dict, 'nope', 'key')
-                report_raw.value = report_raw.value.replace(split_dt_obj[0][1], str(UID))
+      #         if split_dt_obj != []: #if a date was found
+      #           _dict = {'key': split_dt_obj[0][0].strftime('%Y/%m/%d'), 'new_path': output_filepath, 'orig_path': dicom_path}
+      #           UID = generate_uid(_dict, 'nope', 'key')
+      #           report_raw.value = report_raw.value.replace(split_dt_obj[0][1], str(UID))
 
-        print('\n\n\n\n\n\n\n\n\n\n')
-        print(report_raw.value)
+      #   print('\n\n\n\n\n\n\n\n\n\n')
+      #   print(report_raw.value)
 
 
-        #THIS FOR SURE WORKS - saves the raw report to a file
-        report_dict = get_report_as_dict(cleaned_pixels_dicom)
+      #   #THIS FOR SURE WORKS - saves the raw report to a file
+      #   report_dict = get_report_as_dict(cleaned_pixels_dicom)
 
-        file_to_save = report_dict['filepath']
-        filename = os.path.basename(file_to_save)
-        filename = 'deid' + filename
-        folder_prefix = os.path.basename(os.path.dirname(file_to_save))
-        output_filepath_dict = os.path.join(folderpath, filename)
+      #   file_to_save = report_dict['filepath']
+      #   filename = os.path.basename(file_to_save)
+      #   filename = 'deid' + filename
+      #   folder_prefix = os.path.basename(os.path.dirname(file_to_save))
+      #   output_filepath_dict = os.path.join(folderpath, filename)
 
-        file_to_write = open(output_filepath_dict, 'w')
-        file_to_write.write(str(report_dict['Raw']))
-        file_to_write.close()
+      #   file_to_write = open(output_filepath_dict, 'w')
+      #   file_to_write.write(str(report_dict['Raw']))
+      #   file_to_write.close()
+
+
+#---------------------------------OLD CODE-------------------------------------------------
 
 #    # # Store derived data in DICOM
 #    # TODO: DELETE - COMMENTED out because it's already in cleaned_pixels
