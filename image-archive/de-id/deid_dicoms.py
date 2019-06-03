@@ -528,34 +528,33 @@ def get_report_as_dict(dicom):
 
   return report_dict
 
-"""
-@param known_dates: a list of strings of dates
-@param text: the block of text that will be searched for dates
-@return Returns dates found strings in text that match dates in input known_dates
-"""
-def datematcher(known_dates, text):
 
+def datematcher(known_dates, text):
+  """
+  @param known_dates: a list of strings of dates
+  @param text: the block of text that will be searched for dates
+  @return Returns dates exactly as found in text that match dates in input known_dates
+  """
   returning = []
-  matches = datefinder.find_dates(text, source=True)
+  matches = datefinder.find_dates(text, source=True) #finds all dates in text
   matches = list(matches)
 
   for date in known_dates:
-    datetime_object = datefinder.find_dates(date) #gets the datetime object of date
+    datetime_object = datefinder.find_dates(date) #gets the datetime object of the PHI element
     datetime_object = list(datetime_object)
 
-    if datetime_object != []: #there was a date at that PHI position
+    if datetime_object != []: #there was a date at that PHI element
       for txt_day in matches:
-        if datetime_object[0] in txt_day: #if the date matches one of the text
+        if datetime_object[0] in txt_day: #if the date matches one that was in input text
           returning.append(txt_day[1]) #append the line of text where the dates matched
 
   return returning
 
 def match_date_and_exact(dicom, field_tag):
-
   field_val = dicom.get(field_tag)
 
   if (field_val != None): #check if the field exists
-    PHI = get_PHI()
+    PHI = get_PHI() #get all PHI values so far
     PHI.append('2034.06.20')
     PHI.append('2019.05.01')
     PHI.append('2035/02/16')
@@ -568,26 +567,28 @@ def match_date_and_exact(dicom, field_tag):
     possible_match_list = []
 
     for element in PHI:
-      if element in field_val.value: #meaning that that element can be directly replaced
+      if element in field_val.value: #element was an exact match in the text, so it can be directly replaced
         exact_match_list.append(element)
-      else: #the element cannot be direclty replaced
+      else: #the element cannot be direclty replaced as there was no exact match in text
         possible_match_list.append(element)
 
-    #there are exact matches
+    #replace exact matches with UID
     field_val.value = match_exact(dicom, field_tag, exact_match_list)
-    #there are PHI still left to check after exact matches
+    #replace possible date matches that aren't directly in text with UID
     field_val.value = match_dates(dicom, field_tag, possible_match_list)
 
 def match_exact(dicom, field_tag, match_list):
+  """matches and replaces PHI dates that were the exact same format as those found in the specified field
+  Returns the updated field of the dicom"""
   dicom_field = dicom.get(field_tag)
   field_val = dicom_field.value
 
   for element in match_list:
     element_dt_obj = datefinder.find_dates(element)
     element_dt_obj = list(element_dt_obj)
-    if element_dt_obj == [] and len(element) >= 3: #is not a date
+    if element_dt_obj == [] and len(element) >= 3: #is not a date so can use value it already has as the key
         _dict = {'key': element, 'new_path': output_filepath, 'orig_path': dicom_path}
-    else: #is a date
+    else: #is a date so must convert it to a specific form of string for its key
         _dict = {'key': element_dt_obj[0].strftime('%Y/%m/%d'), 'new_path': output_filepath, 'orig_path': dicom_path}
 
     UID = generate_uid(_dict, 'nope', 'key')
@@ -595,16 +596,17 @@ def match_exact(dicom, field_tag, match_list):
 
   return field_val
 
-#maches PHI dates that were not the exact same format as those found in the dicom
 def match_dates(dicom, field_tag, match_list):
+  """matches and replaces PHI dates that were not the exact same format as those found in the specified field
+  Returns the updated field of the dicom"""
   dicom_field = dicom.get(field_tag) 
   field_val = dicom_field.value
 
-  found_date_strings = datematcher(match_list, field_val)
+  found_date_strings = datematcher(match_list, field_val) #get all dates from the specified field of the dicom
   found_date_strings = list(found_date_strings)
 
   for found_date in found_date_strings: #check where the date is and replace it 
-  # Split found date string into parts because sometimes we over detect and include words like "on" so we'll next loop over the parts looking for the just the date
+  # Split found date string into parts because sometimes we over detect and include words like "on" so we'll next loop over the parts looking for the just the date to replace
     split_day = re.split('[ :]', found_date)
     for split_piece in split_day:
       split_dt_obj = datefinder.find_dates(split_piece, source= True)
@@ -617,8 +619,8 @@ def match_dates(dicom, field_tag, match_list):
 
   return field_val
 
-def save_report_to_file(dicom): #save the edited file to the specified file given in the dicom
-
+def save_report_to_file(dicom):
+  """save the edited file to the specified file given in the dicom"""
   report_dict = get_report_as_dict(dicom) 
 
   file_to_save = report_dict['filepath']
@@ -774,10 +776,11 @@ if __name__ == '__main__':
       if field.name == 'Pixel Data':
         continue
 
-      if field.value.__class__ == pydicom.valuerep.PersonName3:
-        continue
       # Skip objects of this kind because they can't be made into strings, perhaps go deeper
       if field.value.__class__ == pydicom.sequence.Sequence:
+        continue
+
+      if field.value.__class__ == pydicom.valuerep.PersonName3:
         continue
 
       if field.value.__class__ == pydicom.multival.MultiValue:
@@ -792,7 +795,9 @@ if __name__ == '__main__':
       if field.value.__class__ == int:
         continue
 
+      #update the specified field with UID replacing PID
       match_date_and_exact(dicom, field.tag)
+
       #save the edited dicom to the specified file
       save_report_to_file(dicom)
 
