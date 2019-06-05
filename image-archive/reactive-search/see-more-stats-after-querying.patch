@@ -1,0 +1,89 @@
+diff --git a/lib/components/result/ReactiveList.js b/lib/components/result/ReactiveList.js
+index 8b6ec37..ffdc5c7 100644
+--- a/lib/components/result/ReactiveList.js
++++ b/lib/components/result/ReactiveList.js
+@@ -478,31 +478,59 @@ var _initialiseProps = function _initialiseProps() {
+                }
+        };
+ 
+-       this.renderResultStats = function () {
+-               if (_this4.props.onResultStats && _this4.props.total) {
+-                       return _this4.props.onResultStats(_this4.props.total, _this4.props.time);
+-               } else if (_this4.props.total) {
+-                       return _react2.default.createElement(
+-                               'p',
+-                               {
+-                                       className: _results.resultStats + ' ' + (0, _helper.getClassName)(_this4.props.innerClass, 'resultStats')
+-                               },
+-                               _this4.props.total,
+-                               ' results found in ',
+-                               _this4.props.time,
+-                               'ms'
+-                       );
+-               }
+-               return null;
+-       };
+-
+-       this.renderNoResults = function () {
+-               return _react2.default.createElement(
+-                       'p',
+-                       { className: (0, _helper.getClassName)(_this4.props.innerClass, 'noResults') || null },
+-                       _this4.props.onNoResults
+-               );
+-       };
++  this.renderResultStats = function () {
++    if (_this4.props.onResultStats && _this4.props.total) {
++      return _this4.props.onResultStats(_this4.props.total, _this4.props.time);
++    } else if (_this4.props.total) {
++
++        var data = { "aggs" : {"exam_count" : {"cardinality" : {"field" : "AccessionNumber.keyword"} }, "patient_count" : {"cardinality" : {"field" : "PatientID.keyword"} } }};
++
++        fetch('http://10.211.55.5:9200/image/image/_search', {
++              method: 'POST', // or 'PUT'
++              body: JSON.stringify(data), // data can be `string` or {object}!
++              headers:{
++                'Content-Type': 'application/json'
++              }
++            })
++              .then(function(response) {
++                return response.json();
++              })
++              .then(function(response) {
++                var str = [_this4.props.total.toLocaleString(),
++                                ' results, ',
++                                response.aggregations.exam_count.value.toLocaleString(),
++                                ' exams, ',
++                                response.aggregations.patient_count.value.toLocaleString(),
++                                ' patients found in ',
++                                _this4.props.time.toLocaleString(),
++                                'ms'].join('');
++                var div = document.getElementsByClassName('result-list-info')[0];
++                div.innerHTML = str;
++                div.className += " result-stats ";
++
++                return _react2.default.createElement(
++                'p',
++                {
++                  className: _results.resultStats + ' ' + (0, _helper.getClassName)(_this4.props.innerClass, 'resultStats')
++                },
++                str
++              );
++        });
++    }
++    return null;
++  };
++
++  this.renderNoResults = function () {
++    if (typeof document !== 'undefined') {
++          var div = document.getElementsByClassName('result-list-info')[0];
++          div.innerHTML = '';
++      }
++    return _react2.default.createElement(
++      'p',
++      { className: (0, _helper.getClassName)(_this4.props.innerClass, 'noResults') || null },
++      _this4.props.onNoResults
++    );
++  };
+ 
+        this.handleSortChange = function (e) {
+                var _ref10;
