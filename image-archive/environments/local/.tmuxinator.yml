@@ -30,7 +30,7 @@ windows:
       panes:
         - source ../environments/local/env.sh && npm run dev
         - echo "http://localhost:3000"
-  - load:
+  - deid:
       root: ../../de-id/
       layout: tiled
       panes:

@@ -30,15 +30,26 @@ windows:
       panes:
         - source ../environments/production/env.sh && npm run dev
         - echo 'http://localhost:3000'
-  - funnel:
+  - deid:
       root: <%= ENV["WORKSPACE"] %>/de-id
       layout: tiled
       panes:
         - . activate; "#python load_elastic.py"
         - . activate;
-  - python:
-      root: <%= ENV["WORKSPACE"] %>/de-id
+  - apache:
+      root: /etc/apache2
       layout: tiled
       panes:
-        - . activate; python3
+        - sudo vim /etc/apache2/sites-enabled/images.conf
+        - sudo systemctl reload apache2
+  - backup:
+      layout: tiled
+      panes:
+        - ls -sh encrypted.tar.gz
+        - watch ls -s encrypted.tar.gz
+  - perf:
+      layout: tiled
+      panes:
+        - "#htop"
+        - "#iostat -xz 1"
 
