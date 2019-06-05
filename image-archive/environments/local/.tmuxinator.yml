@@ -10,7 +10,7 @@ windows:
       layout: tiled
       panes:
         - docker rm -f elasticsearch && docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 --env-file `pwd`/es-docker-env-vars -v `pwd`/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml -v /usr/share/elasticsearch/data docker.elastic.co/elasticsearch/elasticsearch:6.6.0
-        - sleep 15 && source ../environments/local/env.sh && ./init_elastic.sh
+        - sleep 20 && source ../environments/local/env.sh && ./init_elastic.sh
   - dejavu: 
       layout: tiled
       panes:
@@ -34,4 +34,4 @@ windows:
       root: ../../de-id/
       layout: tiled
       panes:
-        - sleep 20 && source ../environments/local/env.sh && python3 load_elastic.py ../reactive-search/static/dicom/file_list.txt ../reactive-search/static/thumbnails/
+        - sleep 25 && source ../environments/local/env.sh && python3 load_elastic.py ../reactive-search/static/dicom/file_list.txt ../reactive-search/static/thumbnails/

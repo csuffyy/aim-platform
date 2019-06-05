@@ -106,9 +106,11 @@ def load_images():
   for filepath in files:
     # filepath = mll[file]
     try:
+      log.info('Processing: %s' % filepath)
+
       # Load Image
       dicom = pydicom.dcmread(filepath, force=True)
-      dicom_metadata = dicom_to_dict(dicom, log=log)
+      dicom_metadata = dicom_to_dict(dicom, log=log, environ=ENVIRON)
 
       thumbnail_filepath = save_thumbnail_of_dicom(dicom, filepath)
       if not thumbnail_filepath:
