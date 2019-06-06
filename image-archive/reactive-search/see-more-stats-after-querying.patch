@@ -1,8 +1,8 @@
 diff --git a/lib/components/result/ReactiveList.js b/lib/components/result/ReactiveList.js
-index 8b6ec37..ffdc5c7 100644
+index 8b6ec37..8789f2a 100644
 --- a/lib/components/result/ReactiveList.js
 +++ b/lib/components/result/ReactiveList.js
-@@ -478,31 +478,59 @@ var _initialiseProps = function _initialiseProps() {
+@@ -478,31 +478,66 @@ var _initialiseProps = function _initialiseProps() {
                 }
         };
  
@@ -38,7 +38,14 @@ index 8b6ec37..ffdc5c7 100644
 +
 +        var data = { "aggs" : {"exam_count" : {"cardinality" : {"field" : "AccessionNumber.keyword"} }, "patient_count" : {"cardinality" : {"field" : "PatientID.keyword"} } }};
 +
-+        fetch('http://10.211.55.5:9200/image/image/_search', {
++           var _props2 = _this4.props,
++                           config = _props2.config,
++                           searchId = _props2.analytics.searchId;
++                               var url = config.url,
++                           app = config.app,
++                           credentials = config.credentials;
++
++        fetch(url + app + '/image/_search', {
 +              method: 'POST', // or 'PUT'
 +              body: JSON.stringify(data), // data can be `string` or {object}!
 +              headers:{
