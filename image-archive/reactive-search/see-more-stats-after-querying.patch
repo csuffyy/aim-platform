@@ -36,7 +36,8 @@ index 8b6ec37..8789f2a 100644
 +      return _this4.props.onResultStats(_this4.props.total, _this4.props.time);
 +    } else if (_this4.props.total) {
 +
-+        var data = { "aggs" : {"exam_count" : {"cardinality" : {"field" : "AccessionNumber.keyword"} }, "patient_count" : {"cardinality" : {"field" : "PatientID.keyword"} } }};
++          var data = _this4.props.queryLog;
++          data.aggs = {"exam_count" : {"cardinality" : {"field" : "AccessionNumber.keyword"} }, "patient_count" : {"cardinality" : {"field" : "PatientID.keyword"} } };
 +
 +           var _props2 = _this4.props,
 +                           config = _props2.config,
