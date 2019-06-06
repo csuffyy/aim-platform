@@ -45,7 +45,7 @@ index 8b6ec37..8789f2a 100644
 +                           app = config.app,
 +                           credentials = config.credentials;
 +
-+        fetch(url + app + '/image/_search', {
++        fetch(url + '/' + app + '/image/_search', {
 +              method: 'POST', // or 'PUT'
 +              body: JSON.stringify(data), // data can be `string` or {object}!
 +              headers:{
