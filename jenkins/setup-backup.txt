@@ -1,0 +1,22 @@
+Crontab command (/etc/crontab)
+    <min> <hour> <day><month><weekday>   <user>  <the command or sh file that preforms the command>
+      0     0      *     *      6         root         /home/ubuntu/create_encrpyted_backup.sh
+    chmod +x /home/ubuntu/create_encrpyted_backup.sh
+
+Encrypting
+    tar -czf - <file or folder path of what you want encryted> | openssl enc -e -aes256 -out <encrypted file name> -pass pass:<password>
+    tar -czf - /* | openssl enc -e -aes256 -out encrypted.tar.gz -pass pass:AIMbackuppc
+
+Decrypting
+    **make sure that the folder where you are putting the decrypted files has already been created** (if not, mkdir one)
+    openssl enc -d -aes256 -in <output encrypted file name from encryption> | tar xz -C <name of folder to place decrypted file in>
+    openssl enc -d -aes256 -in encrypted.tar.gz | tar xz -C ./decrypted
+
+To create a new user (backuppc)
+    Go into prod and then go to the root (sudo su -)
+    adduser <name of user>
+    passwd <name of user> => AIMbackuppc
+
+Authorization key
+    Vim /<name of user>/.ssh/authorized_keys
+    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDZULQI1gyRyjqn3j32Y+c/cHC+6JRIE2PLcvpQDOWf4vkUWgG2dK17l8v63KKfBUTDpYvrfqNUPB8Tiek4c9aDwDsoEijoAqBcyyMGRtl2JC/f8GykFmu+ucwZTzViSOKG0Ci9v9NrGZWOdRtyeaRDSBfhS1FXRSQC4vuqvDlr84g1ZzLBy7RmJDz4EuoidblxiT0kC3VY43/HkLEFXKRd/lKS2QdYBgbUk+h0e5/JUKDwJKuuuHQRusBZij6h/wj5VEv+PwHFdeMkg8/75EDowUVjdZuJl1Jl8S5a9mktIY/OT4wvNf9eL6Mizebt62gqAEsqSUGTP+LQJ+oOe5kx backuppc@backuppc
