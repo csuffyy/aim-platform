@@ -529,13 +529,13 @@ def get_report_as_dict(dicom):
   return report_dict
 
 
-def datematcher(known_dates, text):
+def datematcher(known_dates, text, fuzzy=False):
   """
   @param known_dates: a list of strings of dates
   @param text: the block of text that will be searched for dates
   @return Returns dates exactly as found in text that match dates in input known_dates
   """
-  returning = []
+  returning = set()
   matches = datefinder.find_dates(text, source=True) #finds all dates in text
   matches = list(matches)
 
@@ -546,16 +546,25 @@ def datematcher(known_dates, text):
     if datetime_object != []: #there was a date at that PHI element
       for txt_day in matches:
         if datetime_object[0] in txt_day: #if the date matches one that was in input text
-          returning.append(txt_day[1]) #append the line of text where the dates matched
+          #returning.append(txt_day[1]) #append the line of text where the dates matched
+          returning.add(txt_day[1]) #append the line of text where the dates matched
+
+        else: #not an exact match so should check if it is a fuzzy match
+          if fuzzy: #if fuzzy has been set to true so we are allowed to check fuzzy
+            str_from_list = datetime_object[0].strftime('%Y%m%d')
+            str_txt = txt_day[0].strftime('%Y%m%d')
+            # >=75 allows for two different digit swaps, >=5 confirms that the date is an actual date not just a short string of random numbers, and !=today() confirms that datetime objects that are ONLY times are not included
+            if fuzz.ratio(str_from_list, str_txt) >= 75 and len(txt_day[1]) >= 5 and txt_day[0].date() != datetime.datetime.today().date():  
+              returning.add(txt_day[1])
 
   return returning
 
-def match_date_and_exact(dicom, field_tag):
+def match_date_and_exact(dicom, field_tag, fuzzy=False):
   field_val = dicom.get(field_tag)
 
   if (field_val != None): #check if the field exists
     PHI = get_PHI() #get all PHI values so far
-    PHI.append('2034.06.20')
+    PHI.append('2024.06.20')
     PHI.append('2019.05.01')
     PHI.append('2035/02/16')
     PHI.append('11.02.35')
@@ -575,7 +584,7 @@ def match_date_and_exact(dicom, field_tag):
     #replace exact matches with UID
     field_val.value = match_exact(dicom, field_tag, exact_match_list)
     #replace possible date matches that aren't directly in text with UID
-    field_val.value = match_dates(dicom, field_tag, possible_match_list)
+    field_val.value = match_dates(dicom, field_tag, possible_match_list, fuzzy)
 
 def match_exact(dicom, field_tag, match_list):
   """matches and replaces PHI dates that were the exact same format as those found in the specified field
@@ -596,14 +605,13 @@ def match_exact(dicom, field_tag, match_list):
 
   return field_val
 
-def match_dates(dicom, field_tag, match_list):
+def match_dates(dicom, field_tag, match_list, fuzzy=False):
   """matches and replaces PHI dates that were not the exact same format as those found in the specified field
   Returns the updated field of the dicom"""
   dicom_field = dicom.get(field_tag) 
   field_val = dicom_field.value
 
-  found_date_strings = datematcher(match_list, field_val) #get all dates from the specified field of the dicom
-  found_date_strings = list(found_date_strings)
+  found_date_strings = datematcher(match_list, field_val, fuzzy) #get all dates from the specified field of the dicom
 
   for found_date in found_date_strings: #check where the date is and replace it 
   # Split found date string into parts because sometimes we over detect and include words like "on" so we'll next loop over the parts looking for the just the date to replace
@@ -796,7 +804,7 @@ if __name__ == '__main__':
         continue
 
       #update the specified field with UID replacing PID
-      match_date_and_exact(dicom, field.tag)
+      match_date_and_exact(dicom, field.tag, True)
 
       #save the edited dicom to the specified file
       save_report_to_file(dicom)
