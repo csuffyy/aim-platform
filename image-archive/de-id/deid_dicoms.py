@@ -529,33 +529,36 @@ def get_report_as_dict(dicom):
   return report_dict
 
 
-def datematcher(known_dates, text, fuzzy=False):
+def datematcher(possibly_dates, text, fuzzy=False):
   """
-  @param known_dates: a list of strings of dates
+  @param possibly_dates: a list of strings of dates
   @param text: the block of text that will be searched for dates
-  @return Returns dates exactly as found in text that match dates in input known_dates
+  @return Returns dates exactly as found in text that match dates in input possibly_dates
   """
   returning = set()
-  matches = datefinder.find_dates(text, source=True) #finds all dates in text
-  matches = list(matches)
+  found_dates = datefinder.find_dates(text, source=True) #finds all dates in text
+  found_dates = list(found_dates)
 
-  for date in known_dates:
+  for date in possibly_dates:
     datetime_object = datefinder.find_dates(date) #gets the datetime object of the PHI element
     datetime_object = list(datetime_object)
 
-    if datetime_object != []: #there was a date at that PHI element
-      for txt_day in matches:
-        if datetime_object[0] in txt_day: #if the date matches one that was in input text
-          #returning.append(txt_day[1]) #append the line of text where the dates matched
-          returning.add(txt_day[1]) #append the line of text where the dates matched
+    if datetime_object: #there was a date at that PHI element
+      for found_date in found_date_objects:
+        found_date = {
+          'object' : found_date[0],
+          'string' : found_date[1],
+        }
+        datetime_object = datetime_object[0]
+        if datetime_object in found_date: #if the date matches one that was in input text
+          returning.add(found_date['string']) #append the line of text where the dates matched
 
-        else: #not an exact match so should check if it is a fuzzy match
-          if fuzzy: #if fuzzy has been set to true so we are allowed to check fuzzy
-            str_from_list = datetime_object[0].strftime('%Y%m%d')
-            str_txt = txt_day[0].strftime('%Y%m%d')
-            # >=75 allows for two different digit swaps, >=5 confirms that the date is an actual date not just a short string of random numbers, and !=today() confirms that datetime objects that are ONLY times are not included
-            if fuzz.ratio(str_from_list, str_txt) >= 75 and len(txt_day[1]) >= 5 and txt_day[0].date() != datetime.datetime.today().date():  
-              returning.add(txt_day[1])
+        elif fuzzy: #not an exact match so should check if it is a fuzzy match
+          date_string = datetime_object.strftime('%Y%m%d')
+          found_date_string = found_date['object'].strftime('%Y%m%d')
+          # The >=75 allows for two different digit swaps assuming 8 characters. And the >=5 confirms that the date is long enough to be an actual date not just a short string of random numbers. And the !=today() ignores "found" dates that match todays date because datefinder assumes today's date if there is missing date information
+          if fuzz.ratio(date_string, found_date_string) >= 75 and len(found_date['string']) >= 5 and found_date['object'].date() != datetime.datetime.today().date():
+            returning.add(found_date['string'])
 
   return returning
 
