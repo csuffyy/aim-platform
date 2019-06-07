@@ -46,7 +46,9 @@ index 8b6ec37..8789f2a 100644
 +                           app = config.app,
 +                           credentials = config.credentials;
 +
-+        fetch(url + '/' + app + '/image/_search', {
++        var merging_url = [url, app, '/image/_search'];
++        var full_url = merging_url.join('/').replace(/([^:]\/)\/+/g, "$1");
++        fetch (full_url, {
 +              method: 'POST', // or 'PUT'
 +              body: JSON.stringify(data), // data can be `string` or {object}!
 +              headers:{

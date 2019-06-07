@@ -545,44 +545,48 @@ def get_report_as_dict(dicom):
   return report_dict
 
 
-def datematcher(known_dates, text):
+def datematcher(possibly_dates, text, fuzzy=False):
   """
-  @param known_dates: a list of strings of dates
+  @param possibly_dates: a list of strings of dates
   @param text: the block of text that will be searched for dates
-  @return Returns dates exactly as found in text that match dates in input known_dates
+  @return Returns dates exactly as found in text that match dates in input possibly_dates
 
   TODO (low priority): Explore enabling parser.parse(fuzzy=true) in: /usr/local/lib/python3.5/dist-packages/datefinder/__init__.py
   https://dateutil.readthedocs.io/en/stable/parser.html#dateutil.parser.parse
   """
-  returning = []
-  matches = datefinder.find_dates(text, source=True) #finds all dates in text
-  matches = list(matches)
+  returning = set()
+  found_dates = datefinder.find_dates(text, source=True) #finds all dates in text
+  found_dates = list(found_dates)
 
-  for date in known_dates:
+  for date in possibly_dates:
     datetime_object = datefinder.find_dates(date) #gets the datetime object of the PHI element
     datetime_object = list(datetime_object)
 
-    if datetime_object != []: #there was a date at that PHI element
-      for txt_day in matches:
-        if datetime_object[0] in txt_day: #if the date matches one that was in input text
-          returning.append(txt_day[1]) #append the line of text where the dates matched
+    if datetime_object: #there was a date at that PHI element
+      for found_date in found_date_objects:
+        found_date = {
+          'object' : found_date[0],
+          'string' : found_date[1],
+        }
+        datetime_object = datetime_object[0]
+        if datetime_object in found_date: #if the date matches one that was in input text
+          returning.add(found_date['string']) #append the line of text where the dates matched
+
+        elif fuzzy: #not an exact match so should check if it is a fuzzy match
+          date_string = datetime_object.strftime('%Y%m%d')
+          found_date_string = found_date['object'].strftime('%Y%m%d')
+          # The >=75 allows for two different digit swaps assuming 8 characters. And the >=5 confirms that the date is long enough to be an actual date not just a short string of random numbers. And the !=today() ignores "found" dates that match todays date because datefinder assumes today's date if there is missing date information
+          if fuzz.ratio(date_string, found_date_string) >= 75 and len(found_date['string']) >= 5 and found_date['object'].date() != datetime.datetime.today().date():
+            returning.add(found_date['string'])
 
   return list(returning)
 
-def match_and_replace_PHI(dicom, field_tag):
-  """ Finds and replaces PHI be it a date or an exact string match with a UUID. This does not do fuzzy string matching. """
-
+def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
+  """ Finds and replaces PHI be it a date or an exact string match with a UUID."""
   field_val = dicom.get(field_tag)
 
   if (field_val != None): #check if the field exists
     PHI = get_PHI() #get all PHI values so far
-    # PHI.append('2034.06.20')
-    # PHI.append('2019.05.01')
-    # PHI.append('2035/02/16')
-    # PHI.append('11.02.35')
-    # PHI.append('2035/02/15')
-    # PHI.append('PLAST')
-    # PHI.append('PFIRST')
 
     exact_match_list = []
     possible_match_list = []
@@ -596,7 +600,7 @@ def match_and_replace_PHI(dicom, field_tag):
     #replace exact matches with UID
     field_val.value = match_exact(dicom, field_tag, exact_match_list)
     #replace possible date matches that aren't directly in text with UID
-    field_val.value = match_dates(dicom, field_tag, possible_match_list)
+    field_val.value = match_dates(dicom, field_tag, possible_match_list, fuzzy)
 
 def match_exact(dicom, field_tag, match_list):
   """matches and replaces PHI dates that were the exact same format as those found in the specified field
@@ -617,13 +621,13 @@ def match_exact(dicom, field_tag, match_list):
 
   return field_val
 
-def match_dates(dicom, field_tag, match_list):
+def match_dates(dicom, field_tag, match_list, fuzzy=False):
   """matches and replaces PHI dates that were not the exact same format as those found in the specified field
   Returns the updated field of the dicom"""
   dicom_field = dicom.get(field_tag) 
   field_val = dicom_field.value
 
-  found_date_strings = datematcher(match_list, field_val) #get all dates from the specified field of the dicom
+  found_date_strings = datematcher(match_list, field_val, fuzzy) #get all dates from the specified field of the dicom
 
   for found_date in found_date_strings: #check where the date is and replace it 
   # Split found date string into parts because sometimes we over detect and include words like "on" so we'll next loop over the parts looking for the just the date to replace
@@ -816,7 +820,7 @@ if __name__ == '__main__':
       if field.value.__class__ == int:
         continue
 
-      #update the specified field with UID replacing PID
+      # Update the dicom to replace PHI with UUIDs
       match_and_replace_PHI(dicom, field.tag)
 
     # Save de-identified radiology report to disk
