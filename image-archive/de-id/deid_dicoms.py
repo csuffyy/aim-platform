@@ -234,7 +234,9 @@ def ocr(img, ocr_num=None):
 
   return detection
 
-def match(search_strings, detection, ocr_num=None):
+def ocr_match(search_strings, detection, ocr_num=None):
+  """ Fuzzy matches strings or dates and returns results in pandas dataframe called "detection" which includes data about the location and confidence of matches in pixels """
+
   if detection.empty or search_strings is None or search_strings == []:
     return detection
 
@@ -243,20 +245,33 @@ def match(search_strings, detection, ocr_num=None):
   match_bool = [] # whether it's a positive match
   for i in range(0,len(detection)):
     text = detection.text.iloc[i]
-    valid = True
+    valid_str = True
     if len(text) <= 1: # check that text is longer than one character
-      valid = False
+      valid_str = False
     elif re.match('.*\w.*', text) is None: # check that text contains letter or number
-      valid = False
+      valid_str = False
 
-    if valid:
+    if valid_str:
+      # try fuzzy string matching
       match_text, match_conf = process.extractOne(text, search_strings, scorer=fuzz.ratio)
-      match_texts.append(match_text)
-      match_confs.append(match_conf)
       if match_conf > MATCH_CONF_THRESHOLD:
+        match_texts.append(match_text)
+        match_confs.append(match_conf)
         match_bool.append(True)
       else:
-        match_bool.append(False)
+        # fall back to fuzzy date matching
+        match_text = datematcher(search_strings, text)
+        # TODO get match conf from datematcher function
+        # match_text, match_conf = datematcher(search_strings, text, fuzzy=True)
+        if match_text:
+          match_texts.append(match_text[0])
+          match_confs.append(0)
+          # match_confs.append(match_conf[0])
+          match_bool.append(True)
+        else: 
+          match_texts.append('')
+          match_confs.append(0)
+          match_bool.append(False)
     else:
       match_texts.append('')
       match_confs.append(0)
@@ -406,12 +421,13 @@ def decompress_dicom(dicom):
   return dicom
 
 def amount_of_text(detection):
-  # TODO: Normalize by image resolution
-
+  num_pixels = 123913
   # Score amount of text
+  # the amount of text is scored by multiply the number of characters by the confidence of the detected text block
   score = 0
   for index, row in detection.iterrows():
-    score += row.conf*len(row.text) # the amount of text is scored by multiply the number of characters by the confidence of the detected text block
+    score += row.conf*len(row.text)
+  score / (num_pixels / 1000) # divide by number of pixels (divided by a thousand cause number of pixels is really large and I'm worried about losing precision, so make smaller)
 
   # Check if amount of text is greater than threshold
   is_mostly_text = False
@@ -441,7 +457,7 @@ def process_pixels(input_filepath, output_filepath):
 
   # Match Detected Text to PHI
   log.info('Matching 1...')
-  detection = match(get_PHI(), detection, ocr_num=2)
+  detection = ocr_match(get_PHI(), detection, ocr_num=2)
 
   if ocr_fallback_enabled:
     # Preprocess Pixels (Variety #2)
@@ -453,7 +469,7 @@ def process_pixels(input_filepath, output_filepath):
 
     # Match Detected Text to PHI
     log.info('Matching 2...')
-    detection2 = match(get_PHI(), detection2, ocr_num=2)
+    detection2 = ocr_match(get_PHI(), detection2, ocr_num=2)
 
     # Combine detection results of different preprocessing
     detection = pd.concat([detection, detection2], ignore_index=True, sort=True)
@@ -534,6 +550,9 @@ def datematcher(known_dates, text):
   @param known_dates: a list of strings of dates
   @param text: the block of text that will be searched for dates
   @return Returns dates exactly as found in text that match dates in input known_dates
+
+  TODO (low priority): Explore enabling parser.parse(fuzzy=true) in: /usr/local/lib/python3.5/dist-packages/datefinder/__init__.py
+  https://dateutil.readthedocs.io/en/stable/parser.html#dateutil.parser.parse
   """
   returning = []
   matches = datefinder.find_dates(text, source=True) #finds all dates in text
@@ -548,20 +567,22 @@ def datematcher(known_dates, text):
         if datetime_object[0] in txt_day: #if the date matches one that was in input text
           returning.append(txt_day[1]) #append the line of text where the dates matched
 
-  return returning
+  return list(returning)
 
-def match_date_and_exact(dicom, field_tag):
+def match_and_replace_PHI(dicom, field_tag):
+  """ Finds and replaces PHI be it a date or an exact string match with a UUID. This does not do fuzzy string matching. """
+
   field_val = dicom.get(field_tag)
 
   if (field_val != None): #check if the field exists
     PHI = get_PHI() #get all PHI values so far
-    PHI.append('2034.06.20')
-    PHI.append('2019.05.01')
-    PHI.append('2035/02/16')
-    PHI.append('11.02.35')
-    PHI.append('2035/02/15')
-    PHI.append('PLAST')
-    PHI.append('PFIRST')
+    # PHI.append('2034.06.20')
+    # PHI.append('2019.05.01')
+    # PHI.append('2035/02/16')
+    # PHI.append('11.02.35')
+    # PHI.append('2035/02/15')
+    # PHI.append('PLAST')
+    # PHI.append('PFIRST')
 
     exact_match_list = []
     possible_match_list = []
@@ -603,7 +624,6 @@ def match_dates(dicom, field_tag, match_list):
   field_val = dicom_field.value
 
   found_date_strings = datematcher(match_list, field_val) #get all dates from the specified field of the dicom
-  found_date_strings = list(found_date_strings)
 
   for found_date in found_date_strings: #check where the date is and replace it 
   # Split found date string into parts because sometimes we over detect and include words like "on" so we'll next loop over the parts looking for the just the date to replace
@@ -625,11 +645,12 @@ def save_report_to_file(dicom):
 
   file_to_save = report_dict['filepath']
   filename = os.path.basename(file_to_save)
-  filename = 'deid' + filename
+  filename = 'deid_' + filename
   folder_prefix = os.path.basename(os.path.dirname(file_to_save))
-  output_filepath_dict = os.path.join(folderpath, filename)
+  output_filepath = os.path.join(folderpath, filename)
+  # TODO: save output_filepath back into DICOM
 
-  file_to_write = open(output_filepath_dict, 'w')
+  file_to_write = open(output_filepath, 'w')
   file_to_write.write(str(report_dict['Raw']))
   file_to_write.close()
 
@@ -735,6 +756,7 @@ if __name__ == '__main__':
     dicom_dict[dicom_path]['generate_uid'] = generate_uid # Remember, the action found in deid.dicom is "REPLACE StudyInstanceUID func:generate_uid" so the key here needs to be "generate_uid"
     if save_to_elastic and input_range: 
       dicom_dict[dicom_path]['_id'] = str(doc_ids[idx]) # Store elasticsearch document id so it has the same ID in a new index
+
     # De-Identify Metadata (and keep track of value replacements ie. linking) (and this will populate the found_PHI global variable)
     log.info('De-identifying DICOM header...')
     cleaned_files = replace_identifiers(dicom_files=dicom_path,
@@ -757,8 +779,7 @@ if __name__ == '__main__':
         os.makedirs(folderpath)
 
     # Add derived fields
-    cleaned_header_dicom = add_derived_fields(cleaned_header_dicom)
-
+    cleaned_header_dicom = add_derived_fields(cleaned_header_dicom) # note: cleaned_header_dicom is not a full dicom. It is not as functional as the "dicom" variable
 
     # Process pixels (de-id pixels and save debug gif)
     dicom = process_pixels(dicom_path, output_filepath) # note this opens the dicom again (in a way that can access pixels) and thus contains PHI
@@ -766,11 +787,11 @@ if __name__ == '__main__':
       log.warning('Couldnt read pixels so skipping: %s' % dicom_path)
       continue
 
-    # Save de-ided PHI into "dicom" variable, this variable is the full dicom but cleaned_header_dicom is not
+    # Overwrite PHI with UUIDs in DICOM
     for key in found_PHI.keys():
       dicom.data_element(key).value = cleaned_header_dicom.data_element(key).value
 
-    # Look for detected PHI in fields outside of expected fields
+    # Look for detected PHI in all DICOM fields
     for field in dicom.iterall():
       # Skip pixel data
       if field.name == 'Pixel Data':
@@ -796,23 +817,10 @@ if __name__ == '__main__':
         continue
 
       #update the specified field with UID replacing PID
-      match_date_and_exact(dicom, field.tag)
+      match_and_replace_PHI(dicom, field.tag)
 
-      #save the edited dicom to the specified file
-      save_report_to_file(dicom)
-
-
-        # TODO(Dan): see how match() OCR can utilize find_and_replace_PHI()
-        # TODO(Dan):  match() OCR should try matching to substrings of longer blocks of text, split on seperators, which? just space or .-/\+_ ? 
-
-#    # # Store derived data in DICOM
-#    # TODO: DELETE - COMMENTED out because it's already in cleaned_pixels
-#    # cleaned_header_dicom.PatientAge = dicom.get('PatientAge')
-#
-#    # # Store updated pixels in DICOM
-#    # TODO: DELETE - COMMENTED out because it's already in cleaned_pixels
-#    # cleaned_header_dicom = decompress_dicom(cleaned_header_dicom)
-#    # cleaned_header_dicom.PixelData = dicom.PixelData
+    # Save de-identified radiology report to disk
+    save_report_to_file(dicom)
 
     # Save DICOM to disk
     try:
