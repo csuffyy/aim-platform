@@ -555,20 +555,24 @@ def datematcher(possibly_dates, text, fuzzy=False):
   https://dateutil.readthedocs.io/en/stable/parser.html#dateutil.parser.parse
   """
   returning = set()
-  found_dates = datefinder.find_dates(text, source=True) #finds all dates in text
+  found_dates = datefinder.find_dates(str(text), source=True) #finds all dates in text
   found_dates = list(found_dates)
-
+    
   for date in possibly_dates:
     datetime_object = datefinder.find_dates(date) #gets the datetime object of the PHI element
+    
     datetime_object = list(datetime_object)
+    # if isinstance(datetime_object, list):
+    # embed()
+
 
     if datetime_object: #there was a date at that PHI element
-      for found_date in found_date_objects:
+      datetime_object = datetime_object[0]
+      for found_date in found_dates:
         found_date = {
           'object' : found_date[0],
           'string' : found_date[1],
         }
-        datetime_object = datetime_object[0]
         if datetime_object in found_date: #if the date matches one that was in input text
           returning.add(found_date['string']) #append the line of text where the dates matched
 
@@ -592,7 +596,7 @@ def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
     possible_match_list = []
 
     for element in PHI:
-      if element in field_val.value: #element was an exact match in the text, so it can be directly replaced
+      if element in str(field_val.value): #element was an exact match in the text, so it can be directly replaced
         exact_match_list.append(element)
       else: #the element cannot be direclty replaced as there was no exact match in text
         possible_match_list.append(element)
@@ -645,7 +649,11 @@ def match_dates(dicom, field_tag, match_list, fuzzy=False):
 
 def save_report_to_file(dicom):
   """save the edited file to the specified file given in the dicom"""
-  report_dict = get_report_as_dict(dicom) 
+  report_dict = get_report_as_dict(dicom)
+
+  if not report_dict:
+    log.warning('No report associated with DICOM, so not saving deid report to disk')
+    return
 
   file_to_save = report_dict['filepath']
   filename = os.path.basename(file_to_save)
