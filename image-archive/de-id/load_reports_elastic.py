@@ -27,6 +27,9 @@ log = logging.getLogger('main')
 def load_reports():
   for filepath in files:
     try:
+      if not filepath:
+        continue
+
       # Load Report
       report = process_file(filepath)
 

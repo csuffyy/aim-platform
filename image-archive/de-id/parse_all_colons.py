@@ -82,9 +82,9 @@ def process_file(filename):
   '''main code for report parser
   assumes the report only has colon behind each label, 
   thus colon appears in timestamps must be replaced beforehand.'''
-  with open(filename, 'r') as f:
+  with open(filename, 'rb') as f:
     raw = f.read()
-    # print(raw)
+    raw = raw.decode('utf-8','ignore')
 
   report_with_consistent_dates = find_and_fix_dates(raw)
   header, report = split_sections(report_with_consistent_dates)
