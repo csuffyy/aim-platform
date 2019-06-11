@@ -43,12 +43,16 @@ def load_reports():
         continue
 
       # If this report is already in Elastic, skip, don't add again
-      if is_report_in_elastic(filepath):
-        log.info('Skipping because found in Elastic: %s' % filepath)
-        continue
+      # if is_report_in_elastic(filepath):
+      #   log.info('Skipping because found in Elastic: %s' % filepath)
+      #   continue
 
       # Load Report
       report = process_file(filepath)
+
+      # Remove values that have keys that are longer than 30 characters
+      long_keys = [key for key in report.keys() if len(key) > 30] # find long keys
+      list(map(report.pop, long_keys)) # remove long keys from dict
 
       log.info('\nProcessing: %s' % filepath)
       report['original_title'] = 'Report'
@@ -80,6 +84,7 @@ if __name__ == '__main__':
   # Get the list of report files to be scanned
   with open(input_filenames, 'r') as f:
     files = f.read().split('\n')
+    # files = [f for f in files if 'Report_3697328.txt' in f]
     # files = files[0:5000] # limit number to ingest
 
   t0 = time.time()
