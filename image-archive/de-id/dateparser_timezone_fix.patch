@@ -1,0 +1,25 @@
+Notes:
+1. This fixes "TypeError: can't compare offset-naive and offset-aware datetimes"
+2. Can be fixed by applying patch or with "sed -i 's/self.now < dateobj/self.now.replace(tzinfo=None) < dateobj/g' /usr/local/lib/python3.5/dist-packages/dateparser/parser.py"
+diff --git a/parser.py b/parser.py
+index b7467f2..2d387ed 100644
+--- a/parser.py
++++ b/parser.py
+@@ -386,7 +386,7 @@ class _parser(object):
+             dateobj = dateobj + delta
+ 
+         if self.month and not self.year:
+-            if self.now < dateobj:
++            if self.now.replace(tzinfo=None) < dateobj:
+                 if 'past' in self.settings.PREFER_DATES_FROM:
+                     dateobj = dateobj.replace(year=dateobj.year - 1)
+             else:
+@@ -394,7 +394,7 @@ class _parser(object):
+                     dateobj = dateobj.replace(year=dateobj.year + 1)
+ 
+         if self._token_year and len(self._token_year[0]) == 2:
+-            if self.now < dateobj:
++            if self.now.replace(tzinfo=None) < dateobj:
+                 if 'past' in self.settings.PREFER_DATES_FROM:
+                     dateobj = dateobj.replace(year=dateobj.year - 100)
+             else:

@@ -24,17 +24,33 @@ logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
                     # level=logging.DEBUG)
 log = logging.getLogger('main')
     
+
+
+def is_report_in_elastic(filepath):
+  query = {
+    "query" : {
+      "term" : { "filepath.keyword" : filepath }
+    },
+    "_source": '_id'
+  }
+  res = es.search(index=INDEX_NAME, body=query)
+  return res['hits']['total'] >= 1
+
 def load_reports():
   for filepath in files:
     try:
       if not filepath:
         continue
 
+      # If this report is already in Elastic, skip, don't add again
+      if is_report_in_elastic(filepath):
+        log.info('Skipping because found in Elastic: %s' % filepath)
+        continue
+
       # Load Report
       report = process_file(filepath)
 
-      log.info('\n\n')
-      log.info('Processing: %s' % filepath)
+      log.info('\nProcessing: %s' % filepath)
       report['original_title'] = 'Report'
       report['filepath'] = filepath
       report['_index'] = INDEX_NAME
