@@ -54,6 +54,7 @@ from elasticsearch import helpers
 from deid.config import DeidRecipe
 from matplotlib import pyplot as plt
 from elasticsearch import Elasticsearch
+from dateparser.search import search_dates
 from dateutil.relativedelta import relativedelta
 from skimage.morphology import white_tophat, opening, disk
 from deid.dicom import get_files, replace_identifiers, get_identifiers
@@ -126,7 +127,7 @@ def get_pixels(input_filepath):
   # Guess a transfer syntax if none is available
   if 'TransferSyntaxUID' not in dicom.file_meta:
     dicom.file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian  # 1.2.840.10008.1.2
-    dicom = put_to_dicom_header(dicom, key='AssumedTransferSyntaxUID', value='pydicom.uid.ImplicitVRLittleEndian 1.2.840.10008.1.2', superkey='Image  ')
+    dicom = put_to_dicom_private_header(dicom, key='AssumedTransferSyntaxUID', value='pydicom.uid.ImplicitVRLittleEndian 1.2.840.10008.1.2', superkey='Image  ')
     log.warning('Assumed TransferSyntaxUID')
 
   # Get Pixels
@@ -712,83 +713,84 @@ def datematcher(possibly_dates, text, fuzzy=False):
   TODO (low priority): Explore enabling parser.parse(fuzzy=true) in: /usr/local/lib/python3.5/dist-packages/datefinder/__init__.py
   https://dateutil.readthedocs.io/en/stable/parser.html#dateutil.parser.parse
   """
+
   returning = set()
   found_dates = datefinder.find_dates(str(text), source=True) #finds all dates in text
   found_dates = list(found_dates)
     
-  for date in possibly_dates:
-    datetime_object = datefinder.find_dates(date) #gets the datetime object of the PHI element
-    datetime_object = list(datetime_object)
+  for datetime_object in possibly_dates:
 
-    if datetime_object: #there was a date at that PHI element
-      datetime_object = datetime_object[0]
-      for found_date in found_dates:
-        found_date = {
-          'object' : found_date[0],
-          'string' : found_date[1],
-        }
-        if datetime_object in found_date: #if the date matches one that was in input text
-          returning.add(found_date['string']) #append the line of text where the dates matched
+    datetime_object = datetime_object[0]
+    for found_date in found_dates:
+      found_date = {
+        'object' : found_date[0],
+        'string' : found_date[1],
+      }
+      if datetime_object == found_date['object']: #if the date matches one that was in input text
+        returning.add(found_date['string']) #append the line of text where the dates matched
 
-        elif fuzzy: #not an exact match so should check if it is a fuzzy match
-          date_string = datetime_object.strftime('%Y%m%d')
-          found_date_string = found_date['object'].strftime('%Y%m%d')
-          # The >=75 allows for two different digit swaps assuming 8 characters. And the >=5 confirms that the date is long enough to be an actual date not just a short string of random numbers. And the !=today() ignores "found" dates that match todays date because datefinder assumes today's date if there is missing date information
-          if fuzz.ratio(date_string, found_date_string) >= 75 and len(found_date['string']) >= 5 and found_date['object'].date() != datetime.datetime.today().date():
-            returning.add(found_date['string'])
+      elif fuzzy: #not an exact match so should check if it is a fuzzy match
+        date_string = datetime_object.strftime('%Y%m%d')
+        found_date_string = found_date['object'].strftime('%Y%m%d')
+        # The >=75 allows for two different digit swaps assuming 8 characters. And the >=5 confirms that the date is long enough to be an actual date not just a short string of random numbers. And the !=today() ignores "found" dates that match todays date because datefinder assumes today's date if there is missing date information
+        if fuzz.ratio(date_string, found_date_string) >= 75 and len(found_date['string']) >= 5 and found_date['object'].date() != datetime.datetime.today().date():
+          returning.add(found_date['string'])
 
   return list(returning)
 
 def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
-  """ Finds and replaces PHI be it a date or an exact string match with a UUID."""
+  """ Finds and replaces PHI in inplace in DICOM be it a date or an exact string match with a UUID."""
   field_val = dicom.get(field_tag)
+  PHI_notdates = []
+  PHI_dateobjects = []
 
   if (field_val != None): #check if the field exists
     PHI = get_PHI() #get all PHI values so far
 
-    exact_match_list = []
-    possible_match_list = []
+    # PHI.append("2034.06.20")
+    # PHI.append("2035/02/15")
+    # PHI.append("PFIRST")
+    # PHI.append("PLAST")
 
-    # TODO: move this loop into match_and_replace_exact() and match_and_replace_dates() fuctions
     for element in PHI:
-      if element in str(field_val.value): #element was an exact match in the text, so it can be directly replaced
-        exact_match_list.append(element)
-      else: #the element cannot be direclty replaced as there was no exact match in text
-        possible_match_list.append(element)
+      element_dt_obj = datefinder.find_dates(element)
+      element_dt_obj = list(element_dt_obj)
+      if element_dt_obj == []:
+        PHI_notdates.append(element)
+      else:
+        PHI_dateobjects.append(element_dt_obj)
 
     #replace exact matches with UID
-    field_val.value = match_and_replace_exact(dicom, field_tag, exact_match_list)
+    field_val.value = match_and_replace_exact(dicom, field_tag, PHI_notdates)
     #replace possible date matches that aren't directly in text with UID
-    field_val.value = match_and_replace_dates(dicom, field_tag, possible_match_list, fuzzy)
+    field_val.value = match_and_replace_dates(dicom, field_tag, PHI_dateobjects, fuzzy)
 
-def match_and_replace_exact(dicom, field_tag, match_list):
+    dicom[field.tag] = pydicom.DataElement(field.tag, field.VR, field_val.value) # set back into dicom
+
+
+
+def match_and_replace_exact(dicom, field_tag, PHI):
   """matches and replaces PHI dates that were the exact same format as those found in the specified field
   Returns the updated field of the dicom"""
   dicom_field = dicom.get(field_tag)
   field_val = dicom_field.value
 
-  for element in match_list:
-    element = element.upper()
-    element_dt_obj = datefinder.find_dates(element)
-    element_dt_obj = list(element_dt_obj)
-    # TODO: wtf? how "element_dt_obj == [] and len(element) >= 3"
-    if element_dt_obj == [] and len(element) >= 3: #is not a date so can use value it already has as the key
-      _dict = {dicom_field.name: element, 'new_path': output_filepath, 'orig_path': dicom_path}
-    else: #is a date so must convert it to a specific form of string for its key
-      _dict = {dicom_field.name: element_dt_obj[0].strftime('%Y/%m/%d'), 'new_path': output_filepath, 'orig_path': dicom_path}
-
-    UID = generate_uid(_dict, field_name=dicom_field.name)
-    field_val = field_val.replace(element, str(UID))
+  for element in PHI:
+    if element.upper() in str(field_val).upper():
+      if len(element) >= 3: #is not a date but is an exact match
+        _dict = {dicom_field.name: element, 'new_path': output_filepath, 'orig_path': dicom_path}
+        UID = generate_uid(_dict, field_name=dicom_field.name)
+        field_val = field_val.replace(element, str(UID))
 
   return field_val
 
-def match_and_replace_dates(dicom, field_tag, match_list, fuzzy=False):
+def match_and_replace_dates(dicom, field_tag, PHI_dateobjects, fuzzy=False):
   """matches and replaces PHI dates that were not the exact same format as those found in the specified field
   Returns the updated field of the dicom"""
   dicom_field = dicom.get(field_tag) 
   field_val = dicom_field.value
 
-  found_date_strings = datematcher(match_list, field_val, fuzzy) #get all dates from the specified field of the dicom
+  found_date_strings = datematcher(PHI_dateobjects, field_val, fuzzy) #get all dates from the specified field of the dicom
 
   for found_date in found_date_strings: #check where the date is and replace it 
   # Split found date string into parts because sometimes we over detect and include words like "on" so we'll next loop over the parts looking for the just the date to replace
@@ -824,16 +826,16 @@ def save_report_to_file(dicom):
 
   ## Save report filepath in DICOM header
   # Make copy of the old filepath (before de-identification)
-  dicom = put_to_dicom_header(dicom, key='filepath_orig', value=report_dict['filepath']['value'])
+  dicom = put_to_dicom_private_header(dicom, key='filepath_orig', value=report_dict['filepath']['value'])
   # # Save the new filepath
-  dicom = put_to_dicom_header(dicom, key='filepath', value=output_filepath)
+  dicom = put_to_dicom_private_header(dicom, key='filepath', value=output_filepath)
 
   return dicom
 
-def put_to_dicom_header(dicom, key=None, tag=None, value=None, superkey='Report '):
+def put_to_dicom_private_header(dicom, key=None, tag=None, value=None, superkey='Report '):
   """ Add new report data in dicom metadata """
   if not key:
-    raise Exception('put_to_dicom_header() requires a key')
+    raise Exception('put_to_dicom_private_header() requires a key')
   if len(superkey) > 7:
     raise Exception('Currently only supporting superkeys that are 7 chars long, such as "Report " or "Image  ".')
 
@@ -881,7 +883,7 @@ def add_audit_to_dicom(dicom):
     value = value + ', ' + this_code
   else:
     value = this_code
-  dicom = put_to_dicom_header(dicom, key='ProcessingAudit', value=value, superkey='Image  ')
+  dicom = put_to_dicom_private_header(dicom, key='ProcessingAudit', value=value, superkey='Image  ')
   return dicom
 
 def iter_simple_fields(dicom):
@@ -1060,7 +1062,7 @@ if __name__ == '__main__':
     dicom = save_report_to_file(dicom)
 
     # Record where the original DICOM file came from before it was de-identified
-    dicom = put_to_dicom_header(dicom, key='filepath_orig', value=dicom_path, superkey='Image  ')
+    dicom = put_to_dicom_private_header(dicom, key='filepath_orig', value=dicom_path, superkey='Image  ')
     
     # Record what code touched the image
     dicom = add_audit_to_dicom(dicom)
