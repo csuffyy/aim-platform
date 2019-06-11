@@ -8,7 +8,7 @@
 
 set -x
 
-source aim-platform/image-archive/environments/production/env.sh
+source ~/aim-platform/image-archive/environments/production/env.sh
 export ES_BLUK_INSERT_SIZE=50
 export ELASTIC_IP='192.168.100.61' # special elastic location via tunnel when in HPF
 export FALLBACK_ELASTIC_IP='192.168.100.61' # special elastic location via tunnel when in HPF
