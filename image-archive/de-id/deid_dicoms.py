@@ -713,14 +713,20 @@ def datematcher(possibly_dates, text, fuzzy=False):
   TODO (low priority): Explore enabling parser.parse(fuzzy=true) in: /usr/local/lib/python3.5/dist-packages/datefinder/__init__.py
   https://dateutil.readthedocs.io/en/stable/parser.html#dateutil.parser.parse
   """
-
+  found_dates = []
   returning = set()
-  found_dates = datefinder.find_dates(str(text), source=True) #finds all dates in text
-  found_dates = list(found_dates)
-    
-  for datetime_object in possibly_dates:
 
-    datetime_object = datetime_object[0]
+  found_dates_dfinder = datefinder.find_dates(str(text), source=True) #finds all dates in text using datefinder
+  found_dates_dfinder = list(found_dates_dfinder)
+  found_dates.extend(found_dates_dfinder) #add all the dates found from datefinder to the master list of dates
+
+  found_dates_dparser = search_dates(str(text)) #finds all dates in text using dateparser
+  if found_dates_dparser:
+    found_dates_dparser = list(found_dates_dparser)
+    for dp_date in found_dates_dparser: #add all the dates found from dateparser to the master list of dates in the correct order as a tuple with the datefinder object first and the part of the text that the date was found in
+      found_dates.append((dp_date[1], dp_date[0]))
+
+  for datetime_object in possibly_dates:
     for found_date in found_dates:
       found_date = {
         'object' : found_date[0],
@@ -747,10 +753,10 @@ def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
   if (field_val != None): #check if the field exists
     PHI = get_PHI() #get all PHI values so far
 
-    # PHI.append("2034.06.20")
-    # PHI.append("2035/02/15")
-    # PHI.append("PFIRST")
-    # PHI.append("PLAST")
+    PHI.append("2034.06.20")
+    PHI.append("2035/02/15")
+    PHI.append("PFIRST")
+    PHI.append("PLAST")
 
     for element in PHI:
       element_dt_obj = datefinder.find_dates(element)
@@ -758,7 +764,7 @@ def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
       if element_dt_obj == []:
         PHI_notdates.append(element)
       else:
-        PHI_dateobjects.append(element_dt_obj)
+        PHI_dateobjects.extend(element_dt_obj)
 
     #replace exact matches with UID
     field_val.value = match_and_replace_exact(dicom, field_tag, PHI_notdates)
@@ -892,7 +898,7 @@ def iter_simple_fields(dicom):
     if field.name == 'Pixel Data':
       continue
     # Skip objects of this kind because they can't be made into strings, perhaps go deeper
-    if field.value.__class__ == [pydicom.sequence.Sequence, pydicom.valuerep.PersonName3, pydicom.multival.MultiValue, pydicom.valuerep.DSfloat, pydicom.valuerep.IS, int]:
+    if field.value.__class__ in [pydicom.sequence.Sequence, pydicom.valuerep.PersonName3, pydicom.multival.MultiValue, pydicom.valuerep.DSfloat, pydicom.valuerep.IS, int]:
       continue
     yield field
 
