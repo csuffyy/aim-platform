@@ -1,0 +1,13 @@
+{
+  "size": 0,
+    "aggs" : {
+        "type_count" : {
+            "sum" : {
+                "script" : {
+                "lang": "painless",
+                "source": "Integer.parseInt(doc['Rows.keyword'].value) * Integer.parseInt(doc['Columns.keyword'].value)"
+            }
+            }
+        }
+    }
+}
