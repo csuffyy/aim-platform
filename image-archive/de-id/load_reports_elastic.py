@@ -42,6 +42,8 @@ def load_reports():
       if not filepath:
         continue
 
+      log.info('\nProcessing: %s' % filepath)
+
       # If this report is already in Elastic, skip, don't add again
       # if is_report_in_elastic(filepath):
       #   log.info('Skipping because found in Elastic: %s' % filepath)
@@ -54,7 +56,6 @@ def load_reports():
       long_keys = [key for key in report.keys() if len(key) > 30] # find long keys
       list(map(report.pop, long_keys)) # remove long keys from dict
 
-      log.info('\nProcessing: %s' % filepath)
       report['original_title'] = 'Report'
       report['filepath'] = filepath
       report['_index'] = INDEX_NAME
@@ -62,8 +63,8 @@ def load_reports():
       report['searchallblank'] = '' # needed to search across everything (via searching for empty string)
       yield report
     except:
-      print(traceback.format_exc())
-      log.error('Skipping this report because of unknown error')
+      log.error(traceback.format_exc())
+      log.error('Skipping this report because of unknown error ^')
       # raise
 
 
