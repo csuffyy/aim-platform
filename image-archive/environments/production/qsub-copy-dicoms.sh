@@ -1,3 +1,11 @@
+#!/bin/bash
+
+#PBS -l mem=128mb,vmem=128mb
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=99:99:99
+#PBS -j oe
+#PBS -o /home/dsnider/jobs
+
 while read FILE; do
   IFS='/' read -a ARRAY <<< "$FILE"
   NEWPATH=''
