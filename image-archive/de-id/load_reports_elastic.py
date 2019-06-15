@@ -23,7 +23,6 @@ logging.basicConfig(format='%(asctime)s.%(msecs)d[%(levelname)s] %(message)s',
                     level=logging.INFO)
                     # level=logging.DEBUG)
 log = logging.getLogger('main')
-    
 
 
 def is_report_in_elastic(filepath):
@@ -72,7 +71,7 @@ if __name__ == '__main__':
   # Set up command line arguments
   parser = argparse.ArgumentParser(description='Load reports to Elastic.')
   parser.add_argument('input_filenames', help='File containing report file names.')
-  parser.add_argument('-n', '--num', type=int, default=500, help='Bulk chunksize.')
+  parser.add_argument('-n', '--num', type=int, default=1, help='Bulk chunksize.')
   args = parser.parse_args()
   input_filenames = args.input_filenames  # Includes full path
   ELASTIC_IP = os.environ['ELASTIC_IP']
