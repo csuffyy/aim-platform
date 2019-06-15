@@ -296,6 +296,7 @@ class Leftbar extends Component {
 
         <div style={{height:'6px'}}></div>
 
+        {/*
         <hr className="blue" />
 
         <div className="filter-heading center">
@@ -306,6 +307,7 @@ class Leftbar extends Component {
         </div>
 
         <DateRange {...components.dateRangeAcquisition} />
+      */}
 
       </div>
     );
