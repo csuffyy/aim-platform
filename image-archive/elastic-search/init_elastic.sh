@@ -341,3 +341,36 @@ curl -H 'Content-Type: application/json' -XPUT http://$ELASTIC_IP:$ELASTIC_PORT/
 
 # followed by opening of the index. It is important to open the index up for any indexing and search operations to occur.
 curl -s -X POST http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"
+
+
+##
+## Create COUNT Index
+##
+
+ELASTIC_INDEX="${COUNT_ELASTIC_INDEX:-count}"
+ELASTIC_DOC_TYPE="${COUNT_ELASTIC_DOC_TYPE:-count}"
+
+# Create index
+
+curl -s -H 'Content-Type: application/json' -X PUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX -w "\n" -d  @- << EOF
+{
+  "mappings": {
+    "$ELASTIC_DOC_TYPE": {
+     "date_detection": false,
+    }
+  }
+}
+EOF
+
+curl -s -X POST http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_close -w "\n"
+
+# Reduce replica count to 0 to prefer performance over availability
+curl -H 'Content-Type: application/json' -XPUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
+{
+    "index" : {
+        "number_of_replicas" : 0
+    }
+}'
+
+# followed by opening of the index. It is important to open the index up for any indexing and search operations to occur.
+curl -s -X POST http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_open -w "\n"

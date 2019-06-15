@@ -83,6 +83,8 @@ INDEX_NAME = os.environ['ELASTIC_INDEX']
 DOC_TYPE = os.environ['ELASTIC_DOC_TYPE']
 LINKING_INDEX_NAME = os.environ['LINKING_ELASTIC_INDEX']
 LINKING_DOC_TYPE = os.environ['LINKING_ELASTIC_DOC_TYPE']
+COUNT_INDEX_NAME = os.environ.get('COUNT_ELASTIC_INDEX','count')
+COUNT_DOC_TYPE = os.environ.get('COUNT_ELASTIC_DOC_TYPE','count')
 MATCH_CONF_THRESHOLD = 50
 TOO_MUCH_TEXT_THRESHOLD = 0
 MAX_NUM_PIXELS = 36000000 # 36 million pixels calculated as 2000x2000 plus RESIZE_FACTOR=3, so 6000x6000. Anymore takes too long)
@@ -374,6 +376,8 @@ def clean_pixels(dicom, detection):
     if not row.match_bool:
       continue
 
+    found_PHI_count_pixels += 1
+
     # Black out in actual dicom pixels
     sml_left = int(row.left / RESIZE_FACTOR)
     sml_top = int(row.top / RESIZE_FACTOR)
@@ -654,10 +658,11 @@ def lookup_linking(orig):
 
 def generate_uid(dicom_dict, function_name=None, field_name=None):
   """ This function generates a uuid to put in place of PHI and trackes the linking between UUID and PHI by inserting into ElasticSearch """
-  uid = str(uuid.uuid4()) # otherwise generate new id
   orig = dicom_dict[field_name] if field_name in dicom_dict else ''
   if orig == '':
     return ''
+
+  found_PHI_count_header += 1
 
   # Look to find existing linking in ElasticSearch
   if args.save_to_elastic:
@@ -667,6 +672,7 @@ def generate_uid(dicom_dict, function_name=None, field_name=None):
       # Found existing in elastic, use id already generated
       uid = res[0]['_source']['new']
     else:
+      uid = str(uuid.uuid4()) # otherwise generate new id
       # otherwise insert a new linking for this unseen original value to a uid
       query = {'orig': orig, 'new': uid, 'field': field_name, 'date': datetime.datetime.now(), 'orig_path': dicom_dict['orig_path'], 'new_path': dicom_dict['new_path']}
       if '_id' in dicom_dict:
@@ -929,6 +935,14 @@ def deidentify_header(dicom_path):
   dicom = cleaned_files[0] # we only pass in one at a time
   return dicom
 
+def store_number_of_redacted_PHI(dicom_uuid):
+  """Record how many PHI was found and replaced in ElasticSearch"""
+  query = {'type': 'pixel_PHI', 'count': found_PHI_count_pixels, 'uuid': dicom_uuid}
+  res = es.index(body=query, index=COUNT_INDEX_NAME, doc_type=COUNT_DOC_TYPE)
+  query = {'type': 'header_PHI', 'count': found_PHI_count_header, 'uuid': dicom_uuid}
+  res = es.index(body=query, index=COUNT_INDEX_NAME, doc_type=COUNT_DOC_TYPE)
+
+
 def setup_args():
   parser.add_argument('--input_range', help='Positional document numbers in ElasticSearch (ex. 1-10). These documents will be processed.')
   parser.add_argument('--input_files', help='Pass in file that contains list of DICOM files which will be processed.')
@@ -965,6 +979,8 @@ def log_settings():
   log.info("Settings: %s=%s" % ('DOC_TYPE', DOC_TYPE))
   log.info("Settings: %s=%s" % ('LINKING_INDEX_NAME', LINKING_INDEX_NAME))
   log.info("Settings: %s=%s" % ('LINKING_DOC_TYPE', LINKING_DOC_TYPE))
+  log.info("Settings: %s=%s" % ('COUNT_INDEX_NAME', COUNT_INDEX_NAME))
+  log.info("Settings: %s=%s" % ('COUNT_DOC_TYPE', COUNT_DOC_TYPE))
   log.info("Settings: %s=%s" % ('MATCH_CONF_THRESHOLD', MATCH_CONF_THRESHOLD))
   log.info("Settings: %s=%s" % ('TOO_MUCH_TEXT_THRESHOLD', TOO_MUCH_TEXT_THRESHOLD))
   log.info("Settings: %s=%s" % ('RESIZE_FACTOR', RESIZE_FACTOR))
@@ -1030,9 +1046,8 @@ if __name__ == '__main__':
   for idx, dicom_path in enumerate(dicom_paths):
     log.info('Processing DICOM path: %s' % dicom_path)
     found_PHI = {}
-
-    # De-Identify Metadata (and keep track of value replacements ie. linking) (and this will populate the found_PHI global variable)
-    cleaned_header_dicom = deidentify_header(dicom_path)
+    found_PHI_count_pixels = 0
+    found_PHI_count_header = 0
 
     # Skip DICOMs that are requisitions, identified by SeriesNumber:999*
     if is_requisition(cleaned_header_dicom):
@@ -1048,6 +1063,9 @@ if __name__ == '__main__':
         log.info('Creating output folder: %s' % folderpath)
         os.makedirs(folderpath)
 
+    # De-Identify Metadata (and keep track of value replacements ie. linking) (and this will populate the found_PHI global variable)
+    cleaned_header_dicom = deidentify_header(dicom_path)
+
     # Add derived fields
     cleaned_header_dicom = add_derived_fields(cleaned_header_dicom) # note: cleaned_header_dicom is not a full dicom. It is not as functional as the "dicom" variable
 
@@ -1056,15 +1074,15 @@ if __name__ == '__main__':
     if dicom is None:
       continue
 
-    # Overwrite PHI with UUIDs in DICOM
+    # Copy from "cleaned_header_dicom" to "dicom" variable so that UUIDs take place of PHI. "dicom" is the preferred variable
     for key in found_PHI.keys():
       dicom.data_element(key).value = cleaned_header_dicom.data_element(key).value
 
-    # Look for detected PHI in all DICOM fields and replace with UUIDs
+    # Look for detected PHI in all DICOM fields and replace with UUIDs (this will de-id the report if present in the DICOM)
     for field in iter_simple_fields(dicom):
       match_and_replace_PHI(dicom, field.tag)
 
-    # Save de-identified radiology report to disk
+    # Save de-identified radiology report (if present) to disk
     dicom = save_report_to_file(dicom)
 
     # Record where the original DICOM file came from before it was de-identified
@@ -1072,6 +1090,9 @@ if __name__ == '__main__':
     
     # Record what code touched the image
     dicom = add_audit_to_dicom(dicom)
+
+    # Record how many PHI was found and replaced in ElasticSearch
+    store_number_of_redacted_PHI('dicom_uuid') # FIX UUID!!!
 
     # Save DICOM to disk
     try:
