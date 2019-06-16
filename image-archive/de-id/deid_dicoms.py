@@ -122,9 +122,8 @@ def add_derived_fields(dicom):
 
   return dicom
 
-def get_pixels(input_filepath):
+def get_pixels(dicom, input_filepath):
   log.info('Getting pixels for in DICOM: %s' % input_filepath)
-  dicom = pydicom.dcmread(input_filepath, force=True)
 
   # Guess a transfer syntax if none is available
   if 'TransferSyntaxUID' not in dicom.file_meta:
@@ -395,7 +394,7 @@ def clean_pixels(dicom, detection):
 
   return dicom
 
-def display_debug_images(dicom, img_orig, img_enhanced, detection, output_filepath, input_filepath, is_mostly_text, amount_of_text_score):
+def create_debug_images(dicom, img_orig, img_enhanced, detection, output_filepath, input_filepath, is_mostly_text, amount_of_text_score):
   """ Put black boxes in image to "clean" it """
   # Debug info
   if not args.screen and not args.gifs:
@@ -562,9 +561,9 @@ def amount_of_text(detection):
 
   return (is_mostly_text, score)
 
-def process_pixels(input_filepath, output_filepath):
+def process_pixels(dicom, input_filepath, output_filepath):
   # Get Pixels
-  ret = get_pixels(input_filepath)
+  ret = get_pixels(dicom, input_filepath)
   if ret is None:
     log.warning('Couldnt read pixels so skipping: %s' % dicom_path)
     return
@@ -631,7 +630,7 @@ def process_pixels(input_filepath, output_filepath):
   dicom = clean_pixels(dicom, detection)
 
   # Display Debug Images
-  display_debug_images(dicom, img_orig, img_enhanced, detection, output_filepath, input_filepath, is_mostly_text, amount_of_text_score)
+  create_debug_images(dicom, img_orig, img_enhanced, detection, output_filepath, input_filepath, is_mostly_text, amount_of_text_score)
 
   return dicom
 
@@ -908,7 +907,7 @@ def iter_simple_fields(dicom):
       continue
     yield field
 
-def deidentify_header(dicom_path):
+def deidentify_header(dicom, dicom_path):
   # Prepare to De-Identify Metadata
   log.info('De-identifying DICOM header...')
   recipe = DeidRecipe(args.deid_recipe) # de-id rules
@@ -932,7 +931,17 @@ def deidentify_header(dicom_path):
                                       # overwrite=True,
                                       # output_folder=output_folder)
 
-  dicom = cleaned_files[0] # we only pass in one at a time
+  cleaned_header_dicom = cleaned_files[0] # we only pass in one at a time
+  # note: cleaned_header_dicom is not a full dicom. It is not as functional as the "dicom" variable
+
+  # Copy from "cleaned_header_dicom" to "dicom" variable so that UUIDs take place of PHI. "dicom" is the preferred variable
+  for key in found_PHI.keys():
+    dicom.data_element(key).value = cleaned_header_dicom.data_element(key).value
+
+  # Look for detected PHI in all DICOM fields and replace with UUIDs (this will de-id the report if present in the DICOM)
+  for field in iter_simple_fields(dicom):
+    match_and_replace_PHI(dicom, field.tag)
+
   return dicom
 
 def store_number_of_redacted_PHI(dicom_uuid):
@@ -1049,12 +1058,21 @@ if __name__ == '__main__':
     found_PHI_count_pixels = 0
     found_PHI_count_header = 0
 
+    ############
+    ##  Open  ##
+    ############
+    # Open DICOM
+    dicom = pydicom.dcmread(dicom_path, force=True)
+
     # Skip DICOMs that are requisitions, identified by SeriesNumber:999*
     if is_requisition(cleaned_header_dicom):
       log.warning('Skipping requisition: %s' % dicom_path)
       continue
 
-    # Create output folder
+    # Open Report
+    # TODO!
+
+    # Create output folder (this must come near the start so that things can be saved when needed)
     filename = os.path.basename(dicom_path)
     folder_prefix = os.path.basename(os.path.dirname(dicom_path))
     folderpath = os.path.join(args.output_folder, folder_prefix)
@@ -1063,27 +1081,17 @@ if __name__ == '__main__':
         log.info('Creating output folder: %s' % folderpath)
         os.makedirs(folderpath)
 
-    # De-Identify Metadata (and keep track of value replacements ie. linking) (and this will populate the found_PHI global variable)
-    cleaned_header_dicom = deidentify_header(dicom_path)
+    ##############
+    ##  Enrich  ##
+    ##############
+    # Add derived fields (must happen before de-identification since that could remove needed data)
+    dicom = add_derived_fields(dicom)
+    
+    # Add UUID
+    dicom = add_uuid(dicom)
 
-    # Add derived fields
-    cleaned_header_dicom = add_derived_fields(cleaned_header_dicom) # note: cleaned_header_dicom is not a full dicom. It is not as functional as the "dicom" variable
-
-    # Process pixels (de-id pixels and save debug gif)
-    dicom = process_pixels(dicom_path, output_filepath) # note this opens the dicom again (in a way that can access pixels) and thus contains PHI
-    if dicom is None:
-      continue
-
-    # Copy from "cleaned_header_dicom" to "dicom" variable so that UUIDs take place of PHI. "dicom" is the preferred variable
-    for key in found_PHI.keys():
-      dicom.data_element(key).value = cleaned_header_dicom.data_element(key).value
-
-    # Look for detected PHI in all DICOM fields and replace with UUIDs (this will de-id the report if present in the DICOM)
-    for field in iter_simple_fields(dicom):
-      match_and_replace_PHI(dicom, field.tag)
-
-    # Save de-identified radiology report (if present) to disk
-    dicom = save_report_to_file(dicom)
+    # Add report
+    # TODO!
 
     # Record where the original DICOM file came from before it was de-identified
     dicom = put_to_dicom_private_header(dicom, key='filepath_orig', value=dicom_path, superkey='Image  ')
@@ -1091,8 +1099,26 @@ if __name__ == '__main__':
     # Record what code touched the image
     dicom = add_audit_to_dicom(dicom)
 
-    # Record how many PHI was found and replaced in ElasticSearch
-    store_number_of_redacted_PHI('dicom_uuid') # FIX UUID!!!
+    ###################
+    ##  De-Identify  ##
+    ###################
+    if deidentify:
+      # De-Identify Metadata (including report) (and keep track of value replacements ie. linking) (and this will populate the found_PHI global variable)
+      dicom = deidentify_header(dicom, dicom_path)
+
+      # Record how many PHI was found and replaced in ElasticSearch
+      store_number_of_redacted_PHI('dicom_uuid') # FIX UUID!!!
+
+      # Process pixels (de-id pixels and save debug gif)
+      dicom = process_pixels(dicom_path, output_filepath) # note this opens the dicom again (in a way that can access pixels) and thus contains PHI
+      if dicom is None:
+        continue
+
+    ############
+    ##  Save  ##
+    ############
+    # Save radiology report (if present) to disk
+    dicom = save_report_to_file(dicom)
 
     # Save DICOM to disk
     try:
@@ -1105,6 +1131,16 @@ if __name__ == '__main__':
         dicom[(0x7fe0,0x0010)].is_undefined_length = False
         dicom.save_as(output_filepath)
         log.error('Successfully recovered from error and saved de-identified dicom to disk: %s\n' % filepath)
+
+    # Save image thumbnail to disk
+    # TODO!
+
+    # Insert de-identified DICOM into ElasticSearch
+    # TODO!
+
+    # Insert de-identified report into ElasticSearch (if does not exist)
+    # TODO!
+
 
     if args.wait:
       input("Press Enter to continue...")
