@@ -124,7 +124,6 @@ def process_hits(hits):
     )
     dicom_filepaths = [hit['_source']['dicom_filepath'] for hit in results['hits']['hits']]
 
-
     # Add report info to metadata in dicom on disk
     update_dicoms(report, dicom_filepaths)
 

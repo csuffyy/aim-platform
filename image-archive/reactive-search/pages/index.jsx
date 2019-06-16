@@ -168,6 +168,11 @@ const components = {
         }
       }
 
+    res.dicom_relativepath = res.dicom_relativepath.replace('-0TO0-771100.dcm','');
+    res.thumbnail_filepath = res.thumbnail_filepath.replace('-0TO0-771100','');
+    res.dicom_relativepath = 'static/' + res.dicom_relativepath;
+    res.thumbnail_filepath = 'static/' + res.thumbnail_filepath;
+
     return {
       description: (
         <div className="main-description">
@@ -179,13 +184,13 @@ const components = {
                 DWV_URL + 
                 "index.html?input=" + 
                 STATIC_WEBSERVER_URL +
-                res.dicom_relativepath + FILESERVER_SECRET_DCM
+                res.dicom_relativepath
               }
             >
 
               <div className="img">
                 <img
-                  src={STATIC_WEBSERVER_URL + res.thumbnail_filepath + FILESERVER_SECRET}
+                  src={STATIC_WEBSERVER_URL + res.thumbnail_filepath}
                   alt={res.original_title}
                   className="result-image"
                 />
@@ -264,7 +269,7 @@ const components = {
         DWV_URL + 
         "index.html?input=" + 
         STATIC_WEBSERVER_URL +
-        res.dicom_relativepath + FILESERVER_SECRET_DCM
+        res.dicom_relativepath
     }},
     innerClass: {
       title: "result-title",

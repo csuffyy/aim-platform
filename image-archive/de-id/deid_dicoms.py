@@ -61,6 +61,8 @@ from deid.dicom import get_files, replace_identifiers, get_identifiers
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True # fixes OSError: broken data stream when reading image file 
 
+from utils import dicom_to_dict
+
 ## Change logging level for deid library (see ./logger/message.py for levels)
 # from deid.logger import bot
 # bot.level=5
@@ -85,6 +87,10 @@ LINKING_INDEX_NAME = os.environ['LINKING_ELASTIC_INDEX']
 LINKING_DOC_TYPE = os.environ['LINKING_ELASTIC_DOC_TYPE']
 COUNT_INDEX_NAME = os.environ.get('COUNT_ELASTIC_INDEX','count')
 COUNT_DOC_TYPE = os.environ.get('COUNT_ELASTIC_DOC_TYPE','count')
+REPORT_INDEX_NAME = os.environ.get('REPORT_ELASTIC_INDEX','report')
+REPORT_DOC_TYPE = os.environ.get('REPORT_ELASTIC_DOC_TYPE','report')
+DEID_REPORT_INDEX_NAME = os.environ.get('DEID_REPORT_ELASTIC_INDEX','deid_report')
+DEID_REPORT_DOC_TYPE = os.environ.get('DEID_REPORT_ELASTIC_DOC_TYPE','died_report')
 MATCH_CONF_THRESHOLD = 50
 TOO_MUCH_TEXT_THRESHOLD = 0
 MAX_NUM_PIXELS = 36000000 # 36 million pixels calculated as 2000x2000 plus RESIZE_FACTOR=3, so 6000x6000. Anymore takes too long)
@@ -121,6 +127,65 @@ def add_derived_fields(dicom):
     log.warning('Couldn\'t calculate PatientAge')
 
   return dicom
+
+def save_thumbnail_of_dicom(dicom, filepath):
+  try:
+    img = dicom.pixel_array
+  except Exception as e:
+    print(traceback.format_exc())
+    log.warning('Skipping this image because error occured when reading pixel_array')
+    log.warning('Problem image was: %s\n' % filepath)
+    return
+
+  # Image shape
+  if img.shape == 0:
+    log.warning('Image size is 0: %s' % filepath)
+    return
+  # Handle greyscale Z stacks
+  smallest_dimension = np.sort(img.shape)[0]
+  if len(img.shape) == 3 and smallest_dimension != 3: # 3 here means rgb, likely a z-stack
+    img = img[int(img.shape[0]/2),:,:]
+  # Handle rgbd Z stacks
+  if len(img.shape) == 4 and smallest_dimension != 3: # 3 here means rgb, likely a z-stack
+    img = img[int(img.shape[0]/2),:,:,:]
+  if len(img.shape) not in [2,3]:
+    log.warning('Image shape is not supported: %s' % filepath)
+    return
+      
+  # Colorspace
+  if 'PhotometricInterpretation' in dicom and 'YBR' in dicom.PhotometricInterpretation:
+    # Convert from YBR to RGB
+    image = Image.fromarray(img,'YCbCr')
+    image = image.convert('RGB')
+    img = np.array(image)
+    # plt.imshow(img, cmap='gray')
+    # plt.show()
+    # More image modes: https://pillow.readthedocs.io/en/3.1.x/handbook/concepts.html#concept-modes
+  if 'PhotometricInterpretation' in dicom and 'RGB' in dicom.PhotometricInterpretation:
+    img = img[...,::-1]
+
+  # Calculate thumnail size while retaining preportions
+  max_height = 333.0
+  max_width = 250.0
+  ratio = np.min([max_width / img.shape[0], max_height / img.shape[1]])
+  resize_width = int(img.shape[0]*ratio)
+  resize_height = int(img.shape[1]*ratio)
+  im_resized = cv2.resize(img, dsize=(resize_height, resize_width), interpolation=cv2.INTER_CUBIC)
+  p2, p98 = np.percentile(im_resized, (0.5, 99.5)) # adjust brightness to improve thumbnail viewing
+  im_resized = np.interp(im_resized, (p2, p98), (0, 255)) # rescale between min and max
+  filename = os.path.basename(filepath)
+  parent_folder_name = os.path.basename(os.path.dirname(filepath))
+  thumbnail_filename = '%s.png' % filename
+  thumbnail_folder = os.path.join(output_path, parent_folder_name)
+  if not os.path.exists(thumbnail_folder):
+      os.makedirs(thumbnail_folder)
+  thumbnail_filepath = os.path.join(thumbnail_folder, thumbnail_filename)
+  cv2.imwrite(thumbnail_filepath, im_resized);
+  # plt.imshow(im_resized, cmap='gray')
+  # plt.show()
+  log.info('Saved thumbnail: %s' % thumbnail_filepath)
+  return thumbnail_filepath
+
 
 def get_pixels(dicom, input_filepath):
   log.info('Getting pixels for in DICOM: %s' % input_filepath)
@@ -651,10 +716,93 @@ def lookup_linking(orig):
     # elasticsearch.exceptions.RequestError: RequestError(400, 'search_phase_execution_exception', 'No mapping found for [date] in order to sort on')
     if 'No mapping found' in e.info['error']['root_cause'][0]['reason']:
       res = [] # mapping just doesn't exist yet
-      log.warning('LINKING INDEX DOES NOT EXIST!')
+      log.error('inking index does not exist!')
     else:
       raise e
   return res
+
+def insert_dicom_into_elastic(dicom):
+  if not args.save_to_elastic:
+    return
+
+  dicom_metadata = dicom_to_dict(dicom, log=log, environ=ENVIRON)
+
+  # Save Path of DICOM
+  # Example: 172.20.4.85:8000/static/dicom/OT-MONO2-8-hip.dcm-0TO0-771100.dcm
+  dicom_filename = os.path.basename(filepath)
+  dicom_metadata['dicom_filename'] = dicom_filename
+  dicom_metadata['dicom_filepath'] = filepath
+  dicom_relativepath = filepath.replace(FILESERVER_DICOM_PATH,'') # remove part of path up to where the webserver is located
+  dicom_metadata['dicom_relativepath'] = dicom_relativepath
+
+  # Save Path of Thumbnail
+  # Example: http://172.20.4.85:8000/static/thumbnails/2011/testplot.png-0TO0-771100
+  thumbnail_filename = os.path.basename(thumbnail_filepath)
+  parent_folder_name = os.path.basename(os.path.dirname(thumbnail_filepath))
+  thumbnail_relative_path = os.path.join(FILESERVER_THUMBNAIL_PATH, parent_folder_name, thumbnail_filename) # relative to static webserver
+  dicom_metadata['thumbnail_filename'] = thumbnail_filename
+  dicom_metadata['thumbnail_filepath'] = thumbnail_relative_path
+  dicom_metadata['thumbnail_relativepath'] = thumbnail_relative_path
+
+  dicom_metadata['original_title'] = 'Dicom'
+  dicom_metadata['_index'] = INDEX_NAME
+  dicom_metadata['_type'] = DOC_TYPE
+  dicom_metadata['searchallblank'] = '' # needed to search across everything (via searching for empty string)
+
+  res = es.index(body=dicom_metadata, index=INDEX_NAME, doc_type=DOC_TYPE)
+
+def get_report_from_elastic(AccessionNumber):
+  result = es.search(
+    index=REPORT_INDEX_NAME,
+    doc_type=REPORT_DOC_TYPE,
+    size=1,
+    body={'query': {'term': {'AccessionNumber.keyword': AccessionNumber}}}
+  )
+  if result['total'] == 0:
+    log.info('No report found for AccessionNumber')
+    return
+  # TODO !!!!! load a report into elastic and then try to get it here and continue. Return just the report dictionary
+
+
+def insert_report_into_elastic(dicom):
+  return
+  # TODO !!!!!!!!!!!!!!!!!
+
+  if not args.save_to_elastic:
+    return
+
+  metadata = get_private_metadata_as_dict(dicom)
+
+  if 'Report ' not in metadata.keys():
+    log.warning('No report associated with DICOM, so not saving deid report to disk')
+    return dicom
+
+
+  dicom_metadata = dicom_to_dict(dicom, log=log, environ=ENVIRON)
+
+  # Save Path of DICOM
+  # Example: 172.20.4.85:8000/static/dicom/OT-MONO2-8-hip.dcm-0TO0-771100.dcm
+  dicom_filename = os.path.basename(filepath)
+  dicom_metadata['dicom_filename'] = dicom_filename
+  dicom_metadata['dicom_filepath'] = filepath
+  dicom_relativepath = filepath.replace(FILESERVER_DICOM_PATH,'') # remove part of path up to where the webserver is located
+  dicom_metadata['dicom_relativepath'] = dicom_relativepath
+
+  # Save Path of Thumbnail
+  # Example: http://172.20.4.85:8000/static/thumbnails/2011/testplot.png-0TO0-771100
+  thumbnail_filename = os.path.basename(thumbnail_filepath)
+  parent_folder_name = os.path.basename(os.path.dirname(thumbnail_filepath))
+  thumbnail_relative_path = os.path.join(FILESERVER_THUMBNAIL_PATH, parent_folder_name, thumbnail_filename) # relative to static webserver
+  dicom_metadata['thumbnail_filename'] = thumbnail_filename
+  dicom_metadata['thumbnail_filepath'] = thumbnail_relative_path
+  dicom_metadata['thumbnail_relativepath'] = thumbnail_relative_path
+
+  dicom_metadata['original_title'] = 'Dicom'
+  dicom_metadata['_index'] = INDEX_NAME
+  dicom_metadata['_type'] = DOC_TYPE
+  dicom_metadata['searchallblank'] = '' # needed to search across everything (via searching for empty string)
+
+  res = es.index(body=dicom_metadata, index=INDEX_NAME, doc_type=DOC_TYPE)
 
 def generate_uid(dicom_dict, function_name=None, field_name=None):
   """ This function generates a uuid to put in place of PHI and trackes the linking between UUID and PHI by inserting into ElasticSearch """
@@ -977,7 +1125,6 @@ def store_number_of_redacted_PHI(dicom_uuid):
   query = {'type': 'header_PHI', 'count': found_PHI_count_header, 'uuid': dicom_uuid}
   res = es.index(body=query, index=COUNT_INDEX_NAME, doc_type=COUNT_DOC_TYPE)
 
-
 def setup_args():
   parser.add_argument('--input_range', help='Positional document numbers in ElasticSearch (ex. 1-10). These documents will be processed.')
   parser.add_argument('--input_files', help='Pass in file that contains list of DICOM files which will be processed.')
@@ -1032,13 +1179,17 @@ if __name__ == '__main__':
 
   if args.save_to_elastic:
     es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
-
+    # Test ElasticSearch connection 
+    if not es.indices.exists(index=INDEX_NAME):
+      raise Exception("Could not connect to ElasticSearch or Index doesn't exist")
+    
   # Get List of Dicoms from a file
   if args.input_files:
     fp = open(args.input_files) # Open file on read mode
     dicom_paths = fp.read().split("\n") # Create a list containing all lines
     fp.close() # Close file
     dicom_paths = list(filter(None, dicom_paths)) # remove empty lines
+    dicom_paths = [os.path.abspath(os.path.expanduser(os.path.expandvars(file))) for file in dicom_paths] # expand ~, environment variable, and make absolute path
     doc_ids = None
   # Lookup one input file from Elastic
   elif args.input_file:
@@ -1146,21 +1297,24 @@ if __name__ == '__main__':
     ############
     ##  Save  ##
     ############
-    # Save radiology report (if present) to disk
+
+    # Save de-identified radiology report (if present) to disk
     dicom = save_report_to_disk(dicom)
 
-    # Save DICOM to disk
-    save_dicom_to_disk(dicom, output_filepath)
+    # Insert de-identified report into ElasticSearch
+    insert_report_into_elastic(dicom)
 
     # Save image thumbnail to disk
-    # TODO!
+    thumbnail_filepath = save_thumbnail_of_dicom(dicom)
+    if not thumbnail_filepath:
+      log.error('Couldnt save thumbnail. Skipping image.')
+      continue
+
+    # Save de-identified DICOM to disk
+    save_dicom_to_disk(dicom, output_filepath)
 
     # Insert de-identified DICOM into ElasticSearch
-    # TODO!
-
-    # Insert de-identified report into ElasticSearch (if does not exist)
-    # TODO!
-
+    insert_dicom_into_elastic(dicom)
 
     if args.wait:
       input("Press Enter to continue...")
