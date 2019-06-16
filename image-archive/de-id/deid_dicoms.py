@@ -648,6 +648,7 @@ def lookup_linking(orig):
     # elasticsearch.exceptions.RequestError: RequestError(400, 'search_phase_execution_exception', 'No mapping found for [date] in order to sort on')
     if 'No mapping found' in e.info['error']['root_cause'][0]['reason']:
       res = [] # mapping just doesn't exist yet
+      log.warning('LINKING INDEX DOES NOT EXIST!')
     else:
       raise e
   return res

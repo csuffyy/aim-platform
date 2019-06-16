@@ -103,7 +103,7 @@ class DiannaExample extends Component {
         <FormGroup row>
           <Label for="exampleSearch" sm={3}>Search</Label>
           <Col sm={9}>
-            <Input type="search" name="Search" id="exampleSearch" placeholder="" />
+            <Input type="search" name="Search" id="exampleSearch" placeholder="" disabled/>
           </Col>
         </FormGroup>
 
@@ -111,15 +111,15 @@ class DiannaExample extends Component {
           <Label for="exampleSearch" sm={3}>Total</Label>
           <Col md={3}>
               <Label for="exampleImages">Images</Label>
-              <Input type="text" name="# Images" id="exampleImages" placeholder="Number of images"/>
+              <Input type="text" name="# Images" id="exampleImages" placeholder="Number of images" disabled/>
           </Col>
           <Col md={3}>
               <Label for="exampleExams">Exams</Label>
-              <Input type="text" name="# Exams" id="exampleExams" placeholder="Number of exams"/>
+              <Input type="text" name="# Exams" id="exampleExams" placeholder="Number of exams" disabled/>
           </Col>
           <Col md={3}>
               <Label for="examplePatients">Patients</Label>
-              <Input type="text" name="# Patients" id="examplePatients" placeholder="Number of patients"/>
+              <Input type="text" name="# Patients" id="examplePatients" placeholder="Number of patients" disabled/>
           </Col>
         </FormGroup>
 

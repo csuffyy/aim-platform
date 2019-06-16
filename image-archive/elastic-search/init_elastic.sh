@@ -305,7 +305,6 @@ curl -s -H 'Content-Type: application/json' -X PUT http://$ELASTIC_IP:$ELASTIC_P
 {
   "mappings": {
     "$ELASTIC_DOC_TYPE": {
-      "date_detection": false,
       "properties": {
         "orig": {
           "type": "text",
