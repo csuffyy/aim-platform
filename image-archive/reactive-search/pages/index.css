@@ -17,6 +17,10 @@
 }
 */
 
+.sml-padding-bottom {
+  padding-bottom: 10px;
+}
+
 d:hover{
   colour:white;
 }

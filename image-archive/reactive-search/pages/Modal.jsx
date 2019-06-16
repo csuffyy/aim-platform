@@ -447,16 +447,15 @@ elasticdump \\
               `}
               </pre>
 
-      <p></p>
+      <p style={{paddingTop:'5px'}}></p>
       <hr className="blue-line" />
       <p></p>
       <h3 style={{paddingTop:'15px'}}>
       Search Performance Considerations
       </h3>
-      <div> <tt className="sick-blue">•</tt> It is best to specify and search within known fields names to speed up results. Not specifying field names will searching across all fields which is much slower. </div>
-      <div> <tt className="sick-blue">•</tt> Searches will timeout after 1 minute. If this happens to you then you will have to be more specific on which fields you search.</div>
-      <div> <tt className="sick-blue">•</tt> Number of search terms is limited to 1024. That means maximum 1024 PatientIDs or AccessionNumbers can be searched at once.</div>
-      <p></p>
+      <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> It is best to specify and search within known fields names to speed up results. Not specifying field names will searching across all fields which is much slower. </div>
+      <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> Searches will timeout after 1 minute. If this happens to you then you will have to be more specific on which fields you search.</div>
+      <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> Number of search terms is limited to 1024. That means maximum 1024 PatientIDs or AccessionNumbers can be searched at once.</div>
 
 
 
