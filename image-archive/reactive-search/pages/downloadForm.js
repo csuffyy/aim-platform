@@ -93,107 +93,84 @@ class DiannaExample extends Component {
         </h3>
 
 
-        <h4>To ensure that required approval is in place for your download, please submit a download request form.</h4>
-        <p></p>
+        <p>
+        To ensure that required approval is in place for your download, please submit a download request form:
+        </p>
 
-        <form>
-        <FormGroup row>
-          <Label for="exampleName" sm={2}>User Name</Label>
-          <Col sm={10}>
-            <Input type="name" name="User Name" id="exampleName" placeholder="" />
-          </Col>
-        </FormGroup>
+        <form style={{padding:'0 20px'}}>
+          <div style={{padding:'0 30px 0 0'}}>
 
         <FormGroup row>
-          <Label for="exampleDate" sm={2}>Date</Label>
-          <Col sm={10}>
-            <Input type="date" name="date" id="date" placeholder="" /> 
-          </Col>
-        </FormGroup>
-        <FormGroup row>
-          <Label for="exampleSearch" sm={2}>Search</Label>
-          <Col sm={10}>
+          <Label for="exampleSearch" sm={3}>Search</Label>
+          <Col sm={9}>
             <Input type="search" name="Search" id="exampleSearch" placeholder="" />
           </Col>
         </FormGroup>
 
-
-{/*        <FormGroup row>
-          <Label for="exampleSearch" sm={2}>Image</Label>
-          <Col sm={10}>
-            <Input type="search" name="Image" id="Image" placeholder="Number of images" />
-          </Col>
-        </FormGroup>
-        
         <FormGroup row>
-          <Label for="exampleSearch" sm={2}>Exams</Label>
-          <Col sm={10}>
-            <Input type="search" name="Exams" id="Search" placeholder="Number of exams" />
-          </Col>
-        </FormGroup>
-
-        <FormGroup row>
-          <Label for="exampleSearch" sm={2}>Patients</Label>
-          <Col sm={10}>
-            <Input type="search" name="Patients" id="Patients" placeholder="Number of patients" />
-          </Col>
-        </FormGroup>*/}
-
-
-
-        <Row form>
-          <Col md={4}>
-            <FormGroup>
+          <Label for="exampleSearch" sm={3}>Total</Label>
+          <Col md={3}>
               <Label for="exampleImages">Images</Label>
               <Input type="text" name="# Images" id="exampleImages" placeholder="Number of images"/>
-            </FormGroup>
           </Col>
-          <Col md={4}>
-            <FormGroup>
+          <Col md={3}>
               <Label for="exampleExams">Exams</Label>
               <Input type="text" name="# Exams" id="exampleExams" placeholder="Number of exams"/>
-            </FormGroup>
           </Col>
-          <Col md={4}>
-            <FormGroup>
+          <Col md={3}>
               <Label for="examplePatients">Patients</Label>
               <Input type="text" name="# Patients" id="examplePatients" placeholder="Number of patients"/>
-            </FormGroup>  
           </Col>
-        </Row>
-
+        </FormGroup>
 
 
         <FormGroup row>
-          <Label for="exampleEmail" sm={2}>Email</Label>
-          <Col sm={10}>
+          <Label for="exampleName" sm={3}>Name</Label>
+          <Col sm={9}>
+            <Input type="name" name="Name" id="exampleName" placeholder="" />
+          </Col>
+        </FormGroup>
+
+
+        <FormGroup row>
+          <Label for="exampleEmail" sm={3}>Email</Label>
+          <Col sm={9}>
             <Input type="email" name="Email" id="exampleEmail" placeholder="" />
           </Col>
         </FormGroup>
+
         <FormGroup row>
-          <Label for="examplePI" sm={2}>PI</Label>
-          <Col sm={10}>
+          <Label for="exampleDate" sm={3}>Date</Label>
+          <Col sm={9}>
+            <Input type="date" name="date" id="date" placeholder="" /> 
+          </Col>
+        </FormGroup>
+
+        <FormGroup row>
+          <Label for="examplePI" sm={3}>PI</Label>
+          <Col sm={9}>
             <Input type="PI" name="PI" id="examplePI" placeholder="" />
           </Col>
         </FormGroup>
         <FormGroup row>
-          <Label for="exampleUseCase" sm={2}>Use Case</Label>
-          <Col sm={10}>
+          <Label for="exampleUseCase" sm={3}>Use Case</Label>
+          <Col sm={9}>
             <Input type="useCase" name="Use Case" id="exampleUseCase" placeholder="" />
           </Col>
         </FormGroup>
 
 
         <FormGroup row>
-          <Label for="exampleText" sm={2}>Other Comments</Label>
-          <Col sm={10}>
+          <Label for="exampleText" sm={3}>Other Comments</Label>
+          <Col sm={9}>
             <Input type="textarea" name="Other Comments" id="exampleText" />
           </Col>
         </FormGroup>
+      </div>
         
     <FormGroup check inline>
           <Label check>
-            <Input type="checkbox" div className="checkbox-bigger"/> I agree to only use this data at SickKids for PI lead research approved by an REB study. I agree to report any sensitive PHI found to CCM for redaction.
+            <Input type="checkbox" div className="checkbox-bigger"/> <div style={{paddingLeft:"70px"}}> I agree to only use this data at SickKids for PI lead research approved by an REB study and to report any PHI found to CCM.</div>
           </Label>
         </FormGroup>
         <p></p>
@@ -202,9 +179,8 @@ class DiannaExample extends Component {
         </span></Button>
 
       <p></p>
-      <h4>We will send you a download link once we process your request. For questions please contact <a className="sick-blue" href="https://github.com/aim-sk/aim-platform/wiki/Available-Fields-to-Search-By" target="_blank">daniel.snider@sickkids.ca</a>
-      </h4>
 
+      <h4 style={{marginTop:'15px'}}>Once we process your request we will send you download instructions. For questions please contact <a className="sick-blue" href="mailto:daniel.snider@sickkids.ca?subject=Diagnostic Imaging Archive Support" target="_blank">Support</a>. </h4>
         </form>
         </ModalBody>
         </Modal>

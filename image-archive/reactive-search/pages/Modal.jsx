@@ -28,7 +28,7 @@ class ModalExample extends React.Component {
             <div className="filter-heading center" style={{margin:"0px"}}>
               <b>
                 {" "}
-                <i className="fa fa-download" /> Help{" "}
+                <i className="fa fa-question-circle" /> Help{" "}
               </b>
             </div>
 
@@ -37,14 +37,92 @@ class ModalExample extends React.Component {
 
             <p></p>
             <h3>
-              Possible Searches Perfomed
+              Search Examples
             </h3>
             <p></p>
 
-            The search box allows queries following Query String Query syntax, which is a mini-language in Elasticsearch. This language uses a query parser in order to parse the input given. For more help, visit <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax" target="_blank">ElasticSearch</a>.
+            This archive's search box allows queries to be entered that follow the "String Query" syntax, which is a mini-language in Elasticsearch. Below we summarize possible searchers that can be performed. For more info visit the <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax" target="_blank">ElasticSearch docs</a>.
             <p></p>
 
-            <Table>
+      <Table>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            Boolean
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            (quick OR brown) AND fox
+            </pre> </td>
+            <td className="blue-line">
+            Multiple terms or clauses can be grouped together like "quick OR brown" with parent­heses, to form sub-qu­eries
+            </td>
+          </tr>
+        </tbody>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            Search Within One Field
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            statu­s:a­ctive
+            </pre> </td>
+            <td className="blue-line">
+            Field "­sta­tus­" contains "­act­ive­"
+            </td>
+          </tr>
+        </tbody>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            Search Within Multiple Fields
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            fields:[a,b,c]
+            </pre> </td>
+            <td className="blue-line">
+            "a", "b" and "c" will be the only fields searched. No spaces allowed
+            </td>
+          </tr>
+        </tbody>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            PatientID
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            fields:PatientID ID1 ID2
+            </pre> </td>
+            <td className="blue-line">
+            Fast PatientID searching. Max 1024 IDs at a time
+            </td>
+          </tr>
+        </tbody>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            AccessionNumber
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            fields:AccessionNumber ID1 ID2
+            </pre> </td>
+            <td className="blue-line">
+            Fast AccessionNumber searching
+            </td>
+          </tr>
+        </tbody>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            Patient Age
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            PatientAgeInt &#60; 8
+            </pre> </td>
+            <td className="blue-line">
+            Search by patient age
+            </td>
+          </tr>
+        </tbody>
         <tbody className="blue-line">
           <tr>
             <th className="blue-line">
@@ -61,7 +139,59 @@ class ModalExample extends React.Component {
         <tbody className="blue-line">
           <tr>
             <th className="blue-line">
-            Excluding Specified Keyword
+            Wildcard
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            qu?ck bro*
+            </pre> </td>
+            <td className="blue-line">
+            "­?" to replace a single character, and "­*" to replace zero or more characters
+            </td>
+          </tr>
+        </tbody>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            Missing Field Value
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            _miss­ing­_:t­itle
+            </pre> </td>
+            <td className="blue-line">
+            Field "­tit­le" has no value
+            </td>
+          </tr>
+        </tbody>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            Fuzzy
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            quikc~
+            </pre> </td>
+            <td className="blue-line">
+            More information about <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.3/query-dsl-query-string-query.html#_fuzziness">fuzzy</a>
+            </td>
+          </tr>
+        </tbody>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            Proximity
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            "fox quick"~5
+            </pre> </td>
+            <td className="blue-line">
+            More information about <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.3/query-dsl-query-string-query.html#_proximity_searches">proximity</a>
+            </td>
+          </tr>
+        </tbody>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            Excluding Keyword
             </th>
             <td className="blue-line"> <pre className="app-pre">
             -Fred
@@ -74,7 +204,7 @@ class ModalExample extends React.Component {
         <tbody className="blue-line">
           <tr>
             <th className="blue-line">
-            Excluding Specified Keyword
+            Excluding Keyword
             </th>
             <td className="blue-line"> <pre className="app-pre">
             NOT (name:"Fred")
@@ -87,7 +217,7 @@ class ModalExample extends React.Component {
         <tbody className="blue-line">
           <tr>
             <th className="blue-line">
-            Excluding Specified Keyword
+            Excluding Keyword
             </th>
             <td className="blue-line"> <pre className="app-pre">
             ! (name:"Fred")
@@ -162,193 +292,17 @@ class ModalExample extends React.Component {
             </td>
           </tr>
         </tbody>
-        <tbody className="blue-line">
-          <tr>
-            <th className="blue-line">
-            Wildcard
-            </th>
-            <td className="blue-line"> <pre className="app-pre">
-            qu?ck bro*
-            </pre> </td>
-            <td className="blue-line">
-            "­?" to replace a single character, and "­*" to replace zero or more characters
-            </td>
-          </tr>
-        </tbody>
-        <tbody className="blue-line">
-          <tr>
-            <th className="blue-line">
-            Missing Field Value
-            </th>
-            <td className="blue-line"> <pre className="app-pre">
-            _miss­ing­_:t­itle
-            </pre> </td>
-            <td className="blue-line">
-            Field "­tit­le" has no value
-            </td>
-          </tr>
-        </tbody>
-        <tbody className="blue-line">
-          <tr>
-            <th className="blue-line">
-            Search Within Field
-            </th>
-            <td className="blue-line"> <pre className="app-pre">
-            statu­s:a­ctive
-            </pre> </td>
-            <td className="blue-line">
-            Field "­sta­tus­" contains "­act­ive­"
-            </td>
-          </tr>
-        </tbody>
-        <tbody className="blue-line">
-          <tr>
-            <th className="blue-line">
-            Fuzzy
-            </th>
-            <td className="blue-line"> <pre className="app-pre">
-            quikc~
-            </pre> </td>
-            <td className="blue-line">
-            More information about <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.3/query-dsl-query-string-query.html#_fuzziness">fuzzy</a>
-            </td>
-          </tr>
-        </tbody>
-        <tbody className="blue-line">
-          <tr>
-            <th className="blue-line">
-            Proximity
-            </th>
-            <td className="blue-line"> <pre className="app-pre">
-            "fox quick"~5
-            </pre> </td>
-            <td className="blue-line">
-            More information about <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.3/query-dsl-query-string-query.html#_proximity_searches">proximity</a>
-            </td>
-          </tr>
-        </tbody>
-        <tbody className="blue-line">
-          <tr>
-            <th className="blue-line">
-            Grouping
-            </th>
-            <td className="blue-line"> <pre className="app-pre">
-            (quick OR brown) AND fox
-            </pre> </td>
-            <td className="blue-line">
-            Multiple terms or clauses can be grouped together like "quick OR brown" with parent­heses, to form sub-qu­eries
-            </td>
-          </tr>
-        </tbody>
-        <tbody className="blue-line">
-          <tr>
-            <th className="blue-line">
-            Subset of Fields
-            </th>
-            <td className="blue-line"> <pre className="app-pre">
-            fields:[a,b,c]
-            </pre> </td>
-            <td className="blue-line">
-            "a", "b" and "c" will be the only fields searched. No spaces allowed
-            </td>
-          </tr>
-        </tbody>
-        <tbody className="blue-line">
-          <tr>
-            <th className="blue-line">
-            PatientID
-            </th>
-            <td className="blue-line"> <pre className="app-pre">
-            fields:PatientID ID1 ID2
-            </pre> </td>
-            <td className="blue-line">
-            Fast PatientID searching. Max 1024 IDs at a time
-            </td>
-          </tr>
-        </tbody>
-        <tbody className="blue-line">
-          <tr>
-            <th className="blue-line">
-            AccessionNumber
-            </th>
-            <td className="blue-line"> <pre className="app-pre">
-            fields:AccessionNumber ID1 ID2
-            </pre> </td>
-            <td className="blue-line">
-            Fast AccessionNumber searching
-            </td>
-          </tr>
-        </tbody>
-        <tbody className="blue-line">
-          <tr>
-            <th className="blue-line">
-            Patient Age
-            </th>
-            <td className="blue-line"> <pre className="app-pre">
-            PatientAgeInt &#60; 8
-            </pre> </td>
-            <td className="blue-line">
-            Search by patient age
-            </td>
-          </tr>
-        </tbody>
       </Table>
-      <hr className="blue-line" />
-      <p></p>
 
-          <h3>
-          How to Download Metadata
-          </h3>
-          <p></p>
 
-            <h4>
-              Prerequisite: Download Helper Tool
-            </h4>
-            <p>
-            To download your current search please install the <tt>elasticdump</tt> download helper tool.
-            </p>
-            <p>
-            Install <tt>elasticdump</tt> using the node package manager:
-            </p>
-
-            <pre className="app-pre">
-              npm install elasticdump -g
-            </pre>
-            <h4>
-              Option 1: Download Metadata
-            </h4>
-            Download all metadata associated with the images in your current search results. Run this command and wait for all metadata to be downloaded to the file <tt>output.json</tt>:
-            <pre className="app-pre">{`
-elasticdump \\
-  --input=https://elasticimages.ccm.sickkids.ca \\
-  --output=output.json \\
-  --headers='{"X-Requested-With": "224400"}' \\
-  --searchBody='${this.props.lastQuery}'
-              `}
-              </pre>
-            <h4>
-              Option 2: Download File Paths
-            </h4>
-            Download the file path locations of all the images in your current search results. This also requires the <tt>jq</tt> tool, download jq <a className="sick-blue" href="https://stedolan.github.io/jq/download/" target="_blank">here</a>. Run this command and wait for all the file paths to be downloaded to the file <tt>output.txt</tt>:
-            <pre className="app-pre">{`
-elasticdump \\
-  --input=https://elasticimages.ccm.sickkids.ca \\
-  --output=$ \\
-  --headers='{"X-Requested-With": "224400"}' \\
-  --searchBody='${this.props.lastQuery}' \\
-| jq ._source.dicom_filepath | tee output.txt
-              `}
-              </pre>
-            <h4>
-              Option 3: Download DICOMs
-            </h4>
-            A special request must be made to <a className="sick-blue" href="mailto:daniel.snider@sickkids.ca?subject=Diagnostic Imaging Archive Download Request" target="_blank">Support</a>. Are you sure you want to download potentially millions of DICOMs? Typically users leave the DICOMs in place on the High Performance Computing Facility (HPF) and analyze them there without the need to download them to a desktop computer.
             <p></p>
-            <h3>
-              Possible Fields to Search
+            <hr className="blue-line" />
+            <p></p>
+            <h3 style={{paddingTop:'15px'}}>
+              Available Search Fields
             </h3>
             <p></p>
-            Below is a small amount of the available fields to search from. A more detailed selection can be found <a className="sick-blue" href="https://github.com/aim-sk/aim-platform/wiki/Available-Fields-to-Search-By" target="_blank">here</a>.
+            Below is a subset of the available fields to search on. A full list can be found <a className="sick-blue" href="https://github.com/aim-sk/aim-platform/wiki/Available-Fields-to-Search-By" target="_blank">here</a>.
             <p></p>
 
       <Table bordered>
@@ -367,70 +321,144 @@ elasticdump \\
         </tbody>
         <tbody className="background-line">
           <tr>
-            <td className="background-line blue-right-line">
+            <td className="background-line center blue-right-line">
             PatientID
             </td>
-            <td className="background-line blue-right-line">
+            <td className="background-line center blue-right-line">
             PatientSex
             </td>
-            <td className="background-line">
+            <td className="background-line center">
             ImageID
             </td>
           </tr>
         </tbody>
-        <tbody className="background-line">
+        <tbody className="background-line center">
           <tr>
-            <td className="background-line blue-right-line">
+            <td className="background-line center blue-right-line">
             AccessionNumber
             </td>
-            <td className="background-line blue-right-line">
+            <td className="background-line center blue-right-line">
             InstitutionName
             </td>
-            <td className="background-line">
+            <td className="background-line center">
             Location
             </td>
           </tr>
         </tbody>
-        <tbody className="background-line">
+        <tbody className="background-line center">
           <tr>
-            <td className="background-line blue-right-line">
+            <td className="background-line center blue-right-line">
             StudyID
             </td>
-            <td className="background-line blue-right-line">
-            PatientAge (in Days)
+            <td className="background-line center blue-right-line">
+            PatientAgeInt
             </td>
-            <td className="background-line">
+            <td className="background-line center">
             ImageType
             </td>
           </tr>
         </tbody>
-                <tbody className="background-line">
+                <tbody className="background-line center">
           <tr>
-            <td className="background-line blue-right-line">
+            <td className="background-line center blue-right-line">
             PatientAddress
             </td>
-            <td className="background-line blue-right-line">
+            <td className="background-line center blue-right-line">
             PatientBirthDate
             </td>
-            <td className="background-line">
+            <td className="background-line center">
             AcquisitionNumber
             </td>
           </tr>
         </tbody>
-                <tbody className="background-line">
+        <tbody className="background-line center">
           <tr>
-            <td className="background-line blue-right-line">
+            <td className="background-line center blue-right-line">
             PatientName
             </td>
-            <td className="background-line blue-right-line">
+            <td className="background-line center blue-right-line">
             AcquisitionDate
             </td>
-            <td className="background-line">
-            EthnicGroup
+            <td className="background-line center">
+            InstanceNumber
+            </td>
+          </tr>
+        </tbody>
+        <tbody className="background-line">
+          <tr>
+            <td className="background-line blue-right-line center">
+            •<br></br>•<br></br>•<br></br><a className="sick-blue" href="https://github.com/aim-sk/aim-platform/wiki/Available-Fields-to-Search-By" target="_blank">More</a>
+            </td>
+            <td className="background-line blue-right-line center">
+            •<br></br>•<br></br>•<br></br><a className="sick-blue" href="https://github.com/aim-sk/aim-platform/wiki/Available-Fields-to-Search-By" target="_blank">More</a>
+            </td>
+            <td className="background-line center">
+            •<br></br>•<br></br>•<br></br><a className="sick-blue" href="https://github.com/aim-sk/aim-platform/wiki/Available-Fields-to-Search-By" target="_blank">More</a>
             </td>
           </tr>
         </tbody>
       </Table>
+
+
+
+          <hr className="blue-line" />
+          <p></p>
+          <h3 style={{paddingTop:'15px'}}>
+          How to Download Metadata
+          </h3>
+          <p></p>
+
+            <h4>
+              Prerequisite: Download Helper Tool
+            </h4>
+            <p>
+            To download metadata about your current search please install the <tt>elasticdump</tt> download helper tool. Note this will not download DICOM images.
+            </p>
+            <p>
+            Install <a className="sick-blue" href="https://stedolan.github.io/jq/download/" target="_blank"><tt>elasticdump</tt></a> helper tool using the node package manager:
+            </p>
+
+            <pre className="app-pre">
+              npm install elasticdump -g
+            </pre>
+            <h4>
+              Example 1: Download Metadata
+            </h4>
+            Download all metadata associated with the images in your current search results. Run this command and wait for all metadata to be downloaded to the file <tt>output.json</tt>:
+            <pre className="app-pre">{`
+elasticdump \\
+  --input=https://elasticimages.ccm.sickkids.ca \\
+  --output=output.json \\
+  --headers='{"X-Requested-With": "224400"}' \\
+  --searchBody='${this.props.lastQuery}'
+              `}
+              </pre>
+            <h4>
+              Example 2: Download File Paths
+            </h4>
+            Download the file path locations of all the images in your current search results. This also requires the <tt>jq</tt> tool, download jq <a className="sick-blue" href="https://stedolan.github.io/jq/download/" target="_blank">here</a>. Run this command and wait for all the file paths to be downloaded to the file <tt>output.txt</tt>:
+            <pre className="app-pre">{`
+elasticdump \\
+  --input=https://elasticimages.ccm.sickkids.ca \\
+  --output=$ \\
+  --headers='{"X-Requested-With": "224400"}' \\
+  --searchBody='${this.props.lastQuery}' \\
+| jq ._source.dicom_filepath | tee output.txt
+              `}
+              </pre>
+
+      <p></p>
+      <hr className="blue-line" />
+      <p></p>
+      <h3 style={{paddingTop:'15px'}}>
+      Search Performance Considerations
+      </h3>
+      <div> <tt className="sick-blue">•</tt> It is best to specify and search within known fields names to speed up results. Not specifying field names will searching across all fields which is much slower. </div>
+      <div> <tt className="sick-blue">•</tt> Searches will timeout after 1 minute. If this happens to you then you will have to be more specific on which fields you search.</div>
+      <div> <tt className="sick-blue">•</tt> Number of search terms is limited to 1024. That means maximum 1024 PatientIDs or AccessionNumbers can be searched at once.</div>
+      <p></p>
+
+
 
           </ModalBody>
           <ModalFooter>
