@@ -32,14 +32,14 @@ ELASTIC_IP = os.environ['ELASTIC_IP']
 ELASTIC_PORT = os.environ['ELASTIC_PORT']
 DICOM_BASE_PATH = os.environ.get('DICOM_BASE_PATH','../reactive-search/')
 
-def update_dicoms(report, dicom_filepaths):
-  """Add report info to metadata in dicom on disk"""
+def update_dicoms(metadata, dicom_filepaths):
+  """Add metadata dicom header on disk"""
   # TODO: check for unused group
   # TODO: check for unused key
-  if not report:
+  if not metadata:
     return
 
-  # Loop over images. There may be multiple images related to the report
+  # Loop over images. There may be multiple images related to the metadata
   for filepath in dicom_filepaths:
     filepath = os.path.join(DICOM_BASE_PATH, filepath)
     dicom = pydicom.dcmread(filepath)
@@ -48,7 +48,7 @@ def update_dicoms(report, dicom_filepaths):
     loc_element = 0x0030
 
     # Add new data in dicom metadata
-    for key, value in report.items():
+    for key, value in metadata.items():
       # Remove all non-word characters (everything except numbers and letters)
       key = re.sub(r"[^\w\s]", '', key)
       key = re.sub(r"\s+", '', key)
@@ -56,7 +56,7 @@ def update_dicoms(report, dicom_filepaths):
       if loc in dicom:
         # log.warning('This DICM already has a value at position %s=%s' % (loc, str(dicom[loc])[0:100]))
         pass
-      value = "Report %s: %s" % (key, str(value)) # Append key name to start of value because dicom uses hexadecimal instead of key names
+      value = "metadata %s: %s" % (key, str(value)) # Append key name to start of value because dicom uses hexadecimal instead of key names
       log.debug('Inserting Value: %s' % value)
       dicom[loc] = pydicom.DataElement(loc, dicom_datatype, value)
       loc_element = loc_element + 1 # increment to use higher index on next loop

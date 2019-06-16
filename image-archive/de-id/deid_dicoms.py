@@ -375,6 +375,7 @@ def clean_pixels(dicom, detection):
     if not row.match_bool:
       continue
 
+    global found_PHI_count_pixels
     found_PHI_count_pixels += 1
 
     # Black out in actual dicom pixels
@@ -554,7 +555,7 @@ def amount_of_text(detection):
     score += row.conf*len(row.text)
   score = score / (num_pixels / 1000) # divide by number of pixels (divided by a thousand cause number of pixels is really large and I'm worried about losing precision, so make smaller)
 
-  # Check if amount of text is greater than threshold
+  # Check if amount of text is greater than threshol and so must come before other de-identificationd
   is_mostly_text = False
   if score > TOO_MUCH_TEXT_THRESHOLD:
     is_mostly_text = True
@@ -565,7 +566,6 @@ def process_pixels(dicom, input_filepath, output_filepath):
   # Get Pixels
   ret = get_pixels(dicom, input_filepath)
   if ret is None:
-    log.warning('Couldnt read pixels so skipping: %s' % dicom_path)
     return
 
   img_bw, img_orig, dicom = ret
@@ -662,6 +662,7 @@ def generate_uid(dicom_dict, function_name=None, field_name=None):
   if orig == '':
     return ''
 
+  global found_PHI_count_header
   found_PHI_count_header += 1
 
   # Look to find existing linking in ElasticSearch
@@ -688,26 +689,28 @@ def generate_uid(dicom_dict, function_name=None, field_name=None):
 
 def extract_key_value_from_field(field):
   seperate_key_value = str(field.value).split(": ")
+  superkey = seperate_key_value[0][:7]
   key = seperate_key_value[0][7:].strip()
   value = ":".join(seperate_key_value[1:]) #7 means the end of the word "report"
-  return key, value
+  return superkey, key, value
 
 def get_private_metadata_as_dict(dicom):
-  report_dict = {}
+  metadata = {}
   tag = [0x0019, 0x0030]
-  report_part = dicom.get(tag)
+  metadata_part = dicom.get(tag)
 
-  while(report_part is not None):
-    key, value = extract_key_value_from_field(report_part)
-    report_dict[key] = {}
-    report_dict[key]['value'] = value
-    report_dict[key]['tag'] = tag
+  while(metadata_part is not None):
+    superkey, key, value = extract_key_value_from_field(metadata_part)
+    metadata[superkey] = {}
+    metadata[superkey][key] = {}
+    metadata[superkey][key]['value'] = value
+    metadata[superkey][key]['tag'] = tag
 
     # Increment to next field in the report section of the dicom header
     tag[1] += 1
-    report_part = dicom.get(tag)
+    metadata_part = dicom.get(tag)
 
-  return report_dict
+  return metadata
 
 
 def datematcher(possibly_dates, text, fuzzy=False):
@@ -752,17 +755,20 @@ def datematcher(possibly_dates, text, fuzzy=False):
 
 def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
   """ Finds and replaces PHI in inplace in DICOM be it a date or an exact string match with a UUID."""
-  field_val = dicom.get(field_tag)
+  field = dicom.get(field_tag)
   PHI_notdates = []
   PHI_dateobjects = []
 
-  if (field_val != None): #check if the field exists
+  if (field != None): #check if the field exists
     PHI = get_PHI() #get all PHI values so far
 
-    PHI.append("2034.06.20")
-    PHI.append("2035/02/15")
-    PHI.append("PFIRST")
-    PHI.append("PLAST")
+    # PHI.append("2034.06.20")
+    # PHI.append("2035/02/15")
+    # PHI.append("PFIRST")
+    # PHI.append("PLAST")
+
+    if not PHI:
+      return
 
     for element in PHI:
       element_dt_obj = datefinder.find_dates(element)
@@ -773,11 +779,12 @@ def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
         PHI_dateobjects.extend(element_dt_obj)
 
     #replace exact matches with UID
-    field_val.value = match_and_replace_exact(dicom, field_tag, PHI_notdates)
+    field.value = match_and_replace_exact(dicom, field_tag, PHI_notdates)
     #replace possible date matches that aren't directly in text with UID
-    field_val.value = match_and_replace_dates(dicom, field_tag, PHI_dateobjects, fuzzy)
+    field.value = match_and_replace_dates(dicom, field_tag, PHI_dateobjects, fuzzy)
 
-    dicom[field.tag] = pydicom.DataElement(field.tag, field.VR, field_val.value) # set back into dicom
+    # Update DICOM
+    dicom[field.tag] = pydicom.DataElement(field.tag, field.VR, field.value) # set back into dicom
 
 
 
@@ -818,27 +825,40 @@ def match_and_replace_dates(dicom, field_tag, PHI_dateobjects, fuzzy=False):
 
   return field_val
 
-def save_report_to_file(dicom):
-  """save the edited file to the specified file given in the dicom. Also saves location of de-id'd report into dicom."""
-  report_dict = get_private_metadata_as_dict(dicom)
+def save_dicom_to_disk(dicom, output_filepath):
+  try:
+    dicom.save_as(output_filepath)
+    log.info('Saved DICOM: %s' % output_filepath)
+  except Exception as e:
+    print(traceback.format_exc())
+    log.error('Failed to save de-identified dicom to disk: %s\n' % output_filepath)
+    if 'Pixel Data with undefined length must start with an item tag' in str(e):
+      dicom[(0x7fe0,0x0010)].is_undefined_length = False
+      dicom.save_as(output_filepath)
+      log.error('Successfully recovered from error and saved de-identified dicom to disk: %s\n' % output_filepath)
 
-  if not report_dict:
+
+def save_report_to_disk(dicom):
+  """save the edited file to the specified file given in the dicom. Also saves location of de-id'd report into dicom."""
+  metadata = get_private_metadata_as_dict(dicom)
+
+  if 'Report ' not in metadata.keys():
     log.warning('No report associated with DICOM, so not saving deid report to disk')
     return dicom
 
-  file_to_save = report_dict['filepath']['value']
+  file_to_save = metadata['filepath']['value']
   filename = os.path.basename(file_to_save)
   filename = 'deid_' + filename
   output_filepath = os.path.join(folderpath, filename)
   log.info('Saving de-identified report to disk: %s' % output_filepath)
 
   file_to_write = open(output_filepath, 'w')
-  file_to_write.write(str(report_dict['Raw']['value']))
+  file_to_write.write(str(metadata['Raw']['value']))
   file_to_write.close()
 
   ## Save report filepath in DICOM header
   # Make copy of the old filepath (before de-identification)
-  dicom = put_to_dicom_private_header(dicom, key='filepath_orig', value=report_dict['filepath']['value'])
+  dicom = put_to_dicom_private_header(dicom, key='filepath_orig', value=metadata['filepath']['value'])
   # # Save the new filepath
   dicom = put_to_dicom_private_header(dicom, key='filepath', value=output_filepath)
 
@@ -866,8 +886,8 @@ def put_to_dicom_private_header(dicom, key=None, tag=None, value=None, superkey=
     while loc in dicom:
       # Check if we found key
       field = dicom[loc]
-      a_key, a_value = extract_key_value_from_field(field)
-      if key == a_key:
+      a_superkey, a_key, a_value = extract_key_value_from_field(field)
+      if key == a_key and superkey == a_superkey:
         break
 
       # Increment to use higher index on next loop
@@ -896,6 +916,11 @@ def add_audit_to_dicom(dicom):
   else:
     value = this_code
   dicom = put_to_dicom_private_header(dicom, key='ProcessingAudit', value=value, superkey='Image  ')
+  return dicom
+
+def add_uuid(dicom):
+  uid = str(uuid.uuid4())
+  dicom = put_to_dicom_private_header(dicom, key='UUID', value=uuid, superkey='Image  ')
   return dicom
 
 def iter_simple_fields(dicom):
@@ -960,6 +985,7 @@ def setup_args():
   parser.add_argument('--input_folder', help='Pass in a single DICOM file by giving path on disk.')
   parser.add_argument('--no_elastic', action='store_true', help='Skip saving metadata to ElasticSearch.')
   parser.add_argument('--deid_recipe', default='deid.dicom', help='De-id rules.')
+  parser.add_argument('--deidentify', default=True, help='Whether or not to perform de-identification.')
   parser.add_argument('--output_folder', help='Save processed DICOM files to this path.')
   parser.add_argument('--input_dicom_filename', help='Process only this DICOM by name (looked up in ElasticSearch)')
   parser.add_argument('--ocr_fallback_enabled', action='store_true', help='Only try one pass of OCR to find PHI')
@@ -995,6 +1021,7 @@ def log_settings():
   log.info("Settings: %s=%s" % ('TOO_MUCH_TEXT_THRESHOLD', TOO_MUCH_TEXT_THRESHOLD))
   log.info("Settings: %s=%s" % ('RESIZE_FACTOR', RESIZE_FACTOR))
   log.info("Settings: %s=%s" % ('wait', wait))
+  log.info("Settings: %s=%s" % ('deidentify', deidentify))
 
 if __name__ == '__main__':
   # Set up command line arguments
@@ -1066,7 +1093,7 @@ if __name__ == '__main__':
     dicom = pydicom.dcmread(dicom_path, force=True)
 
     # Skip DICOMs that are requisitions, identified by SeriesNumber:999*
-    if is_requisition(cleaned_header_dicom):
+    if is_requisition(dicom):
       log.warning('Skipping requisition: %s' % dicom_path)
       continue
 
@@ -1103,35 +1130,27 @@ if __name__ == '__main__':
     ###################
     ##  De-Identify  ##
     ###################
-    if deidentify:
-      # De-Identify Metadata (including report) (and keep track of value replacements ie. linking) (and this will populate the found_PHI global variable)
+    if args.deidentify:
+      # De-Identify Metadata (including report) (and keep track of value replacements ie. linking) (and this will populate the found_PHI global variable and so must come before other de-identification)
       dicom = deidentify_header(dicom, dicom_path)
 
       # Record how many PHI was found and replaced in ElasticSearch
       store_number_of_redacted_PHI('dicom_uuid') # FIX UUID!!!
 
       # Process pixels (de-id pixels and save debug gif)
-      dicom = process_pixels(dicom_path, output_filepath) # note this opens the dicom again (in a way that can access pixels) and thus contains PHI
+      dicom = process_pixels(dicom, dicom_path, output_filepath) # note this opens the dicom again (in a way that can access pixels) and thus contains PHI
       if dicom is None:
+        log.warning('Couldnt read pixels so skipping: %s' % dicom_path)
         continue
 
     ############
     ##  Save  ##
     ############
     # Save radiology report (if present) to disk
-    dicom = save_report_to_file(dicom)
+    dicom = save_report_to_disk(dicom)
 
     # Save DICOM to disk
-    try:
-      dicom.save_as(output_filepath)
-      log.info('Saved DICOM: %s' % output_filepath)
-    except Exception as e:
-      print(traceback.format_exc())
-      log.error('Failed to save de-identified dicom to disk: %s\n' % filepath)
-      if 'Pixel Data with undefined length must start with an item tag' in str(e):
-        dicom[(0x7fe0,0x0010)].is_undefined_length = False
-        dicom.save_as(output_filepath)
-        log.error('Successfully recovered from error and saved de-identified dicom to disk: %s\n' % filepath)
+    save_dicom_to_disk(dicom, output_filepath)
 
     # Save image thumbnail to disk
     # TODO!
