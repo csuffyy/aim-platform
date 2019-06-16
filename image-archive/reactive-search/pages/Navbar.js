@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { DataSearch } from "@appbaseio/reactivesearch";
 import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
 import ModalExample from "./Modal.jsx";
+import DiannaExample from "./downloadForm.js"
 
 
 
@@ -75,12 +76,19 @@ class Navbar extends Component {
     this.beforeValueChange = this.beforeValueChange.bind(this);
     // components.dataSearch.beforeValueChange = this.beforeValueChange; // NOTE THIS IS NOT USED BECAUSE: https://github.com/appbaseio/reactivesearch/issues/945#issuecomment-483427469  
     this.LogOut = this.LogOut.bind(this);
+    this.todayDate = this.todayDate.bind(this);
     this.toggle = this.toggle.bind(this);
     this.state = {
       dropdownOpen: false,
       queryError: false
     };
 
+  }
+
+  todayDate() {
+    // today_str = (new Date()).format("yyyy/mm/dd");
+    console.log(today_str);
+    // document.getElementById('date').value = today_str;
   }
 
   // NOTE THIS IS NOT USED BECAUSE: https://github.com/appbaseio/reactivesearch/issues/945#issuecomment-483427469
@@ -203,10 +211,10 @@ class Navbar extends Component {
               </div>
 
               <div className="row btn-group">
-                <ModalExample lastQuery={this.props.lastquery} buttonLabel="Download"/>
-                <button type="button" className="btn btn-secondary app-button" style={{padding:"0px"}}> 
-                  <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax" target="_blank" style={{color:"inherit", padding:"12px"}}>Help</a>
-                </button>
+                <ModalExample lastQuery={this.props.lastquery} buttonLabel="Help"/>
+                
+
+                <DiannaExample lastQuery={this.props.lastquery} buttonLabel="Download" />
                 <button type="button" className="btn btn-secondary app-button" onClick={this.LogOut}>Logout</button>
               </div>
             </div>
