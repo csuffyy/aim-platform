@@ -91,10 +91,17 @@ REPORT_INDEX_NAME = os.environ.get('REPORT_ELASTIC_INDEX','report')
 REPORT_DOC_TYPE = os.environ.get('REPORT_ELASTIC_DOC_TYPE','report')
 DEID_REPORT_INDEX_NAME = os.environ.get('DEID_REPORT_ELASTIC_INDEX','deid_report')
 DEID_REPORT_DOC_TYPE = os.environ.get('DEID_REPORT_ELASTIC_DOC_TYPE','died_report')
+ENVIRON = os.environ['ENVIRON']
+FILESERVER_IP = os.environ['FILESERVER_IP']
+FILESERVER_PORT = os.environ['FILESERVER_PORT']
+FILESERVER_TOKEN = os.environ.get('FILESERVER_TOKEN','')
+FILESERVER_DICOM_PATH = os.environ['FILESERVER_DICOM_PATH']
+FILESERVER_THUMBNAIL_PATH = os.environ['FILESERVER_THUMBNAIL_PATH']
 MATCH_CONF_THRESHOLD = 50
 TOO_MUCH_TEXT_THRESHOLD = 0
 MAX_NUM_PIXELS = 36000000 # 36 million pixels calculated as 2000x2000 plus RESIZE_FACTOR=3, so 6000x6000. Anymore takes too long)
 RESIZE_FACTOR = 3 # how much to blow up image to make OCR work better
+
 
 def add_derived_fields(dicom):
   log.info('Adding derived fields.')
@@ -128,7 +135,7 @@ def add_derived_fields(dicom):
 
   return dicom
 
-def save_thumbnail_of_dicom(dicom, filepath):
+def save_thumbnail_of_dicom(dicom, filepath, output_path):
   try:
     img = dicom.pixel_array
   except Exception as e:
@@ -177,12 +184,14 @@ def save_thumbnail_of_dicom(dicom, filepath):
   parent_folder_name = os.path.basename(os.path.dirname(filepath))
   thumbnail_filename = '%s.png' % filename
   thumbnail_folder = os.path.join(output_path, parent_folder_name)
-  if not os.path.exists(thumbnail_folder):
-      os.makedirs(thumbnail_folder)
+  # TODO !!!!! SAVE thumbnail
+  # if not os.path.exists(thumbnail_folder):
+  #     os.makedirs(thumbnail_folder)
   thumbnail_filepath = os.path.join(thumbnail_folder, thumbnail_filename)
-  cv2.imwrite(thumbnail_filepath, im_resized);
-  # plt.imshow(im_resized, cmap='gray')
-  # plt.show()
+  # cv2.imwrite(thumbnail_filepath, im_resized);
+
+  # # plt.imshow(im_resized, cmap='gray')
+  # # plt.show()
   log.info('Saved thumbnail: %s' % thumbnail_filepath)
   return thumbnail_filepath
 
@@ -721,7 +730,7 @@ def lookup_linking(orig):
       raise e
   return res
 
-def insert_dicom_into_elastic(dicom):
+def insert_dicom_into_elastic(dicom, filepath):
   if not args.save_to_elastic:
     return
 
@@ -745,8 +754,6 @@ def insert_dicom_into_elastic(dicom):
   dicom_metadata['thumbnail_relativepath'] = thumbnail_relative_path
 
   dicom_metadata['original_title'] = 'Dicom'
-  dicom_metadata['_index'] = INDEX_NAME
-  dicom_metadata['_type'] = DOC_TYPE
   dicom_metadata['searchallblank'] = '' # needed to search across everything (via searching for empty string)
 
   res = es.index(body=dicom_metadata, index=INDEX_NAME, doc_type=DOC_TYPE)
@@ -1164,11 +1171,21 @@ def log_settings():
   log.info("Settings: %s=%s" % ('LINKING_DOC_TYPE', LINKING_DOC_TYPE))
   log.info("Settings: %s=%s" % ('COUNT_INDEX_NAME', COUNT_INDEX_NAME))
   log.info("Settings: %s=%s" % ('COUNT_DOC_TYPE', COUNT_DOC_TYPE))
+  log.info("Settings: %s=%s" % ('REPORT_INDEX_NAME', REPORT_INDEX_NAME))
+  log.info("Settings: %s=%s" % ('REPORT_DOC_TYPE', REPORT_DOC_TYPE))
+  log.info("Settings: %s=%s" % ('DEID_REPORT_INDEX_NAME', DEID_REPORT_INDEX_NAME))
+  log.info("Settings: %s=%s" % ('DEID_REPORT_DOC_TYPE', DEID_REPORT_DOC_TYPE))
+  log.info("Settings: %s=%s" % ('ENVIRON', ENVIRON))
+  log.info("Settings: %s=%s" % ('FILESERVER_IP', FILESERVER_IP))
+  log.info("Settings: %s=%s" % ('FILESERVER_PORT', FILESERVER_PORT))
+  log.info("Settings: %s=%s" % ('FILESERVER_TOKEN', FILESERVER_TOKEN))
+  log.info("Settings: %s=%s" % ('FILESERVER_DICOM_PATH', FILESERVER_DICOM_PATH))
+  log.info("Settings: %s=%s" % ('FILESERVER_THUMBNAIL_PATH', FILESERVER_THUMBNAIL_PATH))
   log.info("Settings: %s=%s" % ('MATCH_CONF_THRESHOLD', MATCH_CONF_THRESHOLD))
   log.info("Settings: %s=%s" % ('TOO_MUCH_TEXT_THRESHOLD', TOO_MUCH_TEXT_THRESHOLD))
   log.info("Settings: %s=%s" % ('RESIZE_FACTOR', RESIZE_FACTOR))
-  log.info("Settings: %s=%s" % ('wait', wait))
-  log.info("Settings: %s=%s" % ('deidentify', deidentify))
+  log.info("Settings: %s=%s" % ('wait', args.wait))
+  log.info("Settings: %s=%s" % ('deidentify', args.deidentify))
 
 if __name__ == '__main__':
   # Set up command line arguments
@@ -1176,6 +1193,7 @@ if __name__ == '__main__':
   setup_args()
   args = parser.parse_args()
   args.save_to_elastic = not args.no_elastic
+  log_settings()
 
   if args.save_to_elastic:
     es = Elasticsearch([{'host': ELASTIC_IP, 'port': ELASTIC_PORT}])
@@ -1305,7 +1323,7 @@ if __name__ == '__main__':
     insert_report_into_elastic(dicom)
 
     # Save image thumbnail to disk
-    thumbnail_filepath = save_thumbnail_of_dicom(dicom)
+    thumbnail_filepath = save_thumbnail_of_dicom(dicom, dicom_path, output_filepath)
     if not thumbnail_filepath:
       log.error('Couldnt save thumbnail. Skipping image.')
       continue
@@ -1314,7 +1332,7 @@ if __name__ == '__main__':
     save_dicom_to_disk(dicom, output_filepath)
 
     # Insert de-identified DICOM into ElasticSearch
-    insert_dicom_into_elastic(dicom)
+    insert_dicom_into_elastic(dicom, dicom_path)
 
     if args.wait:
       input("Press Enter to continue...")
