@@ -1,0 +1,17 @@
+# Remove from Low
+EthnicGroup
+PatientSex
+PatientSexNeutered
+PatientWeight
+PatientAge
+PatientAgeInt
+PatientBirthTime
+AcquisitionTime
+PatientSize
+PatientTelephoneNumbers
+PatientInsurancePlanCodeSequence
+InstitutionAddress
+InstitutionName
+InstitutionalDepartmentName
+
+
