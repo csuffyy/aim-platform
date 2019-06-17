@@ -56,18 +56,6 @@ StudyComments
 TextComments
 VisitComments
 
-Wildcards
-==============
-contains:Trial
-contains:UID
-endswith:Date
-endswith:ID
-endswith:IDs
-endswith:Time
-endswith:time
-startswith:IssueDate
-startswith:PatientTelephoneNumber
-
 REMOVE
 ==============
 AccessionNumber
