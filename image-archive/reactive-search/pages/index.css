@@ -17,6 +17,15 @@
 }
 */
 
+.grid {
+  margin-left: 5px !important;
+  padding-left: 10px;
+}
+
+img { 
+  max-width: 100%;
+}
+
 .sml-padding-bottom {
   padding-bottom: 10px;
 }

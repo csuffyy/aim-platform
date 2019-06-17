@@ -24,6 +24,7 @@ class ModalExample extends React.Component {
     return (
         <button type="button" className="btn btn-secondary app-button" onClick={this.toggle}>{this.props.buttonLabel}
         <Modal isOpen={this.state.modal} toggle={this.toggle} className="{this.props.className} app-modal " size="lg">
+        {/*Setting up header with Help icon and X on top-right corner*/}
           <ModalHeader toggle={this.toggle}>
             <div className="filter-heading center" style={{margin:"0px"}}>
               <b>
@@ -31,19 +32,22 @@ class ModalExample extends React.Component {
                 <i className="fa fa-question-circle" /> Help{" "}
               </b>
             </div>
-
           </ModalHeader>
+
           <ModalBody>
-
+          <p></p>
+          {/*All of the examples of queries that can be performed are listed*/}
+          <h3>
+            Search Examples
+          </h3>
+          <p></p>
+        {/*Link to Elasticsearch's query string query syntax page*/}
+            This archive's search box allows queries to be entered that follow the "String Query" syntax, which is a mini-language in Elasticsearch. Below we summarize possible searches that can be performed. For more info visit the <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax" target="_blank">ElasticSearch docs</a>.
             <p></p>
-            <h3>
-              Search Examples
-            </h3>
-            <p></p>
 
-            This archive's search box allows queries to be entered that follow the "String Query" syntax, which is a mini-language in Elasticsearch. Below we summarize possible searchers that can be performed. For more info visit the <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax" target="_blank">ElasticSearch docs</a>.
-            <p></p>
-
+      {/*The table in which all the queries are listed and explained.
+         Each body of the table contains the title of the search, an example
+          of the seach, and the explanation of the search*/}
       <Table>
         <tbody className="blue-line">
           <tr>
@@ -132,6 +136,7 @@ class ModalExample extends React.Component {
             name:/joh?n(ath[oa]n)/
             </pre> </td>
             <td className="blue-line">
+          {/*Link to webpage that gives descriptions and examples of regex*/}
             More information about <a className="sick-blue" href="https://medium.com/factory-mind/regex-tutorial-a-simple-cheatsheet-by-examples-649dc1c3f285">regex</a>
             </td>
           </tr>
@@ -171,6 +176,7 @@ class ModalExample extends React.Component {
             quikc~
             </pre> </td>
             <td className="blue-line">
+          {/*Link to Elasticsearch page about fuzzy searches*/}
             More information about <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.3/query-dsl-query-string-query.html#_fuzziness">fuzzy</a>
             </td>
           </tr>
@@ -184,6 +190,7 @@ class ModalExample extends React.Component {
             "fox quick"~5
             </pre> </td>
             <td className="blue-line">
+          {/*Link to Elasticsearch page about proximity searches*/}
             More information about <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.3/query-dsl-query-string-query.html#_proximity_searches">proximity</a>
             </td>
           </tr>
@@ -294,7 +301,10 @@ class ModalExample extends React.Component {
         </tbody>
       </Table>
 
-
+      {/*A list of the fields that can be searched and those that can't be
+         There are three parts to the list; searches that can't be performed
+          due to increased sensitivity, and searches that can be performed
+          that have medium and low sensitivity*/}
             <p></p>
             <hr className="blue-line" />
             <p></p>
@@ -302,6 +312,7 @@ class ModalExample extends React.Component {
               Available Search Fields
             </h3>
             <p></p>
+            {/*Link to wiki page that shows all possible searches*/}
             Below is a subset of the available fields to search on. A full list can be found <a className="sick-blue" href="https://github.com/aim-sk/aim-platform/wiki/Available-Fields-to-Search-By" target="_blank">here</a>.
             <p></p>
 
@@ -386,12 +397,15 @@ class ModalExample extends React.Component {
         </tbody>
         <tbody className="background-line">
           <tr>
+            {/*Link to wiki page that shows all possible searches*/}
             <td className="background-line blue-right-line center">
             •<br></br>•<br></br>•<br></br><a className="sick-blue" href="https://github.com/aim-sk/aim-platform/wiki/Available-Fields-to-Search-By" target="_blank">More</a>
             </td>
+            {/*Link to wiki page that shows all possible searches*/}
             <td className="background-line blue-right-line center">
             •<br></br>•<br></br>•<br></br><a className="sick-blue" href="https://github.com/aim-sk/aim-platform/wiki/Available-Fields-to-Search-By" target="_blank">More</a>
             </td>
+            {/*Link to wiki page that shows all possible searches*/}
             <td className="background-line center">
             •<br></br>•<br></br>•<br></br><a className="sick-blue" href="https://github.com/aim-sk/aim-platform/wiki/Available-Fields-to-Search-By" target="_blank">More</a>
             </td>
@@ -400,7 +414,7 @@ class ModalExample extends React.Component {
       </Table>
 
 
-
+        {/*Explanation of how to be able to download metadata*/}
           <hr className="blue-line" />
           <p></p>
           <h3 style={{paddingTop:'15px'}}>
@@ -408,6 +422,7 @@ class ModalExample extends React.Component {
           </h3>
           <p></p>
 
+        {/*Explanation of the prerequisties needed to download the metadata*/}
             <h4>
               Prerequisite: Download Helper Tool
             </h4>
@@ -415,16 +430,19 @@ class ModalExample extends React.Component {
             To download metadata about your current search please install the <tt>elasticdump</tt> download helper tool. Note this will not download DICOM images.
             </p>
             <p>
+          {/*Link to webpage about downloading jq*/}
             Install <a className="sick-blue" href="https://stedolan.github.io/jq/download/" target="_blank"><tt>elasticdump</tt></a> helper tool using the node package manager:
             </p>
-
             <pre className="app-pre">
               npm install elasticdump -g
             </pre>
+
+        {/*Explanation of the first possible way to download metadata*/}
             <h4>
               Example 1: Download Metadata
             </h4>
             Download all metadata associated with the images in your current search results. Run this command and wait for all metadata to be downloaded to the file <tt>output.json</tt>:
+        {/*Command to download metadata to otuput.json*/}
             <pre className="app-pre">{`
 elasticdump \\
   --input=https://elasticimages.ccm.sickkids.ca \\
@@ -433,10 +451,13 @@ elasticdump \\
   --searchBody='${this.props.lastQuery}'
               `}
               </pre>
+
+          {/*Explanation of the second possible way to download metadata*/}
             <h4>
               Example 2: Download File Paths
             </h4>
             Download the file path locations of all the images in your current search results. This also requires the <tt>jq</tt> tool, download jq <a className="sick-blue" href="https://stedolan.github.io/jq/download/" target="_blank">here</a>. Run this command and wait for all the file paths to be downloaded to the file <tt>output.txt</tt>:
+        {/*Command to download file paths to otuput.txt*/}
             <pre className="app-pre">{`
 elasticdump \\
   --input=https://elasticimages.ccm.sickkids.ca \\
@@ -450,6 +471,8 @@ elasticdump \\
       <p style={{paddingTop:'5px'}}></p>
       <hr className="blue-line" />
       <p></p>
+
+    {/*List of of things that should be taken into considering when performing a search*/}
       <h3 style={{paddingTop:'15px'}}>
       Search Performance Considerations
       </h3>
@@ -457,13 +480,116 @@ elasticdump \\
       <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> Searches will timeout after 1 minute. If this happens to you then you will have to be more specific on which fields you search.</div>
       <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> Number of search terms is limited to 1024. That means maximum 1024 PatientIDs or AccessionNumbers can be searched at once.</div>
 
+      <p style={{paddingTop:'5px'}}></p>
+      <hr className="blue-line" />
+      <p></p>
+      <h3 style={{paddingTop:'15px'}}>
+        Finding Reports
+      </h3>
+
+      <p></p>
+      Method 1: cURL to index "Report":
+      <p></p>
+
+    <Table>
+      <tbody className="blue-line">
+        <tr>
+          <td className="background-line"> <pre className="app-pre"> {`
+curl -v -H 'Content-Type: \\
+application/json' -H 'X-Requested-With:\\
+224400' -XGET 'https://elasticimages.\\
+ccm.sickkids.ca/image/report/'\\
+ -d '
+  {
+    "query" : {
+        "match_all" : {}
+    }
+  }'
+              `}
+          </pre> </td>
+          <td className="background-line">
+          <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> place your password at: X-Requested-With: ~your password~ </div>
+          <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> - "match_all" will return all results for the index Report </div>
+          <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> elasticimages.ccm.sickkids.ca is location of elasticsearch </div>
+          <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> the cURL will respond to any Elasticsearch HTTP API query </div>
+          </td>
+        </tr>
+      </tbody>
+    </Table>
+
+    <p></p>
+      Method 2: Found in the dicom metadata:
+      <p></p>
+
+    <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> Click on the dicom that you are interested in. </div>
+    <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> On the next webpage, select the tag button in the top left-hand corner of the screen:
+    <img className="grid" src="/static/tabs_image.png" alt="tabs"/>
+    </div>
 
 
-          </ModalBody>
-          <ModalFooter>
+
+    <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> Scroll through the metadata on the following webpage and look at the Values column. Any value that begins with Report is from the report metadata </div>
+
+    <p style={{paddingTop:'5px'}}></p>
+    <hr className="blue-line" />
+    <p></p>
+    <h3 style={{paddingTop:'15px'}}>
+        How De-identification is Performed
+    </h3>
+     <p></p>
+      De-identification can be performed on any PHI, where the PHI is replaced and associated with a specific UUID. PHI that has identical values will be associated with the same UUID. For example, September 9, 1999 and 09/09/1999 will have the same UUID as they are the same date in different forms. There are two forms in which PHI can be identified; identical matches or fuzzy matches. Identical matches are quickly replaced with their PHI counterpart. For fuzzy matches, dates within 2 contrasting digits will be matched and replaced. UUIS linking is used so that partial re-identification can be performed for a fee and with REB approval.
+      <p></p>
+
+    <p style={{paddingTop:'5px'}}></p>
+      <hr className="blue-line" />
+      <p></p>
+      <h3 style={{paddingTop:'15px'}}>
+        How to cURL is Elasticsearch
+      </h3>
+
+    <Table>
+      <tbody className="blue-line">
+        <tr>
+          <td className="background-line"> <pre className="app-pre"> {`
+curl -v -H 'Content-Type: \\
+application/json' -H \\
+'X-Requested-With: 224400' \\
+-XGET 'https://elasticimages.\\
+ccm.sickkids.ca/image/_search'\\
+-d '
+{
+    "query" : {
+        "match_all" : {}
+    }
+}'
+              `}
+          </pre> </td>
+          <td className="background-line">
+          <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> place your password at: X-Requested-With: ~your password~ </div>
+          <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> - "match_all" will return all results for the index Report </div>
+          <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> elasticimages.ccm.sickkids.ca is location of elasticsearch </div>
+          <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> the cURL will respond to any Elasticsearch HTTP API query </div>
+          </td>
+        </tr>
+      </tbody>
+    </Table>
+
+    <p style={{paddingTop:'5px'}}></p>
+    <hr className="blue-line" />
+    <p></p>
+    <h3 style={{paddingTop:'15px'}}>
+      Finding Reports
+    </h3>
+    3D slicer is a software platform that can be used for analysis and visualization of medical images, such as examining 3D images and scanning through the layers of the image. The software can even take a folder of dicoms and display a 3D stack of all the dicoms in a combined view.
+    <p></p>
+    <img src="/static/3D-slicer.png" alt="3D Slicer"/>
+
+  </ModalBody>
 
 
-<Table borderless>
+    {/*Link for where a user can access support or who they can email for support*/}
+    <ModalFooter>
+      <Table borderless>
         <tbody className="background-line">
           <tr>
             <th className="background-line shift-left">
@@ -474,10 +600,11 @@ elasticdump \\
             </th>
           </tr>
         </tbody>
-</Table>
-          </ModalFooter>
-        </Modal>
-        </button>
+      </Table>
+     </ModalFooter>
+
+     </Modal>
+     </button>
     );
   }
 }
