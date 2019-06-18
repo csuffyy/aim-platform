@@ -137,7 +137,7 @@ class ModalExample extends React.Component {
             </pre> </td>
             <td className="blue-line">
           {/*Link to webpage that gives descriptions and examples of regex*/}
-            More information about <a className="sick-blue" href="https://medium.com/factory-mind/regex-tutorial-a-simple-cheatsheet-by-examples-649dc1c3f285">regex</a>
+            More information about <a className="sick-blue" href="https://medium.com/factory-mind/regex-tutorial-a-simple-cheatsheet-by-examples-649dc1c3f285">regex</a> searches
             </td>
           </tr>
         </tbody>
@@ -177,7 +177,7 @@ class ModalExample extends React.Component {
             </pre> </td>
             <td className="blue-line">
           {/*Link to Elasticsearch page about fuzzy searches*/}
-            More information about <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.3/query-dsl-query-string-query.html#_fuzziness">fuzzy</a>
+            More information about <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.3/query-dsl-query-string-query.html#_fuzziness">fuzzy</a> searches
             </td>
           </tr>
         </tbody>
@@ -191,7 +191,7 @@ class ModalExample extends React.Component {
             </pre> </td>
             <td className="blue-line">
           {/*Link to Elasticsearch page about proximity searches*/}
-            More information about <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.3/query-dsl-query-string-query.html#_proximity_searches">proximity</a>
+            More information about <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/reference/6.3/query-dsl-query-string-query.html#_proximity_searches">proximity</a> searches
             </td>
           </tr>
         </tbody>
