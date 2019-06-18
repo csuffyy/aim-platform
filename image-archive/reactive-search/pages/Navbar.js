@@ -212,8 +212,7 @@ class Navbar extends Component {
 
               <div className="row btn-group">
                 <ModalExample lastQuery={this.props.lastquery} buttonLabel="Help"/>
-                
-
+              
                 <DiannaExample lastQuery={this.props.lastquery} buttonLabel="Download" />
                 <button type="button" className="btn btn-secondary app-button" onClick={this.LogOut}>Logout</button>
               </div>

@@ -38,7 +38,31 @@ class DiannaExample extends Component {
     }));
   }
 
+  getDate() {
+    var today = new Date();
+    var dd = today.getDate();
+
+    var mm = today.getMonth()+1; 
+    var yyyy = today.getFullYear();
+    if(dd<10) 
+    {
+        dd='0'+dd;
+    } 
+
+    if(mm<10) 
+    {
+        mm='0'+mm;
+    } 
+    today = yyyy+'-'+mm+'-'+dd;
+    //return today;
+    //console.log(document);
+    document.getElementById("exampleDate").value = today;
+  }
+
   submitForm(event) {
+
+    this.getDate();
+
     var name=document.getElementById("exampleName").value;
     var date=document.getElementById("exampleDate").value;
     var search=document.getElementById("exampleSearch").value;
@@ -71,8 +95,6 @@ class DiannaExample extends Component {
     };
   }
 
-
-
   render() {
     return (
         <button type="button" className="btn btn-secondary app-button" onClick={this.toggle}>{this.props.buttonLabel}
@@ -87,6 +109,8 @@ class DiannaExample extends Component {
             </ModalHeader>
 
         <ModalBody>
+
+        <script>window.addEventListener('load', getDate(), false);</script>
 
         <h3>
           Download Request Form
@@ -142,7 +166,15 @@ class DiannaExample extends Component {
         <FormGroup row>
           <Label for="exampleDate" sm={3}>Date</Label>
           <Col sm={9}>
-            <Input type="date" name="date" id="date" placeholder="" /> 
+          <Input type="date" name="date" id="exampleDate" placeholder="" /> 
+
+
+          <script type="text/javascript">
+            console.log("hello");
+            this.getDate();
+          </script>
+
+
           </Col>
         </FormGroup>
 
@@ -181,7 +213,9 @@ class DiannaExample extends Component {
       <p></p>
 
       <h4 style={{marginTop:'15px'}}>Once we process your request we will send you download instructions. For questions please contact <a className="sick-blue" href="mailto:daniel.snider@sickkids.ca?subject=Diagnostic Imaging Archive Support" target="_blank">Support</a>. </h4>
+
         </form>
+
         </ModalBody>
         </Modal>
         </button>
