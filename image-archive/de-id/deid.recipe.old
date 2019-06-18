@@ -89,7 +89,6 @@ REPLACE StudyInstanceUID func:generate_uid
 # REPLACE contains:date func:generate_uid
 
 # Extra Fields Added
-ADD DeidentificationAction var:_id
 ADD PatientIdentityRemoved Yes
 
 

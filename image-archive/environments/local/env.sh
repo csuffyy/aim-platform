@@ -19,5 +19,5 @@ export FILESERVER_DICOM_PATH="/home/dan/aim-platform/image-archive/reactive-sear
 export FILESERVER_THUMBNAIL_PATH="static/thumbnails"
 export AUTH_TOKEN="771100"
 export FILESERVER_TOKEN=""
-export STATIC_WEBSERVER_URL="http://$IP:3000/"
+export STATIC_WEBSERVER_URL="http://$IP:3000/static/deid/"
 export DWV_URL="http://$IP:8080/"

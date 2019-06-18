@@ -1,0 +1,319 @@
+# Documentation
+# https://pydicom.github.io/deid/
+#
+# Adapted from: https://github.com/pydicom/deid/blob/master/deid/data/deid.dicom#L744
+
+FORMAT dicom
+
+%filter whitelist
+
+%filter graylist
+
+%filter blacklist
+
+%header
+
+# KEEP Demographics
+# =================
+# PatientAge
+# PatientSex
+# PatientSexNeutered
+# PatientSize
+# PatientState
+# PatientStatus
+# PatientWeight
+# Allergies
+# EthnicGroup
+# PreMedication
+# PregnancyStatus
+# SmokingStatus
+# SpecialNeeds
+# ExaminedBodyThickness
+# 
+# KEEP Proceedure Info
+# =================
+# ProtocolName
+# StationName
+# PerformedStationName
+# 
+# KEEP Institution
+# =================
+# InstitutionAddress
+# InstitutionalDepartmentName
+# InstitutionCodeSequence
+# InstitutionName
+# 
+# KEEP Calibration
+# =================
+# DateofLastCalibration
+# DateofLastDetectorCalibration
+# 
+# KEEP Descriptions
+# =================
+# ReasonForStudy
+# ReasonForImagingServiceRequest
+# ReasonForRequestedProcedure
+# ReasonForRequestedProcedureCodeSeq
+# DerivationDescription
+# DischargeDiagnosisDescription
+# ModifiedImageDescription
+# PatientBreedDescription
+# PatientSpeciesDescription
+# SeriesDescription
+# StudyDescription
+# RouteOfAdmissions
+# AdmittingDiagnosesDescription
+# ImageComments
+# ImagePresentationComments
+# PatientComments
+# RequestedProcedureComments
+# StudyComments
+# TextComments
+# VisitComments
+
+# REMOVE
+# ==============
+REPLACE AccessionNumber func:generate_uid
+REPLACE AcquisitionContextSeq func:generate_uid
+REPLACE AcquisitionDate func:generate_uid
+REPLACE AcquisitionDatetime func:generate_uid
+REPLACE ActualHumanPerformersSequence func:generate_uid
+REPLACE AdditionalPatientHistory func:generate_uid
+REPLACE AddressTrial func:generate_uid
+REPLACE AdmissionID func:generate_uid
+REPLACE AdmittingDate func:generate_uid
+REPLACE AdmittingDiagnosesCodeSequence func:generate_uid
+REPLACE AnatomicalOrientationType func:generate_uid
+REPLACE Arbitrary func:generate_uid
+REPLACE AssignedLocation func:generate_uid
+REPLACE AuthorObserverSequence func:generate_uid
+REPLACE BranchOfService func:generate_uid
+REPLACE BreedRegistrationNumber func:generate_uid
+REPLACE BreedRegistrationSequence func:generate_uid
+REPLACE BreedRegistryCodeSequence func:generate_uid
+REPLACE ClinicalTrialCoordinatingCenter func:generate_uid
+REPLACE ClinicalTrialProtocolEthicsCommitteeName func:generate_uid
+REPLACE ClinicalTrialProtocolID func:generate_uid
+REPLACE ClinicalTrialProtocolName func:generate_uid
+REPLACE ClinicalTrialSeriesDescription func:generate_uid
+REPLACE ClinicalTrialSeriesID func:generate_uid
+REPLACE ClinicalTrialSiteID func:generate_uid
+REPLACE ClinicalTrialSiteName func:generate_uid
+REPLACE ClinicalTrialSponsorName func:generate_uid
+REPLACE ClinicalTrialSubjectID func:generate_uid
+REPLACE ClinicalTrialSubjectReadingID func:generate_uid
+REPLACE ClinicalTrialTimePointDescription func:generate_uid
+REPLACE ClinicalTrialTimePointID func:generate_uid
+REPLACE ConfidentialityPatientData func:generate_uid
+REPLACE ConsentForDistributionFlag func:generate_uid
+REPLACE ConsultingPhysicianIdentificationSequence func:generate_uid
+REPLACE ConsultingPhysicianName func:generate_uid
+REPLACE ContactDisplayName func:generate_uid
+REPLACE ContentCreatorName func:generate_uid
+REPLACE ContentCreatorsIdCodeSeq func:generate_uid
+REPLACE ContentCreatorsName func:generate_uid
+REPLACE ContentDate func:generate_uid
+REPLACE ContentSeq func:generate_uid
+REPLACE ContentSequence func:generate_uid
+REPLACE ContextGroupExtensionCreatorUID func:generate_uid
+REPLACE CountryOfResidence func:generate_uid
+REPLACE CreatorVersionUID func:generate_uid
+REPLACE CurrentPatientLocation func:generate_uid
+REPLACE CurveDate func:generate_uid
+REPLACE CustodialOrganizationSeq func:generate_uid
+REPLACE DataSetTrailingPadding func:generate_uid
+REPLACE DateOfSecondaryCapture func:generate_uid
+REPLACE DeviceSerialNumber func:generate_uid
+REPLACE DigitalSignaturesSeq func:generate_uid
+REPLACE DigitalSignatureUID func:generate_uid
+REPLACE DischargeDiagnosisCodeSequence func:generate_uid
+REPLACE DistributionAddress func:generate_uid
+REPLACE DistributionName func:generate_uid
+REPLACE DistributionType func:generate_uid
+REPLACE EvaluatorName func:generate_uid
+REPLACE FailedSOPInstanceUIDList func:generate_uid
+REPLACE FiducialUID func:generate_uid
+REPLACE FillerOrderNumber func:generate_uid
+REPLACE FillerOrderNumberImagingServiceRequest func:generate_uid
+REPLACE FrameofReferenceUID func:generate_uid
+REPLACE GraphicAnnotationSequence func:generate_uid
+REPLACE HumanPerformerName func:generate_uid
+REPLACE HumanPerformersName func:generate_uid
+REPLACE HumanPerformersOrganization func:generate_uid
+REPLACE IconImageSequence func:generate_uid
+REPLACE InstanceCreationDate func:generate_uid
+REPLACE InstanceCreatorUID func:generate_uid
+REPLACE InsurancePlanIdentification func:generate_uid
+REPLACE IntendedRecipientsOfResultsIDSeq func:generate_uid
+REPLACE IntendedRecipientsOfResultsIDSequence func:generate_uid
+REPLACE InterpretationApproverSequence func:generate_uid
+REPLACE InterpretationAuthor func:generate_uid
+REPLACE InterpretationIdIssuer func:generate_uid
+REPLACE InterpretationRecorder func:generate_uid
+REPLACE InterpretationTranscriber func:generate_uid
+REPLACE IrradiationEventUID func:generate_uid
+REPLACE IssuerOfAdmissionID func:generate_uid
+REPLACE IssuerOfPatientID func:generate_uid
+REPLACE IssuerOfServiceEpisodeId func:generate_uid
+REPLACE LastMenstrualDate func:generate_uid
+REPLACE MAC func:generate_uid
+REPLACE MedicalAlerts func:generate_uid
+REPLACE MedicalRecordLocator func:generate_uid
+REPLACE MilitaryRank func:generate_uid
+REPLACE ModifiedAttributesSequence func:generate_uid
+REPLACE ModifyingDeviceID func:generate_uid
+REPLACE ModifyingDeviceManufacturer func:generate_uid
+REPLACE NameofPhysicianReadingStudy func:generate_uid
+REPLACE NameofPhysiciansReadingStudy func:generate_uid
+REPLACE NamesOfIntendedRecipientsOfResults func:generate_uid
+REPLACE Occupation func:generate_uid
+REPLACE OperatorIDSequence func:generate_uid
+REPLACE OperatorName func:generate_uid
+REPLACE OperatorsIdentificationSeq func:generate_uid
+REPLACE OperatorsName func:generate_uid
+REPLACE OrderCallbackPhoneNumber func:generate_uid
+REPLACE OrderEnteredBy func:generate_uid
+REPLACE OrderEntererLocation func:generate_uid
+REPLACE OriginalAttributesSequence func:generate_uid
+REPLACE OtherPatientIDs func:generate_uid
+REPLACE OtherPatientIds func:generate_uid
+REPLACE OtherPatientIDsSeq func:generate_uid
+REPLACE OtherPatientIDsSequence func:generate_uid
+REPLACE OtherPatientNames func:generate_uid
+REPLACE OverlayDate func:generate_uid
+REPLACE ParticipantSequence func:generate_uid
+REPLACE PatientAddress func:generate_uid
+REPLACE PatientBirthDate func:generate_uid
+REPLACE PatientBirthName func:generate_uid
+REPLACE PatientBirthTime func:generate_uid
+REPLACE PatientBreedCodeSequence func:generate_uid
+REPLACE PatientClinicalTrialParticipSeq func:generate_uid
+REPLACE PatientDeathDateInAlternativeCalendar func:generate_uid
+REPLACE PatientGroupLength func:generate_uid
+REPLACE PatientID func:generate_uid
+REPLACE PatientInstitutionResidence func:generate_uid
+REPLACE PatientInsurancePlanCodeSeq func:generate_uid
+REPLACE PatientInsurancePlanCodeSequence func:generate_uid
+REPLACE PatientMotherBirthName func:generate_uid
+REPLACE PatientName func:generate_uid
+REPLACE PatientPhoneNumbers func:generate_uid
+REPLACE PatientPrimaryLanguageCodeModSeq func:generate_uid
+REPLACE PatientPrimaryLanguageCodeSeq func:generate_uid
+REPLACE PatientPrimaryLanguageModifierCodeSeq func:generate_uid
+REPLACE PatientReligiousPreference func:generate_uid
+REPLACE PatientsName func:generate_uid
+REPLACE PatientSpeciesCodeSequence func:generate_uid
+REPLACE PatientTelephoneNumbers func:generate_uid
+REPLACE PatientTransportArrangements func:generate_uid
+REPLACE PerformedLocation func:generate_uid
+REPLACE PerformingPhysicianIdentificationSequence func:generate_uid
+REPLACE PerformingPhysicianIdSeq func:generate_uid
+REPLACE PerformingPhysicianIDSequence func:generate_uid
+REPLACE PerformingPhysicianName func:generate_uid
+REPLACE PerformingPhysicians’Name func:generate_uid
+REPLACE PerformProcedureStepEndDate func:generate_uid
+REPLACE PersonAddress func:generate_uid
+REPLACE PersonIdCodeSequence func:generate_uid
+REPLACE PersonIdentificationCodeSequence func:generate_uid
+REPLACE PersonName func:generate_uid
+REPLACE PersonTelephoneNumbers func:generate_uid
+REPLACE PhysicianApprovingInterpretation func:generate_uid
+REPLACE PhysicianOfRecord func:generate_uid
+REPLACE PhysicianOfRecordIdSeq func:generate_uid
+REPLACE PhysicianReadingStudyIdSeq func:generate_uid
+REPLACE PhysicianReadingStudyIDSequence func:generate_uid
+REPLACE PhysiciansOfRecord func:generate_uid
+REPLACE PhysiciansOfRecordIdentificationSequence func:generate_uid
+REPLACE PhysiciansOfRecordIDSequence func:generate_uid
+REPLACE PhysiciansReadingStudyIdentificationSequence func:generate_uid
+REPLACE PlaceOrderNumberOfImagingServiceReq func:generate_uid
+REPLACE PPSID func:generate_uid
+REPLACE PPSStartDate func:generate_uid
+REPLACE RadiopharmaceuticalStartDateTime func:generate_uid
+REPLACE RadiopharmaceuticalStopDateTime func:generate_uid
+REPLACE RefDigitalSignatureSeq func:generate_uid
+REPLACE ReferencedFrameofReferenceUID func:generate_uid
+REPLACE ReferencedPatientAliasSeq func:generate_uid
+REPLACE ReferencedPatientAliasSequence func:generate_uid
+REPLACE ReferencedSOPInstanceUID func:generate_uid
+REPLACE ReferringPhysicianAddress func:generate_uid
+REPLACE ReferringPhysicianIdentificationSequence func:generate_uid
+REPLACE ReferringPhysicianIDSequence func:generate_uid
+REPLACE ReferringPhysicianName func:generate_uid
+REPLACE ReferringPhysicianPhoneNumbers func:generate_uid
+REPLACE ReferringPhysiciansIDSeq func:generate_uid
+REPLACE ReferringPhysicianTelephoneNumber func:generate_uid
+REPLACE ReferringPhysicianTelephoneNumbers func:generate_uid
+REPLACE RefImageSeq func:generate_uid
+REPLACE RefPatientSeq func:generate_uid
+REPLACE RefPPSSeq func:generate_uid
+REPLACE RefSOPInstanceMACSeq func:generate_uid
+REPLACE RefSOPInstanceUID func:generate_uid
+REPLACE RefStudySeq func:generate_uid
+REPLACE RegionOfResidence func:generate_uid
+REPLACE RelatedFrameofReferenceUID func:generate_uid
+REPLACE RequestAttributesSeq func:generate_uid
+REPLACE RequestAttributesSequence func:generate_uid
+REPLACE RequestedProcedureID func:generate_uid
+REPLACE RequestedProcedureLocation func:generate_uid
+REPLACE RequestedProcedurePriority func:generate_uid
+REPLACE RequestingPhysician func:generate_uid
+REPLACE RequestingPhysicianIdentificationSequence func:generate_uid
+REPLACE RequestingPhysicianIDSequence func:generate_uid
+REPLACE RequestingService func:generate_uid
+REPLACE ResponsibleOrganization func:generate_uid
+REPLACE ResponsiblePerson func:generate_uid
+REPLACE ResponsiblePersonRole func:generate_uid
+REPLACE ResultsDistributionListSeq func:generate_uid
+REPLACE ResultsIDIssuer func:generate_uid
+REPLACE ReviewerName func:generate_uid
+REPLACE ScheduledHumanPerformersSeq func:generate_uid
+REPLACE ScheduledPatientInstitResidence func:generate_uid
+REPLACE ScheduledPatientInstitutionResidence func:generate_uid
+REPLACE ScheduledPerformingPhysicianIdentificationSequence func:generate_uid
+REPLACE ScheduledPerformingPhysicianIDSeq func:generate_uid
+REPLACE ScheduledPerformingPhysicianName func:generate_uid
+REPLACE ScheduledStudyLocation func:generate_uid
+REPLACE ScheduledStudyLocationAETitle func:generate_uid
+REPLACE ScheduledStudyStartDate func:generate_uid
+REPLACE SecondaryReviewerName func:generate_uid
+REPLACE SeriesDate func:generate_uid
+REPLACE SeriesInstanceUID func:generate_uid
+REPLACE ServiceEpisodeID func:generate_uid
+REPLACE SOPInstanceUID func:generate_uid
+REPLACE SourceApplicatorName func:generate_uid
+REPLACE SourceImageSeq func:generate_uid
+REPLACE SPSEndDate func:generate_uid
+REPLACE SPSStartDate func:generate_uid
+REPLACE StorageMediaFile-setUID func:generate_uid
+REPLACE StorageMediaFilesetUID func:generate_uid
+REPLACE StructureSetDate func:generate_uid
+REPLACE StudyArrivalDate func:generate_uid
+REPLACE StudyCompletionDate func:generate_uid
+REPLACE StudyDate func:generate_uid
+REPLACE StudyGroupLength func:generate_uid
+REPLACE StudyID func:generate_uid
+REPLACE StudyIDIssuer func:generate_uid
+REPLACE StudyInstanceUID func:generate_uid
+REPLACE SynchronizationFrameofReferenceUID func:generate_uid
+REPLACE TelephoneNumberTrial func:generate_uid
+REPLACE TemplateExtensionCreatorUID func:generate_uid
+REPLACE TemplateExtensionOrganizationUID func:generate_uid
+REPLACE TextString func:generate_uid
+REPLACE TimezoneOffsetFromUTC func:generate_uid
+REPLACE TopicAuthor func:generate_uid
+REPLACE TopicKeyWords func:generate_uid
+REPLACE TopicSubject func:generate_uid
+REPLACE TopicTitle func:generate_uid
+REPLACE TransactionUID func:generate_uid
+REPLACE TypeOfPatientID func:generate_uid
+REPLACE UID func:generate_uid
+REPLACE VerifyingObserverIdentificationCodeSeq func:generate_uid
+REPLACE VerifyingObserverName func:generate_uid
+REPLACE VerifyingObserverSequence func:generate_uid
+REPLACE VerifyingOrganization func:generate_uid
+REPLACE VisitStatusID func:generate_uid
+
+
+# Extra Fields Added
+ADD PatientIdentityRemoved Yes

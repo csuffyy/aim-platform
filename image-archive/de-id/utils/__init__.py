@@ -29,12 +29,6 @@ def dicom_to_dict(dicom, log=None, environ=None):
 
     if log: log.debug('%s: %s' % (key, value))
 
-  if 'TransferSyntaxUID' not in dicom.file_meta:
-    # Guess a transfer syntax if none is available
-    dicom.file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian  # 1.2.840.10008.1.2
-    dicom.add_new(0x19100e, 'FD', [0,1,0]) # I have no idea what this last vector should actually be
-    dicom[0x19100e].value = 'Assumed TransferSyntaxUID'
-    if log: log.warning('Assumed TransferSyntaxUID')
   # PatientBirthDatePretty
   try:
     if 'PatientBirthDate' in dicom_metadata:
@@ -59,32 +53,5 @@ def dicom_to_dict(dicom, log=None, environ=None):
   #   # convert to string if not already a string and has str method
   #   if not isinstance(v,str) and '__str__' in dir(v):
   #     dicom_metadata[k] = dicom_metadata[key].__str__()
-
-  # PatientAgeInt (Method 1: diff between birth and acquisition dates)
-  try:
-    if 'PatientBirthDate' in dicom_metadata and 'AcquisitionDate' in dicom_metadata:
-      PatientBirthDate = datetime.strptime(dicom_metadata['PatientBirthDate'], '%Y%m%d')
-      AcquisitionDate = datetime.strptime(dicom_metadata['AcquisitionDate'], '%Y%m%d')
-    age = AcquisitionDate - PatientBirthDate
-    age = int(age.days / 365) # age in years
-    dicom_metadata['PatientAgeInt'] = age
-  except:
-    if log: log.warning('Falling back for PatientAge')
-  # PatientAgeInt (Method 2: str to int)
-  try:
-    if 'PatientAge' in dicom_metadata:
-      age = dicom_metadata['PatientAge'] # usually looks like '06Y'
-      if 'Y' in age:
-        age = age.split('Y')
-        age = int(age[0])
-        dicom_metadata['PatientAgeInt'] = age
-  except:
-    if log: log.warning('Didn\'t understand value: %s = \'%s\'' % ('PatientAge', dicom_metadata['PatientAge']))
-  if environ and environ=='local':
-    if 'PatientAgeInt' not in dicom_metadata:
-      # DEMO ONLY!!!! Add random age
-      dicom_metadata['PatientAgeInt'] = random.randint(1,18)
-    if 'PatientSex' not in dicom_metadata:
-      dicom_metadata['PatientSex'] = 'Male' if random.randint(0,1) else 'Female'
 
   return dicom_metadata
