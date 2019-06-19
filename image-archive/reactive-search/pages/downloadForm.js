@@ -50,22 +50,22 @@ class DiannaExample extends Component {
     // Populate form fields
     var _div2 = document.getElementsByClassName('css-148lm57')[0];
     var split_div2 = _div2.innerHTML.split(" ");
-    if (split_div2[1]) { //check that some was searched
+    if (split_div2[1]) { //if there was something that was searched, show search
         split_div2 = split_div2[1].split("<");
         this.state.search = split_div2[0];
     }
-    else{ //nothing was searched, so entire image set returned
+    else{ //nothing was searched, so entire image set returned and said as search
         this.state.search = "Entire Image Set";
     }
 
-    if (document.getElementsByClassName('result-stats')[0]) { //check image count
+    if (document.getElementsByClassName('result-stats')[0]) { //if image count is greater than 0, show results normally
         var _div = document.getElementsByClassName('result-stats')[0];
         var split_div = _div.innerHTML.split(" ");
-        this.state.images = split_div[0];
-        this.state.exampleSearch_style ='0px solid grey'
-        this.state.exampleColour = "grey";
+        this.state.images = split_div[0]; //gives number of images found in search
+        this.state.exampleSearch_style ='0px solid grey' //border is regular grey
+        this.state.exampleColour = "grey"; //text is regular grey font
     }
-    else { //no images found so red box is created
+    else { //no images found so red box and text is shown with everything else being set to 0
         this.state.search = "No results found, please alter your search.";
         this.state.images = 0;
         this.state.exams = 0;
@@ -74,10 +74,10 @@ class DiannaExample extends Component {
         this.state.exampleSearch_style ='2px solid #f95959';
     }
 
-    if (!_div.innerHTML.includes('patient')) { //patients are not present in the query results
+    if (!_div.innerHTML.includes('patient')) { //patients are not present in the query results so don't display section
         this.state.examplePatient_display = 'none';
     }
-    if (!_div.innerHTML.includes('exam')) { //exams are not present in query results
+    if (!_div.innerHTML.includes('exam')) { //exams are not present in query results so don't display section
         this.state.exampleExam_display = 'none';
     }
 
