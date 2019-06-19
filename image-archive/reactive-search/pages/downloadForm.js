@@ -63,12 +63,14 @@ class DiannaExample extends Component {
         var split_div = _div.innerHTML.split(" ");
         this.state.images = split_div[0];
         this.state.exampleSearch_style ='0px solid grey'
+        this.state.exampleColour = "grey";
     }
     else { //no images found so red box is created
         this.state.search = "No results found, please alter your search.";
         this.state.images = 0;
         this.state.exams = 0;
         this.state.patients = 0;
+        this.state.exampleColour = "red";
         this.state.exampleSearch_style ='2px solid #f95959';
     }
 
@@ -173,7 +175,7 @@ class DiannaExample extends Component {
         <FormGroup row>
           <Label for="exampleSearch" sm={3}>Search</Label>
           <Col sm={9}>
-            <Input type="search" name="Search" id="exampleSearch" value={this.state.search} style={{border: this.state.exampleSearch_style}} disabled/>{this.state.results}
+            <Input type="search" name="Search" id="exampleSearch" value={this.state.search} style={{border: this.state.exampleSearch_style, color: this.state.exampleColour}} disabled/>{this.state.results}
           </Col>
         </FormGroup>
 
@@ -181,15 +183,15 @@ class DiannaExample extends Component {
           <Label for="exampleSearch" sm={3}>Total</Label>
           <Col md={3}>
               <Label for="exampleImages">Images</Label>
-              <Input type="text" name="# Images" id="exampleImages" value={this.state.images} placeholder="Number of images" style={{border: this.state.exampleSearch_style}} disabled/>
+              <Input type="text" name="# Images" id="exampleImages" value={this.state.images} placeholder="Number of images" style={{border: this.state.exampleSearch_style, color: this.state.exampleColour}} disabled/>
           </Col>
           <Col md={3}>
               <Label for="exampleExams" style={{display: this.state.exampleExam_display}}>Exams</Label>
-              <Input type="text" name="# Exams" id="exampleExams" value={this.state.exams} placeholder="Number of exams" style={{border: this.state.exampleSearch_style, display:this.state.exampleExam_display}} disabled/>
+              <Input type="text" name="# Exams" id="exampleExams" value={this.state.exams} placeholder="Number of exams" style={{border: this.state.exampleSearch_style, display:this.state.exampleExam_display, color: this.state.exampleColour}} disabled/>
           </Col>
           <Col md={3}>
               <Label for="examplePatients" style={{display: this.state.examplePatient_display}}>Patients</Label>
-              <Input type="text" name="# Patients" id="examplePatients" value={this.state.exams}placeholder="Number of patients" style={{border: this.state.exampleSearch_style, display:this.state.examplePatient_display}} disabled/>
+              <Input type="text" name="# Patients" id="examplePatients" value={this.state.exams}placeholder="Number of patients" style={{border: this.state.exampleSearch_style, display:this.state.examplePatient_display, color: this.state.exampleColour}} disabled/>
           </Col>
         </FormGroup>
 
