@@ -169,6 +169,11 @@ const components = {
         }
       }
 
+    // res.dicom_relativepath = res.dicom_relativepath.replace('-0TO0-771100.dcm','');
+    // res.thumbnail_filepath = res.thumbnail_filepath.replace('-0TO0-771100','');
+    // res.dicom_relativepath = 'static/' + res.dicom_relativepath;
+    // res.thumbnail_filepath = 'static/' + res.thumbnail_filepath;
+
     return {
       description: (
         <div className="main-description">
@@ -193,7 +198,7 @@ const components = {
                 {/* Example src:
                 http://192.168.136.128:3000/static/thumbnails/CT-MONO2-16-ankle.dcm.png */}
               </div>
-              <div className="info colored">
+              <div className="ih-item.square.effect6.colored info">
                 <h3 className="overlay-title">
                   {res.original_title}
                   <button
