@@ -26,7 +26,8 @@ class DiannaExample extends Component {
     this.submitForm = this.submitForm.bind(this);
     this.state = {
       modal: false,
-      size: "lg"
+      size: "lg",
+      date: this.getDate()
     };
 
     this.toggle = this.toggle.bind(this);
@@ -54,15 +55,10 @@ class DiannaExample extends Component {
         mm='0'+mm;
     } 
     today = yyyy+'-'+mm+'-'+dd;
-    //return today;
-    //console.log(document);
-    document.getElementById("exampleDate").value = today;
+    return today;
   }
 
   submitForm(event) {
-
-    this.getDate();
-
     var name=document.getElementById("exampleName").value;
     var date=document.getElementById("exampleDate").value;
     var search=document.getElementById("exampleSearch").value;
@@ -109,8 +105,6 @@ class DiannaExample extends Component {
             </ModalHeader>
 
         <ModalBody>
-
-        <script>window.addEventListener('load', getDate(), false);</script>
 
         <h3>
           Download Request Form
@@ -166,15 +160,7 @@ class DiannaExample extends Component {
         <FormGroup row>
           <Label for="exampleDate" sm={3}>Date</Label>
           <Col sm={9}>
-          <Input type="date" name="date" id="exampleDate" placeholder="" /> 
-
-
-          <script type="text/javascript">
-            console.log("hello");
-            this.getDate();
-          </script>
-
-
+          <Input name="date" id="exampleDate" value={this.state.date} />
           </Col>
         </FormGroup>
 
