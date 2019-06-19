@@ -26,7 +26,17 @@ class DiannaExample extends Component {
     this.submitForm = this.submitForm.bind(this);
     this.state = {
       modal: false,
-      size: "lg"
+      size: "lg",
+      images: 0,
+      exams: 0,
+      patients: 0,
+      search: "",
+      exampleSearch_style: "",
+      examplePatient_display: "",
+      exampleExam_display: "",
+      exampleColour: "",
+      date: this.getDate(),
+      // results: this.getResults()
     };
 
     this.toggle = this.toggle.bind(this);
@@ -36,6 +46,39 @@ class DiannaExample extends Component {
     this.setState(prevState => ({
       modal: !prevState.modal
     }));
+
+    // Populate form fields
+    var _div2 = document.getElementsByClassName('css-148lm57')[0];
+    var split_div2 = _div2.innerHTML.split(" ");
+    if (split_div2[1]) { //check that some was searched
+        split_div2 = split_div2[1].split("<");
+        this.state.search = split_div2[0];
+    }
+    else{ //nothing was searched, so entire image set returned
+        this.state.search = "Entire Image Set";
+    }
+
+    if (document.getElementsByClassName('result-stats')[0]) { //check image count
+        var _div = document.getElementsByClassName('result-stats')[0];
+        var split_div = _div.innerHTML.split(" ");
+        this.state.images = split_div[0];
+        this.state.exampleSearch_style ='0px solid grey'
+    }
+    else { //no images found so red box is created
+        this.state.search = "No results found, please alter your search.";
+        this.state.images = 0;
+        this.state.exams = 0;
+        this.state.patients = 0;
+        this.state.exampleSearch_style ='2px solid #f95959';
+    }
+
+    if (!_div.innerHTML.includes('patient')) { //patients are not present in the query results
+        this.state.examplePatient_display = 'none';
+    }
+    if (!_div.innerHTML.includes('exam')) { //exams are not present in query results
+        this.state.exampleExam_display = 'none';
+    }
+
   }
 
   getDate() {
@@ -54,14 +97,10 @@ class DiannaExample extends Component {
         mm='0'+mm;
     } 
     today = yyyy+'-'+mm+'-'+dd;
-    //return today;
-    //console.log(document);
-    document.getElementById("exampleDate").value = today;
+    return today;
   }
 
   submitForm(event) {
-
-    this.getDate();
 
     var name=document.getElementById("exampleName").value;
     var date=document.getElementById("exampleDate").value;
@@ -78,6 +117,15 @@ class DiannaExample extends Component {
     comments = comment_split.join("%0D%0A");
 
     window.location.href = "mailto:daniel.snider@sickkids.ca?subject=Diagnostic Imaging Archive Document Request&body=User: " + name + "%0D%0A%0D%0A Date: " + date +"%0D%0A%0D%0A Search: " + search + "%0D%0A%0D%0A Number of Images: " + numImages + " %0D%0A%0D%0A Number of Exams: " + numExams + "%0D%0A%0D%0A Number of Patients: " + numPatients + "%0D%0A%0D%0A Email: " + email + "%0D%0A%0D%0A PI: " + PI + "%0D%0A%0D%0A Use Case: " + useCase + "%0D%0A%0D%0A Other Comments: " + comments + "%0D%0A%0D%0A";
+  }
+
+  getResults() {
+    console.log('_div');
+
+    if (typeof window !== 'undefined') {
+
+    }
+    return 
   }
 
   static async getInitialProps() {
@@ -109,9 +157,6 @@ class DiannaExample extends Component {
             </ModalHeader>
 
         <ModalBody>
-
-        <script>window.addEventListener('load', getDate(), false);</script>
-
         <h3>
           Download Request Form
         </h3>
@@ -127,7 +172,7 @@ class DiannaExample extends Component {
         <FormGroup row>
           <Label for="exampleSearch" sm={3}>Search</Label>
           <Col sm={9}>
-            <Input type="search" name="Search" id="exampleSearch" placeholder="" disabled/>
+            <Input type="search" name="Search" id="exampleSearch" value={this.state.search} style={{border: this.state.exampleSearch_style}} disabled/>{this.state.results}
           </Col>
         </FormGroup>
 
@@ -135,15 +180,15 @@ class DiannaExample extends Component {
           <Label for="exampleSearch" sm={3}>Total</Label>
           <Col md={3}>
               <Label for="exampleImages">Images</Label>
-              <Input type="text" name="# Images" id="exampleImages" placeholder="Number of images" disabled/>
+              <Input type="text" name="# Images" id="exampleImages" value={this.state.images} placeholder="Number of images" style={{border: this.state.exampleSearch_style}} disabled/>
           </Col>
           <Col md={3}>
-              <Label for="exampleExams">Exams</Label>
-              <Input type="text" name="# Exams" id="exampleExams" placeholder="Number of exams" disabled/>
+              <Label for="exampleExams" style={{display: this.state.exampleExam_display}}>Exams</Label>
+              <Input type="text" name="# Exams" id="exampleExams" value={this.state.exams} placeholder="Number of exams" style={{border: this.state.exampleSearch_style, display:this.state.exampleExam_display}} disabled/>
           </Col>
           <Col md={3}>
-              <Label for="examplePatients">Patients</Label>
-              <Input type="text" name="# Patients" id="examplePatients" placeholder="Number of patients" disabled/>
+              <Label for="examplePatients" style={{display: this.state.examplePatient_display}}>Patients</Label>
+              <Input type="text" name="# Patients" id="examplePatients" value={this.state.exams}placeholder="Number of patients" style={{border: this.state.exampleSearch_style, display:this.state.examplePatient_display}} disabled/>
           </Col>
         </FormGroup>
 
@@ -166,14 +211,7 @@ class DiannaExample extends Component {
         <FormGroup row>
           <Label for="exampleDate" sm={3}>Date</Label>
           <Col sm={9}>
-          <Input type="date" name="date" id="exampleDate" placeholder="" /> 
-
-
-          <script type="text/javascript">
-            console.log("hello");
-            this.getDate();
-          </script>
-
+          <Input type="date" name="date" id="exampleDate" value={this.state.date} /> 
 
           </Col>
         </FormGroup>
