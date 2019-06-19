@@ -879,6 +879,31 @@ def get_private_metadata_as_dict(dicom):
 
   return metadata
 
+  def count_date_similarity(input_date):
+    count = 0
+    lst_input = []
+
+    input_date = datefinder.find_dates(input_date) #transform the input_date into a datefinder object
+    input_date = list(input_date)[0] #convert the datefinder object into a form that is able to be compared with today's date
+    lst_input.append(input_date.year)
+    if input_date.month < 10: #to be able to compare later, need a 0 in front of single digit months
+      lst_input.append("0" + str(input_date.month))
+    else:
+       lst_input.append(input_date.month)
+    if input_date.day < 10: #to be able to compare later, need a 0 in front of single digit days
+      lst_input.append("0" + str(input_date.day))
+    else:
+      lst_input.append(input_date.day)
+
+    today = datetime.date.today() #get today's date
+    lst_today = str(today).split('-')
+
+    for i in range(len(lst_today)): #compare year, month, and day of today and input_date
+      if str(lst_input[i]) == str(lst_today[i]): #if they are the same, increment the count of similarities
+        count += 1
+
+    return count
+
 
 def datematcher(possibly_dates, text, fuzzy=False):
   """
