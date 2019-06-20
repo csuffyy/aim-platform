@@ -171,7 +171,7 @@ patch --verbose --ignore-whitespace -p 10 -F 10 /usr/local/lib/python3.5/dist-pa
 patch --verbose --ignore-whitespace -p 10 -F 10 /usr/local/lib/python3.5/dist-packages/datefinder/__init__.py < aim-platform/image-archive/de-id/datefinder/overflowerror-fix.patch
 patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/reactive-search/node_modules/@appbaseio/reactivesearch/lib/components/result/ReactiveList.js < see-more-stats-after-querying.patch
 npm run dev &
-# Fixes HTTP 20 OK should be error
+# Fix HTTP 200 OK response with errors by checking for errors
 cp -r image-archive/reactive-search/appbase-js/* image-archive/reactive-search/node_modules/appbase-js/
 
 ###############################
@@ -226,3 +226,12 @@ set -g default-terminal "screen-256color"
 set -g status-bg red
 set -g status-fg white
 EOT
+
+#Making Changes to Set Timeout
+# 1. Download repo for appbase-js
+# 2. Change javascript in src of appbase-js
+# 3. Run yarn after removing line in ./appbase-js/package_scripts
+# 4. Copy the files created by running yarn into node-modules
+# 5. Restart React
+# BELOW IS CODE TO EXECUTE BOTH 3&4 TOGETHER:
+# yarn && cp ./dist/appbase-js.* ~/aim-platform/image-archive/reactive-search/node_modules/appbase-js/dist
