@@ -1,0 +1,46 @@
+===========================================================REPORT
+
+                           Hospital for Sick Children
+                                 Toronto, Ontario
+                          ARTIFICALLY MADE FOR TESTING
+
+Exam Requested: RA Chest 1 View
+Requesting Physician: REQDOC       Scheduled Date:11-16-1995
+Patient Name: Image, Tomoscan             Sex: M
+Medical Record Number: 015692001       Birth Date: 16.11.1995
+    
+Accession Number: 123456789      Order Number: RA20350000003 
+
+Reason for Exam:  S/P GLEN, F/U PNEUMONIA
+Clinical Comments:  
+
+---------------------------- Radiological Report ----------------------------------
+
+INDICATION:  Follow-up.
+
+FINDINGS:  Comparison is made with the most recent study dated 11/16/1995. 
+
+The endotracheal tube, mediastinal drain and sternotomy wires are unchanged since the previous examination.
+
+The study is obtained with the patient slightly rotated.  Accounting for this, the cardiac silhouette is unchanged.  
+
+The 16-11-1995 previous right upper lobe and left lower lobe opacity, has slightly decreased since the previous examination.  The opacities within the left upper and right middle lobe persist.  Bilateral pleural effusions are again demonstrated unchanged.  
+
+The pulmonary vasculature is 16-11-95 asymmetric with the left being less than 11/16/95 the right, however, this is unchanged since the previous examination.
+
+IMPRESSION:  Mild interval improvement in the right upper lobe opacity and left lower lobe opacity.  Persistence of the right middle and left upper lobe opacity.  These findings are compatible with atelectasis and consolidation.  
+
+Transcribed on    1995/11/16                                                                            Radiologist : RLAST, RFIRST   MD
+Transcriptionist  BR                                                                                    Resident : ResLAST, ResFIRST
+
+                           ELECTRONICALLY APPROVED and SIGNED on 95/11/16 by Rfirst Rlast
+    
+             Creation Date: 11.16.1995
+             Creation Time: 1995.11.16
+
+               Approved by: RLAST, RFIRST
+
+             
+
+THIS REPORT WAS RECEIVED FROM AN EXTERNAL RIS SYSTEM
+----------------------------------------------------
