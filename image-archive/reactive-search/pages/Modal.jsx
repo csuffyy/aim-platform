@@ -160,7 +160,7 @@ class ModalExample extends React.Component {
             Wildcard
             </th>
             <td className="blue-line"> <pre className="app-pre">
-            qu?ck bro*
+            che?t scan*
             </pre> </td>
             <td className="blue-line">
             "­?" to replace a single character, and "­*" to replace zero or more characters
@@ -173,7 +173,7 @@ class ModalExample extends React.Component {
             Fuzzy
             </th>
             <td className="blue-line"> <pre className="app-pre">
-            quikc~
+            haert~
             </pre> </td>
             <td className="blue-line">
           {/*Link to ElasticSearch page about fuzzy searches*/}
@@ -187,7 +187,7 @@ class ModalExample extends React.Component {
             Proximity
             </th>
             <td className="blue-line"> <pre className="app-pre">
-            "fox quick"~5
+            "cancer of bone"~5
             </pre> </td>
             <td className="blue-line">
           {/*Link to ElasticSearch page about proximity searches*/}
@@ -208,7 +208,7 @@ class ModalExample extends React.Component {
             </td>
           </tr>
         </tbody>
-        <tbody>
+        <tbody className="blue-line">
           <tr>
             <th className="blue-line">
             Field Missing Value
@@ -266,10 +266,114 @@ class ModalExample extends React.Component {
             Wildcard in Field Name
             </th>
             <td className="blue-line"> <pre className="app-pre">
-            city\*:something
+            he\*:something
             </pre> </td>
             <td className="blue-line">
-            Allow search of field beginning with "city"
+            Allow search of field beginning with "he"- heart and head would both satisfy
+            </td>
+          </tr>
+        </tbody>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            Patient Age
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            PatientAge:>9
+            </pre> </td>
+            <td className="blue-line">
+            Patients older than 9 years of age are searched
+            </td>
+          </tr>
+        </tbody>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            Date
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            AcquisitionDate:>2011/11/16
+            </pre> </td>
+            <td className="blue-line">
+            Any acquisition dates after 2011/11/16 are searched
+            </td>
+          </tr>
+        </tbody>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            Time
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            Time:&lt;12:00:00
+            </pre> </td>
+            <td className="blue-line">
+            Any times before 12:00:00 are searched
+            </td>
+          </tr>
+        </tbody>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            Exact
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            ReasonForStudy.keyword:"High fever"
+            </pre> </td>
+            <td className="blue-line">
+            The exact Accession Number is the only result given
+            </td>
+          </tr>
+        </tbody>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            Inclusive Ranges
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            Date:[2010-01-01 TO 2010-12-31]
+            </pre> </td>
+            <td className="blue-line">
+            [] are used for inclusive ranges
+            </td>
+          </tr>
+        </tbody>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            Exclusive Ranges
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            Date:&#123;2010-01-01 TO 2010-12-31}
+            </pre> </td>
+            <td className="blue-line">
+            &#123;} are used for exclusive ranges
+            </td>
+          </tr>
+        </tbody>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            Combination Ranges
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            Date:&#123;2010-01-01 TO 2010-12-31]
+            </pre> </td>
+            <td className="blue-line">
+            [] and &#123;} can be used together to specify one end point as included and the other as not included, respectively
+            </td>
+          </tr>
+        </tbody>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            Boosting Relevance
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            Left arm^2
+            </pre> </td>
+            <td className="blue-line">
+            Arm is specified as more relevant than left in the search
             </td>
           </tr>
         </tbody>
@@ -326,7 +430,7 @@ class ModalExample extends React.Component {
             InstitutionName
             </td>
             <td className="background-line center">
-            Location
+            Allergies
             </td>
           </tr>
         </tbody>
@@ -545,6 +649,7 @@ elasticdump \\
       <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> It is best to specify and search within known fields names to speed up results. Not specifying field names will searching across all fields which is much slower. </div>
       <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> Searches will timeout after 1 minute. If this happens to you then you will have to be more specific on which fields you search.</div>
       <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> Number of search terms is limited to 1024. That means maximum 1024 PatientIDs or AccessionNumbers can be searched at once.</div>
+      <div className="sml-padding-bottom"><tt className="sick-blue">•</tt> The parameter <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/reference/2.4/query-dsl-minimum-should-match.html#query-dsl-minimum-should-match" target="_blank">minimum_should_match </a> can be used to specify the amount of exact matches there are between the query performed and the results given.</div>
 
 
 
