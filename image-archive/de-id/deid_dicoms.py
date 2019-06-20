@@ -14,6 +14,8 @@
 # kill %; pkill -9 eog; pkill display; python3.5 deid_dicoms.py --output_folder ./tmp/ --gif --disp --input_folder /home/dan/Favourite_Images/Requisition/
 # OR
 # kill %; pkill -9 eog; pkill display; python3.5 deid_dicoms.py --output_folder ~/aim-platform/image-archive/reactive-search/static/deid/ --gif --disp --input_file ../images/sample/CT-MONO2-16-ort.dcm --wait --fast_crop --input_base_path /home/dan/aim-platform/image-archive/images/ --input_report_base_path /home/dan/aim-platform/image-archive/reports/
+# OR
+# pkill -9 eog; pkill display; python3 deid_dicoms.py --output_folder ~/aim-platform/image-archive/reactive-search/static/ --output_folder_suffix PHI --input_file ~/823-whole-body-MR-with-PHI.dcm --fast_crop --input_base_path ~ --input_report_base_path /home/dan/aim-platform/image-archive/reports/ --no_deidentify
 #
 # Note:
 # If you get error "OSError: cannot identify image file", try using python3 instead of python3.7
@@ -64,8 +66,6 @@ from deid.dicom import get_files, replace_identifiers, get_identifiers
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True # fixes OSError: broken data stream when reading image file 
 
-from utils import dicom_to_dict
-
 ## Change logging level for deid library (see ./logger/message.py for levels)
 # from deid.logger import bot
 # bot.level=5
@@ -104,38 +104,53 @@ MATCH_CONF_THRESHOLD = 50
 TOO_MUCH_TEXT_THRESHOLD = 0
 MAX_NUM_PIXELS = 36000000 # 36 million pixels calculated as 2000x2000 plus RESIZE_FACTOR=3, so 6000x6000. Anymore takes too long)
 RESIZE_FACTOR = 3 # how much to blow up image to make OCR work better
+DATE_FORMAT = '%Y/%m/%d' # standard format YYYY/MM/DD to comply with ElasticSearch searching
 
+def convert_dates_to_standard_format(dicom):
+  """Converting dates to standard format YYYY/MM/DD to comply with ElasticSearch searching."""
+  log.info('Converting dates to standard format YYYY/MM/DD.')
+  for field in iter_simple_fields(dicom):
+    try:
+      if not 'Date' in field.name:
+        continue
+    except:
+      embed()
+    found_date = list(datefinder.find_dates(str(field.value))) #finds all dates in text using datefinder
+    # found_date_dparser = search_dates(value) # Commented out because not as accurate. finds all dates in text using dateparser. 
+    if found_date:
+      new_value = found_date[0].strftime(DATE_FORMAT)
+      dicom.update({field.name.replace(' ', ''): new_value})
 
 def add_derived_fields(dicom):
   log.info('Adding derived fields.')
 
-  # Calculate PatientAge
-  PatientBirthDate = dicom.get('PatientBirthDate')
-  AcquisitionDate = dicom.get('AcquisitionDate')
-  PatientAge = dicom.get('PatientAge')
+  # # Calculate PatientAge
+  # PatientBirthDate = dicom.get('PatientBirthDate')
+  # AcquisitionDate = dicom.get('AcquisitionDate')
+  # PatientAge = dicom.get('PatientAge')
 
-  # PatientAgeInt (Method 1: str to int)
-  try:
-    if PatientAge is not None:
-      age = PatientAge # usually looks like '06Y'
-      if 'Y' in PatientAge:
-        age = PatientAge.split('Y')
-        age = int(age[0])
-      dicom.PatientAge = str(age)
-  except:
-    log.warning('Falling back for PatientAge')
-  # PatientAgeInt (Method 2: diff between birth and acquisition dates)
-  # Note: Method 2 is higher precision (not just year) and will override method one
-  try:
-    if PatientBirthDate is not None and AcquisitionDate is not None:
-      PatientBirthDate = datetime.datetime.strptime(PatientBirthDate, '%Y%m%d')
-      AcquisitionDate = datetime.datetime.strptime(AcquisitionDate, '%Y%m%d')
-    age = AcquisitionDate - PatientBirthDate
-    age = round(age.days / 365,2) # age in years with two decimal place precision
-    dicom.PatientAge = str(age)
-    log.debug('Calculated PatientAge to be: %s' % age)
-  except Exception as e:
-    log.warning('Couldn\'t calculate PatientAgeInt')
+  # # PatientAgeInt (Method 1: str to int)
+  # try:
+  #   if PatientAge is not None:
+  #     age = PatientAge # usually looks like '06Y'
+  #     if 'Y' in PatientAge:
+  #       age = PatientAge.split('Y')
+  #       age = int(age[0])
+  #     dicom.PatientAge = str(age)
+  # except:
+  #   log.warning('Falling back for PatientAge')
+  # # PatientAgeInt (Method 2: diff between birth and acquisition dates)
+  # # Note: Method 2 is higher precision (not just year) and will override method one
+  # try:
+  #   if PatientBirthDate is not None and AcquisitionDate is not None:
+  #     PatientBirthDate = datetime.datetime.strptime(PatientBirthDate, '%Y%m%d')
+  #     AcquisitionDate = datetime.datetime.strptime(AcquisitionDate, '%Y%m%d')
+  #   age = AcquisitionDate - PatientBirthDate
+  #   age = round(age.days / 365,2) # age in years with two decimal place precision
+  #   dicom.PatientAge = str(age)
+  #   log.debug('Calculated PatientAge to be: %s' % age)
+  # except Exception as e:
+  #   log.warning('Couldn\'t calculate PatientAgeInt')
 
   # # Add fake data for local testing only! TODO: Commented out because this is dangerous and has caused me confusion
   if ENVIRON=='local':
@@ -145,6 +160,163 @@ def add_derived_fields(dicom):
     if 'PatientSex' not in dicom:
       log.warning('Adding fake PatientSex')
       dicom.PatientSex = 'Male' if random.randint(0,1) else 'Female'
+
+def add_patient_age_units(dicom):
+  """ convert PatientAge from a weird string to a number. Parse into PatientAgeInYears, PatientAgeInWeeks, PatientAgeInDays.
+
+  Age String: A string of characters with one of the following formats -- nnnD, nnnW, nnnM, nnnY; where nnn shall contain the number of days for D, weeks for W, months for M, or years for Y. Example: "018M" would represent an age of 18 months."""
+
+  PatientAge = dicom.get('PatientAge')
+  if not PatientAge:
+    # Fall back to calculating age based of difference between birthdate and acquisition date
+    PatientBirthDate = dicom.get('PatientBirthDate')
+    AcquisitionDate = dicom.get('AcquisitionDate')
+    if not PatientBirthDate and not AcquisitionDate:
+      # No way to calculate age so returning
+      return
+    try:
+      PatientBirthDate = datetime.datetime.strptime(PatientBirthDate, DATE_FORMAT)
+      AcquisitionDate = datetime.datetime.strptime(AcquisitionDate, DATE_FORMAT)
+      age_timedelta = AcquisitionDate - PatientBirthDate
+      age_in_seconds = age_timedelta.total_seconds()
+    except Exception as e:
+      log.error('Couldn\'t calculate PatientAgeInt')
+      return
+
+  # PatientAge example looks like '06Y'. Character Repertoire: "0"-"9", "D", "W", "M", "Y"
+  try:
+    if 'Y' in PatientAge:
+      age = PatientAge.split('Y')
+      age_in_seconds = int(age[0])*31557600 # seconds in a year
+    elif 'M' in PatientAge:
+      age = PatientAge.split('M')
+      age_in_seconds = int(age[0])*2629746 # seconds in a month
+    elif 'W' in PatientAge:
+      age = PatientAge.split('W')
+      age_in_seconds = int(age[0])*604800 # seconds in a week
+    elif 'D' in PatientAge:
+      age = PatientAge.split('D')
+      age_in_seconds = int(age[0])*86400 # seconds in a day
+    elif 'S' in PatientAge:
+      age = PatientAge.split('S')
+      age_in_seconds = int(age[0]) # already in seconds (futureproofing)
+    else:
+      # Assume PatientAge is in years
+      age_in_seconds = float(PatientAge)*31557600 # seconds in a year
+  except:
+    log.error('Couldn\'t calculate PatientAge')
+    return
+
+  PatientAgeInYears = age_in_seconds / 31557600.0
+  PatientAgeInMonths = age_in_seconds / 2629746.0
+  PatientAgeInWeeks = age_in_seconds / 604800.0
+  PatientAgeInDays = age_in_seconds / 86400.0
+  PatientAgeInSeconds = age_in_seconds
+
+  # age = round(PatientAgeInDays / 365,2) # age in years with two decimal place precision
+
+  dicom.PatientAge = str(PatientAgeInYears)
+  put_to_dicom_private_header(dicom, key='PatientAgeInYears', value=PatientAgeInYears, superkey='Image  ')
+  put_to_dicom_private_header(dicom, key='PatientAgeInMonths', value=PatientAgeInMonths, superkey='Image  ')
+  put_to_dicom_private_header(dicom, key='PatientAgeInWeeks', value=PatientAgeInWeeks, superkey='Image  ')
+  put_to_dicom_private_header(dicom, key='PatientAgeInDays', value=PatientAgeInDays, superkey='Image  ')
+  put_to_dicom_private_header(dicom, key='PatientAgeInSeconds', value=PatientAgeInSeconds, superkey='Image  ')
+
+def dicom_to_dict_for_elastic(dicom, log=None, environ=None):
+  dicom_metadata = {}
+  dicom_metadata['PrivateData'] = []
+  dicom_metadata['UnknownData'] = []
+  # [dicom_metadata.__setitem__(key,str(dicom.get(key))) for key in dicom.dir() if key not in ['PixelData']]
+
+  for field in iter_simple_fields(dicom):
+    value = str(field.value)
+    if 'Private' in field.name:
+      # Handle our special private data elements
+      if len(value) > 7 and value[0:7] in ['Image  ', 'Report ']:
+        # This is one of our named private data elements
+        try:
+          superkey, key, value = extract_key_value_from_field(field)
+        except:
+          log.warning('could not understand private key format')
+          continue
+        if superkey == 'Image  ':
+          dicom_metadata[key] = value
+        elif superkey == 'Report ':
+          key = superkey + key # Example: "Report ReportRaw"
+          key = key.replace(' ','') # Example: "ReportReportRaw"
+          key = key.replace('ReportReport','Report') # Example: "ReportRaw"
+          dicom_metadata[key] = value
+      # else:
+        # NOTE: PrivateData is disabled in the interest of time and due to search performance concerns
+        # This is not one of our sepcial private data elements so save it in two places
+        # tag_num = str(field.tag).strip('(,)').replace(' ','') # convert (0019, 0030) to 0019,0030
+        # dicom_metadata[tag_num] = value # add it by tag number. Example: dict['0019,0030']=value
+        # dicom_metadata['PrivateData'].append(value) # add it to a list of private data
+    # elif 'Unknown' in field.name:
+      # NOTE: UnknownData is disabled in the interest of time and due to search performance concerns
+      # This is not one of our sepcial private data elements so save it in two places
+      # tag_num = str(field.tag).strip('(,)').replace(' ','') # convert (0019, 0030) to 0019,0030
+      # dicom_metadata[tag_num] = value # add it by tag number. Example: dict['0019,0030']=value
+      # dicom_metadata['UnknownData'].append(value) # add it to a list of private data
+    else:
+      # Standard DICOM fields
+      key = field.name.strip('[]').replace(' ', '') # Clean up key names
+      dicom_metadata[key] = value
+
+  # for key, value in dicom_metadata.items():
+  #   #1
+  #   if hasattr(dicom_metadata[key], '_list'):
+  #     # Fix for error: TypeError("Unable to serialize ['ORIGINAL', 'SECONDARY'] (type: <class 'pydicom.multival.MultiValue'>)")
+  #     dicom_metadata[key] = dicom_metadata[key]._list
+  #   #2
+  #   if hasattr(dicom_metadata[key], 'original_string'):
+  #     # Fix for error: TypeError("Unable to serialize '' (type: <class 'pydicom.valuerep.PersonName3'>)")
+  #     dicom_metadata[key] = dicom_metadata[key].original_string
+  #   #3
+  #   if isinstance(dicom_metadata[key], bytes):
+  #     # Fix for error: TypeError("Unable to serialize b'FOONAME^BARNAM' (type: <class 'bytes'>)")
+  #     try:
+  #       dicom_metadata[key] = dicom_metadata[key].decode("utf-8")
+  #     except UnicodeDecodeError as e:
+  #       pass
+  #   #4
+  #   if isinstance(dicom_metadata[key], list):
+  #     if len(dicom_metadata[key])>0 and type(dicom_metadata[key][0]) is pydicom.dataset.Dataset:
+  #       # Fix for error: TypeError("Unable to serialize 'ProcedureCodeSequence' (type: <class 'pydicom.dataset.Dataset'>)")")
+  #       dicom_metadata[key] = dicom_metadata[key].__str__()
+  #   #5
+  #   # Remove bytes datatype from metadata because it can't be serialized for sending to elasticsearch
+  #   if type(dicom_metadata[key]) is bytes:
+  #     dicom_metadata.pop(key, None) # remove
+
+    log.debug('%s: %s' % (key, value))
+
+  # PatientBirthDatePretty
+  try:
+    if 'PatientBirthDate' in dicom_metadata:
+      PatientBirthDate = datetime.strptime(dicom_metadata['PatientBirthDate'], '%Y%m%d')
+      dicom_metadata['PatientBirthDatePretty'] = datetime.strftime(PatientBirthDate,'%Y-%m-%d')
+      datetime.strptime(dicom_metadata['PatientBirthDatePretty'], '%Y-%m-%d')  # just check that it works
+  except:
+    # log.warning('Didn\'t understand value: %s = \'%s\'' % ('PatientBirthDate', dicom_metadata['PatientBirthDate']))
+    dicom_metadata.pop('PatientBirthDatePretty', None) # remove bad formatted metadata
+  # AcquisitionDatePretty
+  try:
+    if 'AcquisitionDate' in dicom_metadata:
+      AcquisitionDate = datetime.strptime(dicom_metadata['AcquisitionDate'], '%Y%m%d')
+      dicom_metadata['AcquisitionDatePretty'] = datetime.strftime(AcquisitionDate,'%Y-%m-%d')
+      datetime.strptime(dicom_metadata['AcquisitionDatePretty'], '%Y-%m-%d')  # just check that it works
+  except:
+    # log.warning('Didn\'t understand value: %s = \'%s\'' % ('AcquisitionDate', dicom_metadata['AcquisitionDate']))
+    dicom_metadata.pop('AcquisitionDatePretty', None) # remove bad formatted metadata
+
+  # # Convert any values that can be displayed as a string (things that need to be numbers should follow this)
+  # for k, v in dicom_metadata.items():
+  #   # convert to string if not already a string and has str method
+  #   if not isinstance(v,str) and '__str__' in dir(v):
+  #     dicom_metadata[k] = dicom_metadata[key].__str__()
+
+  return dicom_metadata
 
 def convert_colorspace(img, dicom):
   if 'PhotometricInterpretation' in dicom and isinstance(dicom.PhotometricInterpretation, str):
@@ -729,7 +901,7 @@ def insert_dicom_into_elastic(dicom):
   if not args.save_to_elastic:
     return
 
-  dicom_metadata = dicom_to_dict(dicom, log=log, environ=ENVIRON)
+  dicom_metadata = dicom_to_dict_for_elastic(dicom, log=log, environ=ENVIRON)
 
   dicom_metadata['dicom_filename'] = os.path.basename(output_image_filepath)
   dicom_metadata['dicom_filepath'] = output_image_filepath
@@ -738,7 +910,10 @@ def insert_dicom_into_elastic(dicom):
   dicom_metadata['thumbnail_filepath'] = output_thumbnail_filepath
   dicom_metadata['thumbnail_webpath'] = output_thumbnail_webpath
   if 'PatientAge' in dicom:
-    dicom_metadata['PatientAgeInt'] = float(dicom.get('PatientAge'))
+    try:
+      dicom_metadata['PatientAgeInt'] = float(dicom.get('PatientAge'))
+    except:
+      pass
   dicom_metadata['original_title'] = 'Dicom'
   dicom_metadata['searchallblank'] = '' # needed to search across everything (via searching for empty string)
 
@@ -752,7 +927,7 @@ def insert_dicom_into_elastic(dicom):
 
 def get_report_from_dicom(dicom, return_only_key_values=False):
   metadata = get_private_metadata_as_dict(dicom)
-  if 'Report ' in metadata:
+  if not 'Report ' in metadata:
     return
   report =  metadata['Report ']
 
@@ -923,6 +1098,8 @@ def datematcher(possibly_dates, text, fuzzy=False):
 def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
   """ Finds and replaces PHI in inplace in DICOM be it a date or an exact string match with a UUID."""
   field = dicom.get(field_tag)
+  if not field:
+    return
 
   # Skip certain tags # TODO: choose more that shouldn't contain PHI
   short_name = field.name.replace(' ','') # pydicom gives field names with spaces while deid.recipe doesn't have spaces
@@ -971,7 +1148,7 @@ def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
         dicom[field.tag] = pydicom.DataElement(field.tag, field.VR, field.value) # set back into dicom
     except Exception as e:
       print(traceback.format_exc())
-      log.error('Failed to set dicom field "%s" with value "%s". The original value will remain in place without any redaction.' % (field, value))
+      log.error('Failed to set dicom field "%s" with new value. The original value will remain in place without any redaction.' % field)
 
 def match_and_replace_exact(dicom, field_tag, PHI):
   """matches and replaces PHI dates that were the exact same format as those found in the specified field
@@ -1016,7 +1193,7 @@ def match_and_replace_dates(dicom, field_tag, PHI_dateobjects, fuzzy=False):
       split_dt_obj = list(split_dt_obj)
 
       if split_dt_obj != []: #if a date was found
-        _dict = {dicom_field.name: split_dt_obj[0][0].strftime('%Y/%m/%d'), 'new_path': output_image_filepath, 'orig_path': dicom_path}
+        _dict = {dicom_field.name: split_dt_obj[0][0].strftime(DATE_FORMAT), 'new_path': output_image_filepath, 'orig_path': dicom_path}
         UID = generate_uid(_dict, field_name=dicom_field.name)
         field_val = field_val.replace(split_dt_obj[0][1], str(UID))
 
@@ -1132,12 +1309,23 @@ def already_cleaned_tag_names():
 
 def iter_simple_fields(dicom):
   for field in dicom.iterall():
+    if field is int:
+      continue
+    if field is None:
+      continue
     # Skip pixel data
     if field.name == 'Pixel Data':
       continue
-    # Skip objects of this kind because they can't be made into strings, perhaps go deeper
-    if field.value.__class__ in [pydicom.sequence.Sequence, pydicom.valuerep.PersonName3, pydicom.multival.MultiValue, pydicom.valuerep.DSfloat, pydicom.valuerep.IS, int]:
+    if field.value.__class__ in [pydicom.sequence.Sequence]:
       continue
+    # Note: commented out because not needed?
+    # # Skip objects of this kind because they can't be made into strings, perhaps go deeper. Update: not true?
+    # if field.value.__class__ in [pydicom.valuerep.PersonName3, pydicom.multival.MultiValue, pydicom.valuerep.DSfloat, pydicom.valuerep.IS, int, pydicom.sequence.Sequence]:
+    #
+    # Note: commented because can't going deeper into dicom isn't working
+    # if field.VR == 'SQ' or (hasattr(field, 'get') and len(field.get('tags'))):
+    #   for f in field:
+    #     yield f
     yield field
 
 def deidentify_header(dicom):
@@ -1163,8 +1351,8 @@ def deidentify_header(dicom):
   # note: cleaned_header_dicom is not a full dicom. It is not as functional as the "dicom" variable
 
   # Copy from "cleaned_header_dicom" to "dicom" variable so that UUIDs take place of PHI. "dicom" is the preferred variable
-  for key in found_PHI.keys():
-    dicom.data_element(key).value = cleaned_header_dicom.data_element(key).value
+  for field_name in found_PHI.keys():
+    dicom.data_element(field_name).value = cleaned_header_dicom.data_element(field_name).value
     # Change VL data type from date to long string to try to get DWV to display it properly
     # NOTE: commented out because pydicom doesn't actually save the VL change
     
@@ -1362,34 +1550,39 @@ if __name__ == '__main__':
     output_thumbnail_folder = os.path.dirname(output_thumbnail_filepath)
     if not os.path.exists(output_image_folder):
       os.makedirs(output_image_folder)
-    if not os.path.exists(output_debug_folder):
-      os.makedirs(output_debug_folder)
-    if not os.path.exists(output_thumbnail_folder):
-      os.makedirs(output_thumbnail_folder)
-    if report:
-      args.input_report_base_path = os.path.abspath(os.path.expanduser(os.path.expandvars(args.input_report_base_path))) # example: /home/dan/aim-platform/image-archive/reports
-      embed()
-      input_report_filepath = os.path.abspath(os.path.expanduser(os.path.expandvars(report['filepath']))) # example: /home/dan/aim-platform/image-archive/reports/sample/Report_55123.txt
-      if args.input_report_base_path not in input_report_filepath:
-        raise Exception('Error: Couldnt find "args.input_report_base_path" in "input_report_filepath". Please check your CLI arguments.')
-      report_path_short = input_report_filepath.replace(args.input_report_base_path,'').lstrip('/') # example: sample/Report_55123.txt
-      output_report_filepath = os.path.join(args.output_folder, 'report', report_path_short) # example: /home/dan/aim-platform/image-archive/reactive-search/static/deid/report/sample/Report_55123.txt
-      output_report_webpath = os.path.join('report', report_path_short) # example: report/sample/Report_55123.txt
-      output_report_folder = os.path.dirname(output_report_filepath)
-      if not os.path.exists(output_report_folder):
-        os.makedirs(output_report_folder)
-      log.info('args.input_report_base_path = %s' % args.input_report_base_path)
-      log.info('input_report_filepath = %s' % input_report_filepath)
-      log.info('report_path_short = %s' % report_path_short)
+    # if not os.path.exists(output_debug_folder):
+    #   os.makedirs(output_debug_folder)
+    # if not os.path.exists(output_thumbnail_folder):
+    #   os.makedirs(output_thumbnail_folder)
+    # if report:
+    #   args.input_report_base_path = os.path.abspath(os.path.expanduser(os.path.expandvars(args.input_report_base_path))) # example: /home/dan/aim-platform/image-archive/reports
+    #   input_report_filepath = os.path.abspath(os.path.expanduser(os.path.expandvars(report['filepath']))) # example: /home/dan/aim-platform/image-archive/reports/sample/Report_55123.txt
+    #   if args.input_report_base_path not in input_report_filepath:
+    #     raise Exception('Error: Couldnt find "args.input_report_base_path" in "input_report_filepath". Please check your CLI arguments.')
+    #   report_path_short = input_report_filepath.replace(args.input_report_base_path,'').lstrip('/') # example: sample/Report_55123.txt
+    #   output_report_filepath = os.path.join(args.output_folder, 'report', report_path_short) # example: /home/dan/aim-platform/image-archive/reactive-search/static/deid/report/sample/Report_55123.txt
+    #   output_report_webpath = os.path.join('report', report_path_short) # example: report/sample/Report_55123.txt
+    #   output_report_folder = os.path.dirname(output_report_filepath)
+    #   if not os.path.exists(output_report_folder):
+    #     os.makedirs(output_report_folder)
+    #   log.info('args.input_report_base_path = %s' % args.input_report_base_path)
+    #   log.info('input_report_filepath = %s' % input_report_filepath)
+    #   log.info('report_path_short = %s' % report_path_short)
       log.info('output_report_filepath = %s' % output_report_filepath)
 
     log.info('##############')
     log.info('##  Enrich  ##')
     log.info('##############')
 
+    # Convert dates to standard format YYYY/MM/DD to comply with ElasticSearch searching and DWV viewing.
+    convert_dates_to_standard_format(dicom)
+
     # Add derived fields (must happen before de-identification since that could remove needed data)
     add_derived_fields(dicom)
     
+    # Convert PatientAge into PatientAgeInYears, PatientAgeInWeeks, PatientAgeInDays, etc.
+    add_patient_age_units(dicom)
+
     # Add report
     add_report(dicom, report)
     
