@@ -16,6 +16,11 @@ FORMAT dicom
 # KEEP Demographics
 # =================
 # PatientAge
+# PatientAgeInYears
+# PatientAgeInMonths
+# PatientAgeInWeeks
+# PatientAgeInDays
+# PatientAgeInSeconds
 # PatientSex
 # PatientSexNeutered
 # PatientSize
