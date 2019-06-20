@@ -35,6 +35,7 @@ class DiannaExample extends Component {
       examplePatient_display: "",
       exampleExam_display: "",
       exampleColour: "",
+      submitted: "",
       date: this.getDate(),
       // results: this.getResults()
     };
@@ -124,6 +125,8 @@ class DiannaExample extends Component {
   }
 
   submitForm(event) {
+
+    document.getElementById("submitted").innerHTML = "Your email client should now open with your request.";
 
     var name=document.getElementById("exampleName").value;
     var date=document.getElementById("exampleDate").value;
@@ -275,6 +278,8 @@ class DiannaExample extends Component {
         </span></Button>
 
       <p></p>
+
+      <p className="center" id="submitted" style={{color: "red"}}></p>
 
       <h4 style={{marginTop:'15px'}}>Once we process your request we will send you download instructions. For questions please contact <a className="sick-blue" href="mailto:daniel.snider@sickkids.ca?subject=Diagnostic Imaging Archive Support" target="_blank">Support</a>. </h4>
 
