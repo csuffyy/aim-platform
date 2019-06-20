@@ -171,6 +171,7 @@ patch --verbose --ignore-whitespace -p 10 -F 10 /usr/local/lib/python3.5/dist-pa
 patch --verbose --ignore-whitespace -p 10 -F 10 /usr/local/lib/python3.5/dist-packages/datefinder/__init__.py < aim-platform/image-archive/de-id/datefinder/overflowerror-fix.patch
 patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/reactive-search/node_modules/@appbaseio/reactivesearch/lib/components/result/ReactiveList.js < see-more-stats-after-querying.patch
 npm run dev &
+# Fixes HTTP 20 OK should be error
 cp -r image-archive/reactive-search/appbase-js/* image-archive/reactive-search/node_modules/appbase-js/
 
 ###############################

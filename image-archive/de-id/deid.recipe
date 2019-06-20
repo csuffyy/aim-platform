@@ -322,3 +322,23 @@ REPLACE VisitStatusID func:generate_uid
 
 # Extra Fields Added
 ADD PatientIdentityRemoved Yes
+
+# REMOVE Report Fields
+# =================
+# REMOVE AccessionNumber
+# REMOVE BirthDate
+# REMOVE CreationDate
+# REMOVE MedicalRecordNumber
+# REMOVE OrderNumber
+# REMOVE PatientName
+# REMOVE Radiologist
+# REMOVE RequestingPhysician
+# REMOVE Resident
+# REMOVE ScheduledDate
+# REMOVE Transcriptionist
+# REMOVE Transcribedon
+# REMOVE Co-contributor
+# REMOVE ReceivedonPACSDate
+ELECTRONICALLY APPROVED and SIGNED on 1915-11-15 # REMOVE 22:59 by Dr. RFirst RLast
+# REMOVE Transcribed on    1995/11/16
+# REMOVE Transcriptionist  BR  

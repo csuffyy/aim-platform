@@ -107,19 +107,25 @@ RESIZE_FACTOR = 3 # how much to blow up image to make OCR work better
 DATE_FORMAT = '%Y/%m/%d' # standard format YYYY/MM/DD to comply with ElasticSearch searching
 
 def convert_dates_to_standard_format(dicom):
-  """Converting dates to standard format YYYY/MM/DD to comply with ElasticSearch searching."""
+  """Converting dates to standard format YYYY/MM/DD to comply with ElasticSearch searching. It's important that we are confident that we are detecting the correct date because we wouldn't watch to put in place a different date. """
   log.info('Converting dates to standard format YYYY/MM/DD.')
   for field in iter_simple_fields(dicom):
-    try:
-      if not 'Date' in field.name:
-        continue
-    except:
-      embed()
+    if not 'Date' in field.name:
+      continue
+    # Skip if not long enough to determine a date with confidence
+    if not len(str(field.value))>=8:
+      continue
     found_date = list(datefinder.find_dates(str(field.value))) #finds all dates in text using datefinder
-    # found_date_dparser = search_dates(value) # Commented out because not as accurate. finds all dates in text using dateparser. 
-    if found_date:
-      new_value = found_date[0].strftime(DATE_FORMAT)
-      dicom.update({field.name.replace(' ', ''): new_value})
+    # Skip if more than one date was found since we aren't confident
+    if not len(found_date)==1:
+      continue
+    found_date = found_date[0]
+    # Skip any date that matches today's date in two sections (YY/MM/DD) because we have problems with datefiner assuming today's date when it can't figure it out
+    if count_date_similarity_to_today(found_date) >= 2:
+      continue
+    # Replace the date with the standard format
+    new_value = found_date.strftime(DATE_FORMAT)
+    dicom.update({field.name.replace(' ', ''): new_value})
 
 def add_derived_fields(dicom):
   log.info('Adding derived fields.')
@@ -483,7 +489,7 @@ def blur_sharpen_preprocess(img):
   img = np.array(image)
   return img
 
-def get_PHI():
+def get_PHI(dates=False, notdates=False):
   """ Note: there may be more PHI values than keys because we split name into several values and look for each seperately """
   PHI = list(found_PHI.values())
   
@@ -513,7 +519,27 @@ def get_PHI():
   # Sort alphabetically when numbers following letters
   PHI = sorted(PHI, key=lambda x: (x[0].isdigit(), x))
 
-  return PHI
+  if dates or notdates:
+    PHI_notdates = []
+    PHI_dateobjects = []
+
+    # Sort PHI into two lists: Dates and Not Dates
+    for element in PHI:
+      element_dt_obj = datefinder.find_dates(element)
+      element_dt_obj = list(element_dt_obj)
+      if element_dt_obj == []:
+        PHI_notdates.append(element)
+      else:
+        PHI_dateobjects.extend(element_dt_obj)
+
+  if dates and notdates:
+    return (PHI_dateobjects, PHI_notdates)
+  elif dates and not notdates:
+    return PHI_dateobjects
+  elif not dates and notdates:
+    return PHI_notdates
+  else:
+    return PHI
 
 def ocr(img, ocr_num=None):
   log.info('Starting OCR...')
@@ -561,7 +587,8 @@ def ocr_match(search_strings, detection, ocr_num=None):
         continue
 
       # Fall back to fuzzy date matching
-      _match_text = datematcher(search_strings, text, fuzzy=True)
+      PHI_dateobjects = get_PHI(dates=True)
+      _match_text = datematcher(PHI_dateobjects, text, fuzzy=True)
       if _match_text:
         match_texts.append(_match_text[0])
         match_confs.append(999) # no confidence given by datematcher
@@ -667,6 +694,7 @@ def create_debug_images(dicom, img_orig, img_enhanced, detection, is_mostly_text
 
   # Draw boxes for each detected text annotations
   for index, row in detection.iterrows():
+    embed()
     # Black out pixels with debug info overlayed in boxes (for debugging only)
     annotation = 'ocr: %s, %d\nmatch: %s, %d' % (row.text, row.conf, row.match_text, row.match_conf)
     xy = [row.left, row.top, row.left+row.width, row.top+row.height]
@@ -835,7 +863,8 @@ def process_pixels(dicom):
 
   # Preprocess Pixels (Variety #1)
   log.info('Processing 1...')
-  img_enhanced = tophat_proprocess(img_bw)
+  # img_enhanced = tophat_proprocess(img_bw)
+  img_enhanced = img_bw
 
   # Detect Text with OCR
   detection = ocr(img_enhanced, ocr_num=2)
@@ -981,7 +1010,7 @@ def insert_deid_report_into_elastic(dicom):
     body={'query': {'term': {'AccessionNumber.keyword': dicom.get('AccessionNumber')}}}
   )
 
-  if result['hits']['total'] > 0:
+  if result['hits']['total'] > 0 and not args.overwrite_report:
     log.warning("Not inserting deid report into ElasticSearch because it already exists.")
     return
 
@@ -1054,32 +1083,11 @@ def get_private_metadata_as_dict(dicom):
 
   return metadata
 
-  def count_date_similarity(input_date):
-    count = 0
-    lst_input = []
-
-    input_date = datefinder.find_dates(input_date) #transform the input_date into a datefinder object
-    input_date = list(input_date)[0] #convert the datefinder object into a form that is able to be compared with today's date
-    lst_input.append(input_date.year)
-    if input_date.month < 10: #to be able to compare later, need a 0 in front of single digit months
-      lst_input.append("0" + str(input_date.month))
-    else:
-       lst_input.append(input_date.month)
-    if input_date.day < 10: #to be able to compare later, need a 0 in front of single digit days
-      lst_input.append("0" + str(input_date.day))
-    else:
-      lst_input.append(input_date.day)
-
-    today = datetime.date.today() #get today's date
-    lst_today = str(today).split('-')
-
-    for i in range(len(lst_today)): #compare year, month, and day of today and input_date
-      if str(lst_input[i]) == str(lst_today[i]): #if they are the same, increment the count of similarities
-        count += 1
-
-    return count
-
-
+def count_date_similarity_to_today(input_date):
+  """ Output 0 to 3 depending on how many sections (YY/MM/DD) of the give date match todays date. """
+  today = datetime.date.today() #get today's date
+  return sum([today.year == input_date.year, today.month == input_date.month, today.day == input_date.day])
+  
 def datematcher(possibly_dates, text, fuzzy=False):
   """
   @param possibly_dates: a list of strings of dates
@@ -1112,13 +1120,22 @@ def datematcher(possibly_dates, text, fuzzy=False):
         returning.add(found_date['string']) #append the line of text where the dates matched
 
       elif fuzzy: #not an exact match so should check if it is a fuzzy match
-        date_string = datetime_object.strftime('%Y%m%d')
+        try:
+          date_string = datetime_object.strftime('%Y%m%d')
+        except:
+          embed()
         found_date_string = found_date['object'].strftime('%Y%m%d')
         # The >=75 allows for two different digit swaps assuming 8 characters. And the >=5 confirms that the date is long enough to be an actual date not just a short string of random numbers. And the !=today() ignores "found" dates that match todays date because datefinder assumes today's date if there is missing date information
         if fuzz.ratio(date_string, found_date_string) >= 75 and len(found_date['string']) >= 5 and found_date['object'].date() != datetime.datetime.today().date():
           returning.add(found_date['string'])
 
   return list(returning)
+
+def pydicom_fieldname_to_short_field_name(field_name):
+  """ Example: "Patient's Birth Date" to "PatientBirthDate"""
+  short_name = field_name.replace(' ','') # pydicom gives field names with spaces while deid.recipe doesn't have spaces
+  short_name = short_name.replace("'s",'') # pydicom gives field names with "'s"
+  return short_name
 
 def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
   """ Finds and replaces PHI in inplace in DICOM be it a date or an exact string match with a UUID."""
@@ -1127,36 +1144,18 @@ def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
     return
 
   # Skip certain tags # TODO: choose more that shouldn't contain PHI
-  short_name = field.name.replace(' ','') # pydicom gives field names with spaces while deid.recipe doesn't have spaces
+  short_name = pydicom_fieldname_to_short_field_name(field.name)
   if short_name in cleaned_tag_names_list:
     return
   # Skip values less than 3 characters
   if len(str(field.value)) <= 3:
     return
 
-  PHI_notdates = []
-  PHI_dateobjects = []
-
 
   if (field != None): #check if the field exists
-    PHI = get_PHI() #get all PHI values so far
-
-    # PHI.append("2034.06.20")
-    # PHI.append("2035/02/15")
-    # PHI.append("PFIRST")
-    # PHI.append("PLAST")
-
-    if not PHI:
+    (PHI_dateobjects, PHI_notdates) = get_PHI(dates=True, notdates=True) #get all PHI values so far
+    if not PHI_notdates and not PHI_dateobjects:
       return
-
-    # Sort PHI into two lists: Dates and Not Dates
-    for element in PHI:
-      element_dt_obj = datefinder.find_dates(element)
-      element_dt_obj = list(element_dt_obj)
-      if element_dt_obj == []:
-        PHI_notdates.append(element)
-      else:
-        PHI_dateobjects.extend(element_dt_obj)
 
     # Update DICOM
     try:
@@ -1178,51 +1177,57 @@ def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
 def match_and_replace_exact(dicom, field_tag, PHI):
   """matches and replaces PHI dates that were the exact same format as those found in the specified field
   Returns the updated field of the dicom"""
-  dicom_field = dicom.get(field_tag)
-  field_val = dicom_field.value
+  field = dicom.get(field_tag)
+  value = str(field.value)
 
-  for element in PHI:
-    if element.upper() in str(field_val).upper():
-      if len(element) >= 3: #is not a date but is an exact match
-        _dict = {dicom_field.name: element, 'new_path': output_image_filepath, 'orig_path': dicom_path}
-        UID = generate_uid(_dict, field_name=dicom_field.name)
-        field_val = field_val.replace(element, str(UID))
+  for a_PHI in PHI:
+    if a_PHI.upper() in value.upper():
+      if len(a_PHI) >= 3:
+        _dict = {field.name: a_PHI, 'new_path': output_image_filepath, 'orig_path': dicom_path}
+        start_loc = value.upper().find(a_PHI)
+        end_loc = start_loc + len(a_PHI)
+        UID = generate_uid(_dict, field_name=field.name)
+        value = value[0:start_loc] + str(UID) + value[end_loc:]
 
-  return field_val
+  return value
 
 def match_and_replace_dates(dicom, field_tag, PHI_dateobjects, fuzzy=False):
   """matches and replaces PHI dates that were not the exact same format as those found in the specified field
   Returns the updated field of the dicom"""
-  dicom_field = dicom.get(field_tag) 
-  field_val = str(dicom_field.value)
+  field = dicom.get(field_tag) 
+  value = str(field.value)
 
   # To speed up computation don't try to match dates if we can till it's not going to be a date.
   # Skip if not 2 or more numbers
-  if not re.match('.*[0-9].*[0-9].*', field_val.replace('\n','')):
+  if not re.match('.*[0-9].*[0-9].*', value.replace('\n','')):
     return
   # Skip if is UUID
   try:
-    if isinstance(uuid.UUID(field_val), uuid.UUID):
+    if isinstance(uuid.UUID(value), uuid.UUID):
       return
   except:
     # if it's not a UUID, check it for a date
     pass
 
-  found_date_strings = datematcher(PHI_dateobjects, field_val, fuzzy) #get all dates from the specified field of the dicom
+  found_date_strings = datematcher(PHI_dateobjects, value, fuzzy) #get all dates from the specified field of the dicom
 
   for found_date in found_date_strings: #check where the date is and replace it 
   # Split found date string into parts because sometimes we over detect and include words like "on" so we'll next loop over the parts looking for the just the date to replace
     split_day = re.split('[ :]', found_date)
     for split_piece in split_day:
-      split_dt_obj = datefinder.find_dates(split_piece, source= True)
-      split_dt_obj = list(split_dt_obj)
+      # Skip dates less than 5 characters
+      if len(split_piece) < 5:
+        continue
 
-      if split_dt_obj != []: #if a date was found
-        _dict = {dicom_field.name: split_dt_obj[0][0].strftime(DATE_FORMAT), 'new_path': output_image_filepath, 'orig_path': dicom_path}
-        UID = generate_uid(_dict, field_name=dicom_field.name)
-        field_val = field_val.replace(split_dt_obj[0][1], str(UID))
+      date_string_tuple = datefinder.find_dates(split_piece, source= True)
+      date_string_tuple = list(date_string_tuple)
 
-  return field_val
+      if date_string_tuple != []: #if a date was found
+        _dict = {field.name: date_string_tuple[0][0].strftime(DATE_FORMAT), 'new_path': output_image_filepath, 'orig_path': dicom_path}
+        UID = generate_uid(_dict, field_name=field.name)
+        value = value.replace(date_string_tuple[0][1], str(UID))
+
+  return value
 
 def save_dicom_to_disk(dicom):
   try:
@@ -1245,7 +1250,7 @@ def save_deid_report_to_disk(dicom):
     log.warning('No report associated with DICOM, so not saving deid report to disk')
     return
 
-  if not os.path.exists(output_report_filepath):
+  if not os.path.exists(output_report_filepath) or args.overwrite_report:
     file_to_write = open(output_report_filepath, 'w')
     file_to_write.write(str(report['Raw']['value']))
     file_to_write.close()
@@ -1374,13 +1379,14 @@ def deidentify_header(dicom):
   log.info('Found %s unique pieces of PHI.' % len(found_PHI.keys()))
   cleaned_header_dicom = cleaned_files[0] # we only pass in one at a time
   # note: cleaned_header_dicom is not a full dicom. It is not as functional as the "dicom" variable
+  if args.log_PHI:
+    log.info(found_PHI)
 
   # Copy from "cleaned_header_dicom" to "dicom" variable so that UUIDs take place of PHI. "dicom" is the preferred variable
   for field_name in found_PHI.keys():
     dicom.data_element(field_name).value = cleaned_header_dicom.data_element(field_name).value
     # Change VL data type from date to long string to try to get DWV to display it properly
     # NOTE: commented out because pydicom doesn't actually save the VL change
-    
     # if dicom.data_element(key).VR in  ['DA','DT','TM']:
     #   dicom.data_element(key).VR = 'LO' # these fieldsa are now UUIDs and so their type should be long string LO
     #   dicom[cleaned_header_dicom.data_element(key).tag] = pydicom.DataElement(cleaned_header_dicom.data_element(key).tag, 'LO', cleaned_header_dicom.data_element(key).value) # set back into dicom
@@ -1417,6 +1423,8 @@ def setup_args():
   parser.add_argument('--gifs', action='store_true', help='Save output pixels to gifs')
   parser.add_argument('--display_gif', action='store_true', help='Open the gif for the user to see')
   parser.add_argument('--wait', action='store_true', help='Wait for user to press enter after processing each dicom')
+  parser.add_argument('--log_PHI', action='store_true', help='Log PHI for debugging purposes only')
+  parser.add_argument('--overwrite_report', action='store_true', help='Overwrite existing report on disk and in elasticsearch')
 
 def log_settings():
   log.info("Settings: %s=%s" % ('output_folder', args.output_folder))
@@ -1458,6 +1466,8 @@ def log_settings():
   log.info("Settings: %s=%s" % ('RESIZE_FACTOR', RESIZE_FACTOR))
   log.info("Settings: %s=%s" % ('wait', args.wait))
   log.info("Settings: %s=%s" % ('no_deidentify', not args.no_deidentify))
+  log.info("Settings: %s=%s" % ('log_PHI', not args.log_PHI))
+  log.info("Settings: %s=%s" % ('overwrite_report', not args.overwrite_report))
   
 
 if __name__ == '__main__':
@@ -1575,24 +1585,24 @@ if __name__ == '__main__':
     output_thumbnail_folder = os.path.dirname(output_thumbnail_filepath)
     if not os.path.exists(output_image_folder):
       os.makedirs(output_image_folder)
-    # if not os.path.exists(output_debug_folder):
-    #   os.makedirs(output_debug_folder)
-    # if not os.path.exists(output_thumbnail_folder):
-    #   os.makedirs(output_thumbnail_folder)
-    # if report:
-    #   args.input_report_base_path = os.path.abspath(os.path.expanduser(os.path.expandvars(args.input_report_base_path))) # example: /home/dan/aim-platform/image-archive/reports
-    #   input_report_filepath = os.path.abspath(os.path.expanduser(os.path.expandvars(report['filepath']))) # example: /home/dan/aim-platform/image-archive/reports/sample/Report_55123.txt
-    #   if args.input_report_base_path not in input_report_filepath:
-    #     raise Exception('Error: Couldnt find "args.input_report_base_path" in "input_report_filepath". Please check your CLI arguments.')
-    #   report_path_short = input_report_filepath.replace(args.input_report_base_path,'').lstrip('/') # example: sample/Report_55123.txt
-    #   output_report_filepath = os.path.join(args.output_folder, 'report', report_path_short) # example: /home/dan/aim-platform/image-archive/reactive-search/static/deid/report/sample/Report_55123.txt
-    #   output_report_webpath = os.path.join('report', report_path_short) # example: report/sample/Report_55123.txt
-    #   output_report_folder = os.path.dirname(output_report_filepath)
-    #   if not os.path.exists(output_report_folder):
-    #     os.makedirs(output_report_folder)
-    #   log.info('args.input_report_base_path = %s' % args.input_report_base_path)
-    #   log.info('input_report_filepath = %s' % input_report_filepath)
-    #   log.info('report_path_short = %s' % report_path_short)
+    if not os.path.exists(output_debug_folder):
+      os.makedirs(output_debug_folder)
+    if not os.path.exists(output_thumbnail_folder):
+      os.makedirs(output_thumbnail_folder)
+    if report:
+      args.input_report_base_path = os.path.abspath(os.path.expanduser(os.path.expandvars(args.input_report_base_path))) # example: /home/dan/aim-platform/image-archive/reports
+      input_report_filepath = os.path.abspath(os.path.expanduser(os.path.expandvars(report['filepath']))) # example: /home/dan/aim-platform/image-archive/reports/sample/Report_55123.txt
+      if args.input_report_base_path not in input_report_filepath:
+        raise Exception('Error: Couldnt find "args.input_report_base_path" in "input_report_filepath". Please check your CLI arguments.')
+      report_path_short = input_report_filepath.replace(args.input_report_base_path,'').lstrip('/') # example: sample/Report_55123.txt
+      output_report_filepath = os.path.join(args.output_folder, 'report', report_path_short) # example: /home/dan/aim-platform/image-archive/reactive-search/static/deid/report/sample/Report_55123.txt
+      output_report_webpath = os.path.join('report', report_path_short) # example: report/sample/Report_55123.txt
+      output_report_folder = os.path.dirname(output_report_filepath)
+      if not os.path.exists(output_report_folder):
+        os.makedirs(output_report_folder)
+      log.info('args.input_report_base_path = %s' % args.input_report_base_path)
+      log.info('input_report_filepath = %s' % input_report_filepath)
+      log.info('report_path_short = %s' % report_path_short)
       log.info('output_report_filepath = %s' % output_report_filepath)
 
     log.info('##############')

@@ -13,6 +13,6 @@
 /home/dan/aim-platform/image-archive/images/sample/CR-MONO1-10-chest.dcm.nope
 /home/dan/aim-platform/image-archive/images/sample/OT-PAL-8-face.dcm
 /home/dan/aim-platform/image-archive/images/sample/CT-MONO2-16-ort.dcm
-/home/dan/aim-platform/image-archive/images/sample/CT-MONO2-16-ankle.dcm
-/home/dan/aim-platform/image-archive/images/sample/CT-MONO2-8-abdo.dcm
+/home/dan/aim-platform/image-archive/images/sample/CT-MONO2-16-ankle.dc
+/home/dan/aim-platform/image-archive/images/sample/CT-MONO2-8-abdo-TEST.dcm
 /home/dan/aim-platform/image-archive/images/sample/US-MONO2-8-8x-execho.dcm
