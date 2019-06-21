@@ -1575,7 +1575,6 @@ if __name__ == '__main__':
     output_thumbnail_folder = os.path.dirname(output_thumbnail_filepath)
     if not os.path.exists(output_image_folder):
       os.makedirs(output_image_folder)
-<<<<<<< HEAD
     if not os.path.exists(output_debug_folder):
       os.makedirs(output_debug_folder)
     if not os.path.exists(output_thumbnail_folder):
@@ -1595,7 +1594,7 @@ if __name__ == '__main__':
       log.info('args.input_report_base_path = %s' % args.input_report_base_path)
       log.info('input_report_filepath = %s' % input_report_filepath)
       log.info('report_path_short = %s' % report_path_short)
-=======
+
     # if not os.path.exists(output_debug_folder):
     #   os.makedirs(output_debug_folder)
     # if not os.path.exists(output_thumbnail_folder):
@@ -1614,7 +1613,6 @@ if __name__ == '__main__':
     #   log.info('args.input_report_base_path = %s' % args.input_report_base_path)
     #   log.info('input_report_filepath = %s' % input_report_filepath)
     #   log.info('report_path_short = %s' % report_path_short)
->>>>>>> f7dd9d750e629057db577d946ab389fbb557a838
       log.info('output_report_filepath = %s' % output_report_filepath)
 
     log.info('##############')
