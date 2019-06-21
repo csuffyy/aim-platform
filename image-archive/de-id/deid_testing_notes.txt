@@ -1,0 +1,19 @@
+kill %; pkill -9 eog; pkill display; python3 deid_dicoms.py --output_folder ~/aim-platform/image-archive/reactive-search/static/ --output_folder_suffix DEID --input_file ../images/sample/CT-MONO2-8-abdo-TEST.dcm --fast_crop --input_base_path /home/dan/aim-platform/image-archive/images/ --input_report_base_path /home/dan/aim-platform/image-archive/reports/ --log_PHI --overwrite_report
+
+
+diff ../reports/sample/Report_testing.txt /home/dan/aim-platform/image-archive/reactive-search/static/DEID/report/sample/Report_testing.txt; dcmdump /home/dan/aim-platform/image-archive/reactive-search/static/DEID/image/sample/CT-MONO2-8-abdo-TEST.dcm ../images/sample/CT-MONO2-8-abdo-TEST.dcm | grep -i -e accession -e patientname -e patientBirth | grep -v Report
+...
+report is diffed
+...
+(0008,0050) SH [5b5b8948-47a7-48e1-a5f2-c58d7f283d08]   #  36, 1 AccessionNumber
+(0010,0010) PN [06c6fd74-64e9-4dfe-a4fd-6bf89268b1ed]   #  36, 1 PatientName
+(0010,0030) DA [bd83c318-d421-4ed9-8104-a3720cf0384e]   #  36, 1 PatientBirthDate
+(0008,0050) SH [123456789]                              #  10, 1 AccessionNumber
+(0010,0010) PN [Image^Tomoscan]                         #  14, 1 PatientName
+(0010,0030) DA [16.11.2019]                             #  10, 1 PatientBirthDate
+
+
+# Diff DICOMs
+diff <(dcmdump ../images/sample/CT-MONO2-8-abdo-TEST.dcm) <(dcmdump /home/dan/aim-platform/image-archive/reactive-search/static/DEID/image/sample/CT-MONO2-8-abdo-TEST.dcm)
+
+cat /home/dan/aim-platform/image-archive/reactive-search/static/DEID/report/sample/Report_testing.txt

@@ -125,6 +125,7 @@ def convert_dates_to_standard_format(dicom):
       continue
     # Replace the date with the standard format
     new_value = found_date.strftime(DATE_FORMAT)
+    new_value = found_date
     dicom.update({field.name.replace(' ', ''): new_value})
 
 def add_derived_fields(dicom):
@@ -673,15 +674,6 @@ def create_debug_images(dicom, img_orig, img_enhanced, detection, is_mostly_text
 
   yellow = 'rgb(255, 255, 0)' # yellow color
   black = 'rgb(0, 0, 0)' # yellow input_color
-  width = img_orig.shape[1]
-  height = int(14*img_orig.shape[1]/120/RESIZE_FACTOR)+4
-  left = 0
-  top = img_orig.shape[0]-height
-  xy = [left, top, left+width, top+height]
-  choice_str = 'REJECT' if is_mostly_text else 'ACCEPT'
-  filename = os.path.basename(dicom_path)
-  metadata_fontsize = int(14*img_orig.shape[1]/200/RESIZE_FACTOR)
-  img_dtype = str(img_orig.dtype)
 
   # For debugging purposes, image_PHI is the image with detected PHI overlaid annotations, draw_PHI is a helper object for annotating. It will be used in a gif. image_all_txt is the image with all detected text overlaid annotations, draw_all_txt is a helper object for annotating.
   image_orig = convert_image_numpy_to_pillow(img_orig)
@@ -694,7 +686,6 @@ def create_debug_images(dicom, img_orig, img_enhanced, detection, is_mostly_text
 
   # Draw boxes for each detected text annotations
   for index, row in detection.iterrows():
-    embed()
     # Black out pixels with debug info overlayed in boxes (for debugging only)
     annotation = 'ocr: %s, %d\nmatch: %s, %d' % (row.text, row.conf, row.match_text, row.match_conf)
     xy = [row.left, row.top, row.left+row.width, row.top+row.height]
@@ -706,6 +697,15 @@ def create_debug_images(dicom, img_orig, img_enhanced, detection, is_mostly_text
       draw_PHI.multiline_text((row.left, row.top), annotation, fill=yellow, font=font)
 
   # Write information in a bottom bar ontop of image
+  filename = os.path.basename(dicom_path)
+  choice_str = 'REJECT' if is_mostly_text else 'ACCEPT'
+  width = img_orig.shape[1]
+  height = int(14*img_orig.shape[1]/120/RESIZE_FACTOR)+4
+  left = 0
+  top = img_orig.shape[0]-height
+  xy = [left, top, left+width, top+height]
+  metadata_fontsize = int(14*img_orig.shape[1]/200/RESIZE_FACTOR)
+  img_dtype = str(img_orig.dtype)
   annotation = ' %s, %d text score, %s, %s' % (filename, amount_of_text_score, img_dtype, choice_str)
   font = ImageFont.truetype('Roboto-Regular.ttf', size=metadata_fontsize)
   draw_PHI.rectangle(xy, fill=black, outline=yellow)
@@ -990,6 +990,9 @@ def get_report_from_elastic(AccessionNumber):
 
   log.info('Found report: %s' % report['filepath'])
 
+  if 'Report_Raw' in report:
+    del report['Report_Raw'] # it was deemed that this was both redundant information and causing a key conflict
+
   return report
 
 def insert_deid_report_into_elastic(dicom):
@@ -1075,7 +1078,7 @@ def get_private_metadata_as_dict(dicom):
     if superkey not in metadata: metadata[superkey] = {}
     if key not in metadata[superkey]: metadata[superkey][key] = {}
     metadata[superkey][key]['value'] = value
-    metadata[superkey][key]['tag'] = tag
+    metadata[superkey][key]['tag'] = tuple([hex(t) for t in tag])
 
     # Increment to next field in the report section of the dicom header
     tag[1] += 1
@@ -1120,10 +1123,7 @@ def datematcher(possibly_dates, text, fuzzy=False):
         returning.add(found_date['string']) #append the line of text where the dates matched
 
       elif fuzzy: #not an exact match so should check if it is a fuzzy match
-        try:
-          date_string = datetime_object.strftime('%Y%m%d')
-        except:
-          embed()
+        date_string = datetime_object.strftime('%Y%m%d')
         found_date_string = found_date['object'].strftime('%Y%m%d')
         # The >=75 allows for two different digit swaps assuming 8 characters. And the >=5 confirms that the date is long enough to be an actual date not just a short string of random numbers. And the !=today() ignores "found" dates that match todays date because datefinder assumes today's date if there is missing date information
         if fuzz.ratio(date_string, found_date_string) >= 75 and len(found_date['string']) >= 5 and found_date['object'].date() != datetime.datetime.today().date():
@@ -1151,7 +1151,6 @@ def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
   if len(str(field.value)) <= 3:
     return
 
-
   if (field != None): #check if the field exists
     (PHI_dateobjects, PHI_notdates) = get_PHI(dates=True, notdates=True) #get all PHI values so far
     if not PHI_notdates and not PHI_dateobjects:
@@ -1161,15 +1160,16 @@ def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
     try:
       #replace exact matches with UID
       value = match_and_replace_exact(dicom, field_tag, PHI_notdates)
-      if str(value) != str(field.value): # only if a replacement was made
+      if value is not None and str(value) != str(field.value): # only if a replacement was made
         field.value = value
         dicom[field.tag] = pydicom.DataElement(field.tag, field.VR, field.value) # set back into dicom
 
       #replace possible date matches that aren't directly in text with UID
       value = match_and_replace_dates(dicom, field_tag, PHI_dateobjects, fuzzy)
-      if str(value) != str(field.value): # only if a replacement was made
+      if value is not None and str(value) != str(field.value): # only if a replacement was made
         field.value = value
         dicom[field.tag] = pydicom.DataElement(field.tag, field.VR, field.value) # set back into dicom
+
     except Exception as e:
       print(traceback.format_exc())
       log.error('Failed to set dicom field "%s" with new value. The original value will remain in place without any redaction.' % field)
@@ -1179,6 +1179,11 @@ def match_and_replace_exact(dicom, field_tag, PHI):
   Returns the updated field of the dicom"""
   field = dicom.get(field_tag)
   value = str(field.value)
+  superkey = None
+
+  # Avoid replacing our superkey and key stuff (Part 1)
+  if len(value) > 7 and value[0:7] in ['Image  ', 'Report ']:
+    (superkey, key, value) =  extract_key_value_from_field(field)
 
   for a_PHI in PHI:
     if a_PHI.upper() in value.upper():
@@ -1188,6 +1193,12 @@ def match_and_replace_exact(dicom, field_tag, PHI):
         end_loc = start_loc + len(a_PHI)
         UID = generate_uid(_dict, field_name=field.name)
         value = value[0:start_loc] + str(UID) + value[end_loc:]
+    else:
+      return
+
+  # Avoid replacing our superkey and key stuff (Part 2)
+  if superkey:
+    value = "%s%s: %s" % (superkey, key, str(value))
 
   return value
 
@@ -1196,6 +1207,10 @@ def match_and_replace_dates(dicom, field_tag, PHI_dateobjects, fuzzy=False):
   Returns the updated field of the dicom"""
   field = dicom.get(field_tag) 
   value = str(field.value)
+
+  # For faster testing, allow skipping slow and frequent datefinding
+  if args.skip_dates:
+    return
 
   # To speed up computation don't try to match dates if we can till it's not going to be a date.
   # Skip if not 2 or more numbers
@@ -1206,7 +1221,7 @@ def match_and_replace_dates(dicom, field_tag, PHI_dateobjects, fuzzy=False):
     if isinstance(uuid.UUID(value), uuid.UUID):
       return
   except:
-    # if it's not a UUID, check it for a date
+    # if it's not a UUID pass this and check it for a date
     pass
 
   found_date_strings = datematcher(PHI_dateobjects, value, fuzzy) #get all dates from the specified field of the dicom
@@ -1226,6 +1241,7 @@ def match_and_replace_dates(dicom, field_tag, PHI_dateobjects, fuzzy=False):
         _dict = {field.name: date_string_tuple[0][0].strftime(DATE_FORMAT), 'new_path': output_image_filepath, 'orig_path': dicom_path}
         UID = generate_uid(_dict, field_name=field.name)
         value = value.replace(date_string_tuple[0][1], str(UID))
+
 
   return value
 
@@ -1265,37 +1281,35 @@ def save_deid_report_to_disk(dicom):
   put_to_dicom_private_header(dicom, key='filepath', value=output_report_filepath, superkey='Report ')
 
 def put_to_dicom_private_header(dicom, key=None, tag=None, value=None, superkey=None):
-  """ Add new report data in dicom metadata """
+  """ Add new private data in dicom metadata. Overwritting can be done if you just provide a tag """
   if not key:
     raise Exception('put_to_dicom_private_header() requires a key')
-  if len(superkey) > 7:
-    raise Exception('Currently only supporting superkeys that are 7 chars long, such as "Report " or "Image  ".')
+  if superkey not in ['Report ', 'Image  ']:
+    raise Exception('Currently only supporting superkeys "Report " or "Image  ".')
 
   dicom_datatype = 'LT' # Dicom datatype Value Representation
 
-  if key:
-    loc_group = 0x0019
-    loc_element = 0x0030
-    loc = (loc_group, loc_element)
-
+  if tag:
+    # This can overwrite an existing piece of data (this is a needed feature)
+    loc = tag
+  elif key:
     # Remove all non-word characters (everything except numbers and letters)
     key = re.sub(r"[^\w\s]", '', key)
     key = re.sub(r"\s+", '', key)
 
     # Loop until the key is found in header or a free location for metadata is found in header
+    loc_group = 0x0019
+    loc_element = 0x0030
+    loc = (loc_group, loc_element)
     while loc in dicom:
       # Check if we found key
       field = dicom[loc]
       a_superkey, a_key, a_value = extract_key_value_from_field(field)
       if key == a_key and superkey == a_superkey:
         break
-
       # Increment to use higher index on next loop
       loc_element = loc_element + 1 
       loc = (loc_group, loc_element)
-
-  elif tag:
-    loc = tag
 
   # Add new value
   value = "%s%s: %s" % (superkey, key, str(value)) # Append key name to start of value because dicom uses hexadecimal instead of key names
@@ -1337,6 +1351,104 @@ def already_cleaned_tag_names():
     names = [line.split()[1] for line in names if 'REPLACE' in line] # convert "REPLACE AdmissionID func:generate_uid" to "AdmissionID"
     return names
 
+def get_report_deid_recipe():
+  """ Instructions for how to deidentify report.
+
+  Example return:
+  [{'operation': 'REPORT_REPLACE', 'search_text': 'BirthDate'},
+ {'operation': 'REPORT_REPLACE', 'search_text': 'MedicalRecordNumber'},
+ {'operation': 'REPORT_REPLACE_AFTER',
+  'parameter': 'until_newline',
+  'search_text': 'ELECTRONICALLY APPROVED and SIGNED on'},
+ {'operation': 'REPORT_REPLACE_AFTER',
+  'parameter': '10',
+  'search_text': 'Transcriptionist'}]
+
+  @return replace_keys is a list of keys in the recipe for REPORT_REPLACE lines
+  @return report_replace_after is a list of keys in the recipe for REPORT_REPLACE_AFTER lines
+  """
+
+  ret = []
+  with open(args.deid_recipe, 'r') as f:
+    lines = f.read().split('\n')
+    # Parse REPORT_REPLACE lines
+    replace_keys = [line.split()[2] for line in lines if 'REPORT_REPLACE ' in line] # convert "# REPORT_REPLACE OrderNumber" to "OrderNumber"
+    for replace_key in replace_keys:
+      ret.append({'operation': 'REPORT_REPLACE', 'search_text': replace_key})
+
+    # Parse REPORT_REPLACE_AFTER lines
+    # convert '# REPORT_REPLACE_AFTER "Transcriptionist" 10' to tuple('Transcriptionist', '10')
+    replace_after_keys = [line for line in lines if 'REPORT_REPLACE_AFTER' in line]
+    for line in replace_after_keys:
+      start_loc = line.find('REPORT_REPLACE_AFTER') + len('REPORT_REPLACE_AFTER') # get text after the special command identifier
+      line_parts = line[start_loc:].split() # split up the text by spaces (as per the syntax)
+      last_line_part = len(line_parts) - 1 # the last line part is the parameter
+      parameter = line_parts[last_line_part]
+      search_text = ' '.join(line_parts[0:last_line_part]) # search string is the unique text identifier (key) used to signify a PHI section of the report
+      search_text = search_text[1:len(search_text)-1] # remove leading and trailing quote
+      ret.append({'operation': 'REPORT_REPLACE_AFTER', 'search_text': search_text, 'parameter': parameter})
+
+    return ret, replace_keys
+
+def deidentify_report(dicom):
+  # Iterate over keys to replace with UUIDs. Store PHI values
+  # Apply algorithm to "Raw": (1) find and replace stored PHI values and (2) and apply the special replace rules to raw only
+  if not report:
+    return
+
+  # Get report from DICOM (which has info about tag numbers)
+  dicom_report = get_report_from_dicom(dicom)
+
+  # Get rules for deidentification
+  (recipe, replace_keys) = get_report_deid_recipe()
+
+  # Replace PHI in report
+  found_report_PHI = {} # found PHI and their values
+  found_report_PHI_UID = {} # found PHI and their UUIDs
+  global found_PHI_count_header
+  for key, data in dicom_report.items():
+    tag = data['tag']
+    value = data['value']
+    # Only replace if it's a key in our report recipe or (in the standard REPLACE recipe section but not if it already has had a UUID replaced, we don't want to replace a UUID with a UUID)
+    if key in replace_keys or (key in cleaned_tag_names_list and not count_uuids(value)):
+      # Generate replacement value
+      _dict = {key: value, 'new_path': output_image_filepath, 'orig_path': dicom_path}
+      UID = generate_uid(_dict, field_name=key)
+      # Replace value in DICOM
+      put_to_dicom_private_header(dicom, key=key, tag=tag, value=UID, superkey='Report ')
+      found_report_PHI[key] = value # store this PHI
+      found_report_PHI_UID[key] = UID # store this UUID
+      found_PHI_count_header += 1 # count this PHI
+
+  # Replace the found PHI in the raw report with UUIDs. The raw report should be the only duplicated report data that needs this special treatment
+  raw_report = dicom_report['Raw']['value']
+  tag = dicom_report['Raw']['tag']
+  for key, value in found_report_PHI.items():
+    UID = found_report_PHI_UID[key]
+    raw_report = raw_report.replace(value, UID)
+
+  # Handle REPORT_REPLACE_AFTER which should remove charaters after the found string
+  for rule in recipe:
+    if rule['operation'] == 'REPORT_REPLACE_AFTER':
+      # Get start stop indexes of text to remove
+      start_loc = raw_report.find(rule['search_text']) + len(rule['search_text']) # start right after the search_text
+      if rule['parameter'] == 'until_newline':
+        end_loc = raw_report.find('\n', start_loc) # stop at the next new line
+      else:
+        distance = int(rule['parameter'])
+        end_loc = start_loc + distance # stop after this many characters
+      # Remove the PHI
+      value = raw_report[start_loc:end_loc]
+      _dict = {key: value, 'new_path': output_image_filepath, 'orig_path': dicom_path}
+      UID = generate_uid(_dict, field_name=key)
+      raw_report = raw_report[0:start_loc] + ' ' + str(UID) + ' ' + raw_report[end_loc:len(raw_report)]
+  # Store
+  put_to_dicom_private_header(dicom, key='Raw', tag=tag, value=raw_report, superkey='Report ')
+
+def count_uuids(text):
+  """ Returns number of lines that contain UUID. Counts max 1 uuid per line """
+  return len(re.findall('.*[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}.*', text))
+
 def iter_simple_fields(dicom):
   for field in dicom.iterall():
     if field is int:
@@ -1359,6 +1471,8 @@ def iter_simple_fields(dicom):
     yield field
 
 def deidentify_header(dicom):
+
+
   # Prepare to De-Identify Metadata
   log.info('De-identifying DICOM header...')
   recipe = DeidRecipe(args.deid_recipe) # de-id rules
@@ -1391,9 +1505,12 @@ def deidentify_header(dicom):
     #   dicom.data_element(key).VR = 'LO' # these fieldsa are now UUIDs and so their type should be long string LO
     #   dicom[cleaned_header_dicom.data_element(key).tag] = pydicom.DataElement(cleaned_header_dicom.data_element(key).tag, 'LO', cleaned_header_dicom.data_element(key).value) # set back into dicom
 
+
   # Look for detected PHI in all DICOM fields and replace with UUIDs (this will de-id the report if present in the DICOM)
   for field in iter_simple_fields(dicom):
     match_and_replace_PHI(dicom, field.tag)
+
+
 
   log.info('Redacted %s instances of PHI from header and report' % found_PHI_count_header)
 
@@ -1425,6 +1542,7 @@ def setup_args():
   parser.add_argument('--wait', action='store_true', help='Wait for user to press enter after processing each dicom')
   parser.add_argument('--log_PHI', action='store_true', help='Log PHI for debugging purposes only')
   parser.add_argument('--overwrite_report', action='store_true', help='Overwrite existing report on disk and in elasticsearch')
+  parser.add_argument('--skip_dates', action='store_true', help='For faster testing, allow skipping slow and frequent datefinding')
 
 def log_settings():
   log.info("Settings: %s=%s" % ('output_folder', args.output_folder))
@@ -1468,6 +1586,7 @@ def log_settings():
   log.info("Settings: %s=%s" % ('no_deidentify', not args.no_deidentify))
   log.info("Settings: %s=%s" % ('log_PHI', not args.log_PHI))
   log.info("Settings: %s=%s" % ('overwrite_report', not args.overwrite_report))
+  log.info("Settings: %s=%s" % ('skip_dates', not args.skip_dates))
   
 
 if __name__ == '__main__':
@@ -1638,8 +1757,11 @@ if __name__ == '__main__':
       # Store cleaned tag names so that they can be skipped at later times for faster performance
       cleaned_tag_names_list = already_cleaned_tag_names()
 
-      # De-Identify Metadata (including report) (and keep track of value replacements ie. linking) (and this will populate the found_PHI global variable and so must come before other de-identification)
+      # De-Identify Metadata (including much of the report) (and keep track of value replacements ie. linking) (and this will populate the found_PHI global variable and so must come before other de-identification)
       deidentify_header(dicom)
+
+      # De-Identify Report
+      deidentify_report(dicom)
 
       # Record how many PHI was found and replaced in ElasticSearch
       store_number_of_redacted_PHI(uid)
