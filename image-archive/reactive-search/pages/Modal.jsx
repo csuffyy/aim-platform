@@ -133,7 +133,7 @@ class ModalExample extends React.Component {
             Patient Age
             </th>
             <td className="blue-line"> <pre className="app-pre">
-            PatientAge:&#60;8
+            PatientAge:&#60;9
             </pre> </td>
             <td className="blue-line">
             Search by patient age
@@ -177,7 +177,8 @@ class ModalExample extends React.Component {
             </pre> </td>
             <td className="blue-line">
           {/*Link to ElasticSearch page about fuzzy searches*/}
-            More information about <a className="sick-blue" href="https://www.elastic.co/guide/en/ElasticSearch/reference/6.3/query-dsl-query-string-query.html#_fuzziness">fuzzy</a> searches
+            Can match heart, haert, and other variations of the letters together. <br></br>
+            More information about <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-fuzzy-query.html">fuzzy</a> searches
             </td>
           </tr>
         </tbody>
@@ -187,11 +188,12 @@ class ModalExample extends React.Component {
             Proximity
             </th>
             <td className="blue-line"> <pre className="app-pre">
-            "cancer of bone"~5
+            "cancer bone"~5
             </pre> </td>
             <td className="blue-line">
           {/*Link to ElasticSearch page about proximity searches*/}
-            More information about <a className="sick-blue" href="https://www.elastic.co/guide/en/ElasticSearch/reference/6.3/query-dsl-query-string-query.html#_proximity_searches">proximity</a> searches
+            Where two words exists in proximity of a 5 word distance. <br></br>
+            More information about <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/guide/current/proximity-matching.html">proximity</a> searches
             </td>
           </tr>
         </tbody>
@@ -247,7 +249,7 @@ class ModalExample extends React.Component {
             </td>
           </tr>
         </tbody>
-        <tbody className="blue-line">
+        {/*<tbody className="blue-line">
           <tr>
             <th className="blue-line">
             Field Name with Space
@@ -259,30 +261,17 @@ class ModalExample extends React.Component {
             Allow search of field "Scheduled Date"
             </td>
           </tr>
-        </tbody>
+        </tbody>*/}
         <tbody className="blue-line">
           <tr>
             <th className="blue-line">
             Wildcard in Field Name
             </th>
             <td className="blue-line"> <pre className="app-pre">
-            he\*:something
+            he\*:diagnosis
             </pre> </td>
             <td className="blue-line">
-            Allow search of field beginning with "he"- heart and head would both satisfy
-            </td>
-          </tr>
-        </tbody>
-        <tbody className="blue-line">
-          <tr>
-            <th className="blue-line">
-            Patient Age
-            </th>
-            <td className="blue-line"> <pre className="app-pre">
-            PatientAge:>9
-            </pre> </td>
-            <td className="blue-line">
-            Patients older than 9 years of age are searched
+            Allow search of field beginning with "he"; heart and head would both satisfy
             </td>
           </tr>
         </tbody>
@@ -295,7 +284,7 @@ class ModalExample extends React.Component {
             AcquisitionDate:>2011/11/16
             </pre> </td>
             <td className="blue-line">
-            Any acquisition dates after 2011/11/16 are searched
+            Any acquisition dates after yyyy/mm/dd are searched
             </td>
           </tr>
         </tbody>
@@ -305,7 +294,7 @@ class ModalExample extends React.Component {
             Time
             </th>
             <td className="blue-line"> <pre className="app-pre">
-            Time:&lt;12:00:00
+            AcquisitionTime:&lt;12:00:00
             </pre> </td>
             <td className="blue-line">
             Any times before 12:00:00 are searched
@@ -321,7 +310,7 @@ class ModalExample extends React.Component {
             ReasonForStudy.keyword:"High fever"
             </pre> </td>
             <td className="blue-line">
-            The exact Accession Number is the only result given
+            The exact reason for study is the only result given
             </td>
           </tr>
         </tbody>
@@ -360,7 +349,7 @@ class ModalExample extends React.Component {
             Date:&#123;2010-01-01 TO 2010-12-31]
             </pre> </td>
             <td className="blue-line">
-            [] and &#123;} can be used together to specify one end point as included and the other as not included, respectively
+            [] and &#123;} can be used together
             </td>
           </tr>
         </tbody>
@@ -373,7 +362,7 @@ class ModalExample extends React.Component {
             Left arm^2
             </pre> </td>
             <td className="blue-line">
-            Arm is specified as more relevant than left in the search
+            "Arm" is specified as more relevant than "left" in the search
             </td>
           </tr>
         </tbody>

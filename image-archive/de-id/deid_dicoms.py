@@ -1722,7 +1722,6 @@ if __name__ == '__main__':
       log.info('args.input_report_base_path = %s' % args.input_report_base_path)
       log.info('input_report_filepath = %s' % input_report_filepath)
       log.info('report_path_short = %s' % report_path_short)
-<<<<<<< HEAD
 
     # if not os.path.exists(output_debug_folder):
     #   os.makedirs(output_debug_folder)
@@ -1742,8 +1741,7 @@ if __name__ == '__main__':
     #   log.info('args.input_report_base_path = %s' % args.input_report_base_path)
     #   log.info('input_report_filepath = %s' % input_report_filepath)
     #   log.info('report_path_short = %s' % report_path_short)
-=======
->>>>>>> a8c1c324ab40e6a483715552a1879cb2d98e7f7e
+
       log.info('output_report_filepath = %s' % output_report_filepath)
 
     log.info('##############')
