@@ -1113,22 +1113,44 @@ def datematcher(possibly_dates, text, fuzzy=False):
     for dp_date in found_dates_dparser: #add all the dates found from dateparser to the master list of dates in the correct order as a tuple with the datefinder object first and the part of the text that the date was found in
       found_dates.append((dp_date[1], dp_date[0]))
 
-  for datetime_object in possibly_dates:
-    for found_date in found_dates:
-      found_date = {
+
+  for found_date in found_dates: #loop over ONLY found dates as any date has to be in both lists ton continue
+    found_date = {
         'object' : found_date[0],
         'string' : found_date[1],
       }
-      if datetime_object == found_date['object']: #if the date matches one that was in input text
-        returning.add(found_date['string']) #append the line of text where the dates matched
+    if found_date['object'] in possibly_dates: 
+      returning.add(found_date['string'])
 
-      elif fuzzy: #not an exact match so should check if it is a fuzzy match
+    elif fuzzy: #not an exact match so should check if it is a fuzzy match
+      found_date_string = found_date['object'].strftime('%Y%m%d')
+      for datetime_object in possibly_dates:
         date_string = datetime_object.strftime('%Y%m%d')
-        found_date_string = found_date['object'].strftime('%Y%m%d')
+
         # The >=75 allows for two different digit swaps assuming 8 characters. And the >=5 confirms that the date is long enough to be an actual date not just a short string of random numbers. And the !=today() ignores "found" dates that match todays date because datefinder assumes today's date if there is missing date information
         if fuzz.ratio(date_string, found_date_string) >= 75 and len(found_date['string']) >= 5 and found_date['object'].date() != datetime.datetime.today().date():
           returning.add(found_date['string'])
 
+    #--------------------OLD CODE-----------------------------------
+
+  # for datetime_object in possibly_dates:
+  #   for found_date in found_dates:
+  #     found_date = {
+  #       'object' : found_date[0],
+  #       'string' : found_date[1],
+  #     }
+  #     if datetime_object == found_date['object']: #if the date matches one that was in input text
+  #       returning.add(found_date['string']) #append the line of text where the dates matched
+
+  #     elif fuzzy: #not an exact match so should check if it is a fuzzy match
+  #       date_string = datetime_object.strftime('%Y%m%d')
+  #       found_date_string = found_date['object'].strftime('%Y%m%d')
+  #       # The >=75 allows for two different digit swaps assuming 8 characters. And the >=5 confirms that the date is long enough to be an actual date not just a short string of random numbers. And the !=today() ignores "found" dates that match todays date because datefinder assumes today's date if there is missing date information
+  #       if fuzz.ratio(date_string, found_date_string) >= 75 and len(found_date['string']) >= 5 and found_date['object'].date() != datetime.datetime.today().date():
+  #         returning.add(found_date['string'])
+
+    #--------------------OLD CODE-----------------------------------
+    
   return list(returning)
 
 def pydicom_fieldname_to_short_field_name(field_name):
@@ -1153,6 +1175,10 @@ def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
 
   if (field != None): #check if the field exists
     (PHI_dateobjects, PHI_notdates) = get_PHI(dates=True, notdates=True) #get all PHI values so far
+    PHI_dateobjects.extend(list(datefinder.find_dates("2035/02/15")))
+    PHI_dateobjects.extend(list(datefinder.find_dates("2035/02/16")))
+    PHI_dateobjects.extend(list(datefinder.find_dates("2034/06/20")))
+    PHI_dateobjects.extend(list(datefinder.find_dates("2035/11/02")))
     if not PHI_notdates and not PHI_dateobjects:
       return
 
