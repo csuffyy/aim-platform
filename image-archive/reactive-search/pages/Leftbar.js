@@ -140,12 +140,20 @@ const components = {
   },
   dateRangeAcquisition: {
     componentId: "acquisitiondate-range",
-    dataField: "AcquisitionDate",
+    dataField: "AcquisitionDate.keyword",
+    queryFormat: "date",
     className: "acquisitiondate-filter"
   }
 };
 
 class Leftbar extends Component {
+
+  state = {
+      date: new Date(),
+    }
+
+    onChange = date => this.setState({ date })
+
   constructor() {
     super();
     this.state = { isChecked: false };
@@ -296,10 +304,10 @@ class Leftbar extends Component {
 
         <div style={{height:'6px'}}></div>
 
-        {/*
+
         <hr className="blue" />
 
-        <div className="filter-heading center">
+        <div className="filter-heading center" >
           <b>
             {" "}
             <i className="fa fa-calendar" /> Acquisition Date{" "}
@@ -307,9 +315,7 @@ class Leftbar extends Component {
         </div>
 
         <DateRange {...components.dateRangeAcquisition} />
-      */}
-
-      </div>
+              </div>
     );
   }
 }
