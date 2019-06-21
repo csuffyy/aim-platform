@@ -104,11 +104,11 @@ MATCH_CONF_THRESHOLD = 50
 TOO_MUCH_TEXT_THRESHOLD = 0
 MAX_NUM_PIXELS = 36000000 # 36 million pixels calculated as 2000x2000 plus RESIZE_FACTOR=3, so 6000x6000. Anymore takes too long)
 RESIZE_FACTOR = 3 # how much to blow up image to make OCR work better
-DATE_FORMAT = '%Y/%m/%d' # standard format YYYY/MM/DD to comply with ElasticSearch searching
+DATE_FORMAT = '%Y-%m-%d' # standard format YYYY/MM/DD to comply with ElasticSearch searching
 
 def convert_dates_to_standard_format(dicom):
-  """Converting dates to standard format YYYY/MM/DD to comply with ElasticSearch searching. It's important that we are confident that we are detecting the correct date because we wouldn't watch to put in place a different date. """
-  log.info('Converting dates to standard format YYYY/MM/DD.')
+  """Converting dates to standard format YYYY-MM-DD to comply with ElasticSearch searching. It's important that we are confident that we are detecting the correct date because we wouldn't watch to put in place a different date. """
+  log.info('Converting dates to standard format YYYY-MM-DD.')
   for field in iter_simple_fields(dicom):
     if not 'Date' in field.name:
       continue
@@ -1728,7 +1728,7 @@ if __name__ == '__main__':
     log.info('##  Enrich  ##')
     log.info('##############')
 
-    # Convert dates to standard format YYYY/MM/DD to comply with ElasticSearch searching and DWV viewing.
+    # Convert dates to standard format YYYY-MM-DD to comply with ElasticSearch searching and DWV viewing.
     convert_dates_to_standard_format(dicom)
 
     # Add derived fields (must happen before de-identification since that could remove needed data)
