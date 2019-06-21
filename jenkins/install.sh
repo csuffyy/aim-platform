@@ -162,6 +162,8 @@ bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:8080`"
 #Install ReactiveSearch
 cd image-archive/reactive-search/
 npm install --verbose --color false 2>&1
+
+# Apply Patches
 patch --verbose --ignore-whitespace -p 10 -F 10 node_modules/@appbaseio/reactivesearch/lib/server/index.js < server-side-provide-headers-to-elastic.patch
 patch --verbose --ignore-whitespace -p 10 -F 10 node_modules/@appbaseio/reactivesearch/lib/components/result/ReactiveList.js < comma-seperated-numbers.patch
 patch --verbose --ignore-whitespace -p 10 -F 10 ~/dwv-jqmobile/node_modules/dwv/dist/dwv.js < 0001-increased-text-limit-to-65000.patch
@@ -171,8 +173,20 @@ patch --verbose --ignore-whitespace -p 10 -F 10 /usr/local/lib/python3.5/dist-pa
 patch --verbose --ignore-whitespace -p 10 -F 10 /usr/local/lib/python3.5/dist-packages/datefinder/__init__.py < aim-platform/image-archive/de-id/datefinder/overflowerror-fix.patch
 patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/reactive-search/node_modules/@appbaseio/reactivesearch/lib/components/result/ReactiveList.js < see-more-stats-after-querying.patch
 npm run dev &
-# Fix 200 OK response with errors by checking for errors
+
+# Fix HTTP 200 OK response with errors by checking for errors
 cp -r image-archive/reactive-search/appbase-js/* image-archive/reactive-search/node_modules/appbase-js/
+
+# For more fixes to appbase-js (a reactive-search depedency) follow these steps:
+#Making Changes to Set Timeout
+# 1. Download repo for appbase-js
+# 2. Change javascript in src of appbase-js
+# 3. Run yarn after removing line in ./appbase-js/package_scripts
+# 4. Copy the files created by running yarn into node-modules
+# 5. Restart React
+# BELOW IS CODE TO EXECUTE BOTH 3&4 TOGETHER:
+# yarn && cp ./dist/appbase-js.* ~/aim-platform/image-archive/reactive-search/node_modules/appbase-js/dist
+
 
 ###############################
 # Production Server Dependencies
@@ -227,11 +241,3 @@ set -g status-bg red
 set -g status-fg white
 EOT
 
-#Making Changes to Set Timeout
-# 1. Download repo for appbase-js
-# 2. Change javascript in src of appbase-js
-# 3. Run yarn after removing line in ./appbase-js/package_scripts
-# 4. Copy the files created by running yarn into node-modules
-# 5. Restart React
-# BELOW IS CODE TO EXECUTE BOTH 3&4 TOGETHER:
-# yarn && cp ./dist/appbase-js.* ~/aim-platform/image-archive/reactive-search/node_modules/appbase-js/dist

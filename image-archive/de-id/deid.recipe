@@ -319,6 +319,21 @@ REPLACE VerifyingObserverSequence func:generate_uid
 REPLACE VerifyingOrganization func:generate_uid
 REPLACE VisitStatusID func:generate_uid
 
-
 # Extra Fields Added
 ADD PatientIdentityRemoved Yes
+
+# REMOVE Report Fields (Note (Daniel S): these are my own recipe types for radiology text reports. Note this should not overlap with regular REPLACE keys because then our code could replace a UUID that is already a UUID)
+# =================
+# REPORT_REPLACE Approvedby
+# REPORT_REPLACE BirthDate
+# REPORT_REPLACE CreationDate
+# REPORT_REPLACE MedicalRecordNumber
+# REPORT_REPLACE OrderNumber
+# REPORT_REPLACE Radiologist
+# REPORT_REPLACE Resident
+# REPORT_REPLACE ScheduledDate
+# REPORT_REPLACE Co-contributor
+# REPORT_REPLACE ReceivedonPACSDate
+# REPORT_REPLACE_AFTER "ELECTRONICALLY APPROVED and SIGNED on" until_newline
+# REPORT_REPLACE_AFTER "Transcribed on" 20
+# REPORT_REPLACE_AFTER "Transcriptionist" 10

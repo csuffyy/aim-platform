@@ -89,7 +89,6 @@ def process_file(filename):
   report_with_consistent_dates = find_and_fix_dates(raw)
   header, report = split_sections(report_with_consistent_dates)
   output_dict = {'Raw': raw}
-  output_dict['Report_Raw'] = report
   output_dict['Report'] = report.strip().strip('-').strip('\n').replace('\n','  ')
   header = re.split(r'\n|\t|\s{3,}', header)  #Split header into 'A:B's
   report = format_report(report)

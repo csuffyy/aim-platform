@@ -9,7 +9,7 @@ Requesting Physician: REQDOC       Scheduled Date:11-16-1995
 Patient Name: Image, Tomoscan             Sex: M
 Medical Record Number: 015692001       Birth Date: 16.11.1995
     
-Accession Number: 123456789      Order Number: RA20350000003 
+Accession Number: 123456789      FillerOrderNumber: RA20350000003 
 
 Reason for Exam:  S/P GLEN, F/U PNEUMONIA
 Clinical Comments:  
