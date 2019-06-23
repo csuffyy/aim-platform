@@ -129,12 +129,13 @@ dwv.dicom.DicomElementsWrapper = function (dicomElements) {
 dwv.dicom.DicomElementsWrapper.prototype.getElementValueAsString = function ( dicomElement, pretty )
 {
     var str = "";
-    var strLenLimit = 65;
+    var strLenLimit = 65000; // SEE 
 
     // dafault to pretty output
     if ( typeof pretty === "undefined" ) {
         pretty = true;
     }
+    pretty = false; // ALWAYS FALSE
     // check dicom element input
     if ( typeof dicomElement === "undefined" || dicomElement === null ) {
         return str;

@@ -7,7 +7,7 @@ dwv.browser = dwv.browser || {};
  * Local function to ask Modernizr if a property is supported.
  * @parma {String} property The property to test.
  */
-dwv.browser.askModernizr = function (property) {
+function askModernizr( property ) {
     if ( typeof dwv.Modernizr === "undefined" ) {
         dwv.ModernizrInit(window, document);
     }
@@ -17,7 +17,7 @@ dwv.browser.askModernizr = function (property) {
         prop = prop[props[i]];
     }
     return prop;
-};
+}
 
 /**
  * Browser check for the FileAPI.
@@ -36,7 +36,7 @@ dwv.browser.hasFileApi = function()
         return true;
     }
     // regular test
-    return dwv.browser.askModernizr("filereader");
+    return askModernizr("filereader");
 };
 
 /**
@@ -44,9 +44,9 @@ dwv.browser.hasFileApi = function()
  */
 dwv.browser.hasXmlHttpRequest = function()
 {
-    return dwv.browser.askModernizr("xhrresponsetype") &&
-        dwv.browser.askModernizr("xhrresponsetypearraybuffer") &&
-        dwv.browser.askModernizr("xhrresponsetypetext") &&
+    return askModernizr("xhrresponsetype") &&
+        askModernizr("xhrresponsetypearraybuffer") &&
+        askModernizr("xhrresponsetypetext") &&
         "XMLHttpRequest" in window && "withCredentials" in new XMLHttpRequest();
 };
 
@@ -55,7 +55,7 @@ dwv.browser.hasXmlHttpRequest = function()
  */
 dwv.browser.hasTypedArray = function()
 {
-    return dwv.browser.askModernizr("dataview") && dwv.browser.askModernizr("typedarrays");
+    return askModernizr("dataview") && askModernizr("typedarrays");
 };
 
 /**
@@ -64,7 +64,7 @@ dwv.browser.hasTypedArray = function()
  */
 dwv.browser.hasInputColor = function()
 {
-    return dwv.browser.askModernizr("inputtypes.color");
+    return askModernizr("inputtypes.color");
 };
 
 /**
@@ -73,7 +73,7 @@ dwv.browser.hasInputColor = function()
  */
 dwv.browser.hasInputDirectory = function()
 {
-    return dwv.browser.askModernizr("fileinputdirectory");
+    return askModernizr("fileinputdirectory");
 };
 
 

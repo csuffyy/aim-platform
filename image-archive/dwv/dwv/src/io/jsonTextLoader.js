@@ -108,7 +108,7 @@ dwv.io.JSONTextLoader = function ()
  * @return True if the file can be loaded.
  */
 dwv.io.JSONTextLoader.prototype.canLoadFile = function (file) {
-    var ext = dwv.utils.getFileExtension(file.name);
+    var ext = file.name.split('.').pop().toLowerCase();
     return (ext === "json");
 };
 
@@ -118,8 +118,7 @@ dwv.io.JSONTextLoader.prototype.canLoadFile = function (file) {
  * @return True if the url can be loaded.
  */
 dwv.io.JSONTextLoader.prototype.canLoadUrl = function (url) {
-    var urlObjext = dwv.utils.getUrlFromUri(url);
-    var ext = dwv.utils.getFileExtension(urlObjext.pathname);
+    var ext = url.split('.').pop().toLowerCase();
     return (ext === "json");
 };
 

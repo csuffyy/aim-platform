@@ -152,7 +152,6 @@ dwv.io.MemoryLoader.prototype.load = function (ioArray)
 
     var mproghandler = new dwv.utils.MultiProgressHandler(self.onprogress);
     mproghandler.setNToLoad( ioArray.length );
-    mproghandler.setNumberOfDimensions(1);
 
     // get loaders
     var loaders = [];
@@ -171,7 +170,7 @@ dwv.io.MemoryLoader.prototype.load = function (ioArray)
         loader.setOptions({
             'defaultCharacterSet': this.getDefaultCharacterSet()
         });
-        loader.onprogress = mproghandler.getUndefinedMonoProgressHandler(0);
+        loader.onprogress = mproghandler.getUndefinedMonoProgressHandler(1);
     }
 
     // loop on I/O elements
