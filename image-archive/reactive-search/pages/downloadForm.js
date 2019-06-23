@@ -142,7 +142,13 @@ class DiannaExample extends Component {
     var comment_split = comments.split("\n");
     comments = comment_split.join("%0D%0A");
 
-    window.location.href = "mailto:daniel.snider@sickkids.ca?subject=Diagnostic Imaging Archive Document Request&body=User: " + name + "%0D%0A%0D%0A Date: " + date +"%0D%0A%0D%0A Search: " + search + "%0D%0A%0D%0A Number of Images: " + numImages + " %0D%0A%0D%0A Number of Exams: " + numExams + "%0D%0A%0D%0A Number of Patients: " + numPatients + "%0D%0A%0D%0A Email: " + email + "%0D%0A%0D%0A PI: " + PI + "%0D%0A%0D%0A Use Case: " + useCase + "%0D%0A%0D%0A Other Comments: " + comments + "%0D%0A%0D%0A";
+    window.open(
+    "mailto:daniel.snider@sickkids.ca?subject=Diagnostic Imaging Archive Download Request&body=User: " + name + "%0D%0A%0D%0A Date: " + date +"%0D%0A%0D%0A Search: " + search + "%0D%0A%0D%0A Number of Images: " + numImages + " %0D%0A%0D%0A Number of Exams: " + numExams + "%0D%0A%0D%0A Number of Patients: " + numPatients + "%0D%0A%0D%0A Email: " + email + "%0D%0A%0D%0A PI: " + PI + "%0D%0A%0D%0A Use Case: " + useCase + "%0D%0A%0D%0A Other Comments: " + comments + "%0D%0A%0D%0A",
+    '_blank' // <- This is what makes it open in a new window.
+  );
+
+
+    // window.location.href = "mailto:daniel.snider@sickkids.ca?subject=Diagnostic Imaging Archive Document Request&body=User: " + name + "%0D%0A%0D%0A Date: " + date +"%0D%0A%0D%0A Search: " + search + "%0D%0A%0D%0A Number of Images: " + numImages + " %0D%0A%0D%0A Number of Exams: " + numExams + "%0D%0A%0D%0A Number of Patients: " + numPatients + "%0D%0A%0D%0A Email: " + email + "%0D%0A%0D%0A PI: " + PI + "%0D%0A%0D%0A Use Case: " + useCase + "%0D%0A%0D%0A Other Comments: " + comments + "%0D%0A%0D%0A";
   }
 
   getResults() {

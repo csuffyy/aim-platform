@@ -230,11 +230,11 @@ const components = {
                       </b>
                     </div>*/}
 
-                    {Number.isInteger(res.PatientAgeInt) && (
+                    {res.PatientAge && (
                       <div className="sub-title Age-data">
                         <b>
                           Age:
-                          <span className="details"> {res.PatientAgeInt}</span>
+                          <span className="details"> {res.PatientAge}</span>
                         </b>
                       </div>
                     )}
@@ -247,7 +247,7 @@ const components = {
                           Acquisition Date:
                           <span className="details">
                             {" "}
-                            {res.AcquisitionDatePretty}
+                            {res.AcquisitionDate}
                           </span>
                         </b>
                       </div>

@@ -119,7 +119,7 @@ def convert_dates_to_standard_format(dicom):
       continue
     # Replace the date with the standard format
     new_value = found_date.strftime(DATE_FORMAT)
-    dicom[field.tag].value = new_value
+    dicom[field.tag] = pydicom.DataElement(field.tag, field.VR, new_value)
 
 def add_derived_fields(dicom):
   log.info('Adding derived fields.')
@@ -240,11 +240,13 @@ def dicom_to_dict_for_elastic(dicom, log=None, environ=None):
           log.warning('could not understand private key format')
           continue
         if superkey == 'Image  ':
+          # I don't want PatientAgeInMonths to show up as ImagePatientAgeInMonths, therefore this if block is needed, note the lack of superkey use 
+          key = to_short_fieldname(key)
           dicom_metadata[key] = value
         elif superkey == 'Report ':
           key = superkey + key # Example: "Report ReportRaw"
-          key = key.replace(' ','') # Example: "ReportReportRaw"
           key = key.replace('ReportReport','Report') # Example: "ReportRaw"
+          key = to_short_fieldname(key)
           dicom_metadata[key] = value
       # else:
         # NOTE: PrivateData is disabled in the interest of time and due to search performance concerns
@@ -260,7 +262,7 @@ def dicom_to_dict_for_elastic(dicom, log=None, environ=None):
       # dicom_metadata['UnknownData'].append(value) # add it to a list of private data
     else:
       # Standard DICOM fields
-      key = field.name.strip('[]').replace(' ', '') # Clean up key names
+      key = to_short_fieldname(field.name) # clean up field names
       dicom_metadata[key] = value
 
   # for key, value in dicom_metadata.items():
@@ -1018,7 +1020,7 @@ def insert_deid_report_into_elastic(dicom):
   res = es.index(body=report, index=DEID_REPORT_INDEX_NAME, doc_type=DEID_REPORT_DOC_TYPE)
 
   if res['result'] == 'created':
-    log.info('Inserted de-identified dicom into ElasticSearch: %s' % res['_id'])
+    log.info('Inserted de-identified report into ElasticSearch: %s' % res['_id'])
   else:
     log.error('Insert de-identified report into ElasticSearch FAILED.')
     log.error('elasticsearch index result = %s' % res)
@@ -1146,10 +1148,11 @@ def datematcher(possibly_dates, text, fuzzy=False):
     
   return list(returning)
 
-def pydicom_fieldname_to_short_field_name(field_name):
+def to_short_fieldname(field_name):
   """ Example: "Patient's Birth Date" to "PatientBirthDate"""
-  short_name = field_name.replace(' ','') # pydicom gives field names with spaces while deid.recipe doesn't have spaces
-  short_name = short_name.replace("'s",'') # pydicom gives field names with "'s"
+  short_name = field_name.replace("'s",'') # pydicom gives field names with "'s"
+  # short_name = short_name.replace(" ",'')
+  short_name = re.sub('[\W_]+','',short_name) # pydicom gives field names with spaces and other non-alphanumeric characters while deid.recipe doesn't have spaces and follows the dicom standard
   return short_name
 
 def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
@@ -1159,7 +1162,7 @@ def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
     return
 
   # Skip certain tags # TODO: choose more that shouldn't contain PHI
-  short_name = pydicom_fieldname_to_short_field_name(field.name)
+  short_name = to_short_fieldname(field.name)
   if short_name in cleaned_tag_names_list:
     return
   # Skip values less than 3 characters
@@ -1361,6 +1364,7 @@ def add_report(dicom, report):
 
   # Add new data in dicom report
   for key, value in report.items():
+    key = to_short_fieldname(key)
     put_to_dicom_private_header(dicom, key=key, value=value, superkey='Report ')
   put_to_dicom_private_header(dicom, key='webpath', value=output_report_webpath, superkey='Report ')
 
@@ -1368,6 +1372,12 @@ def already_cleaned_tag_names():
   with open(args.deid_recipe, 'r') as f:
     names = f.read().split('\n')
     names = [line.split()[1] for line in names if 'REPLACE' in line] # convert "REPLACE AdmissionID func:generate_uid" to "AdmissionID"
+    return names
+
+def dont_replace_field_names():
+  with open(args.deid_recipe, 'r') as f:
+    names = f.read().split('\n')
+    names = [line.split()[2] for line in names if 'KEEP' in line] # convert "# KEEP AdmissionID" to "AdmissionID"
     return names
 
 def get_report_deid_recipe():
@@ -1490,8 +1500,6 @@ def iter_simple_fields(dicom):
     yield field
 
 def deidentify_header(dicom):
-
-
   # Prepare to De-Identify Metadata
   log.info('De-identifying DICOM header...')
   recipe = DeidRecipe(args.deid_recipe) # de-id rules
@@ -1518,14 +1526,12 @@ def deidentify_header(dicom):
   # Copy from "cleaned_header_dicom" to "dicom" variable so that UUIDs take place of PHI. "dicom" is the preferred variable
   for field_name in found_PHI.keys():
     dicom.data_element(field_name).value = cleaned_header_dicom.data_element(field_name).value
-    # Change VL data type from date to long string to try to get DWV to display it properly
-    # NOTE: commented out because pydicom doesn't actually save the VL change
-    # if dicom.data_element(key).VR in  ['DA','DT','TM']:
-    #   dicom.data_element(key).VR = 'LO' # these fieldsa are now UUIDs and so their type should be long string LO
-    #   dicom[cleaned_header_dicom.data_element(key).tag] = pydicom.DataElement(cleaned_header_dicom.data_element(key).tag, 'LO', cleaned_header_dicom.data_element(key).value) # set back into dicom
-
+    
   # Look for detected PHI in all DICOM fields and replace with UUIDs (this will de-id the report if present in the DICOM)
+  dont_replace_field_names_list = dont_replace_field_names()
   for field in iter_simple_fields(dicom):
+    if to_short_fieldname(field.name) in dont_replace_field_names_list:
+      continue # skip fields we've explicity said we want to keep in our deid recipe
     match_and_replace_PHI(dicom, field.tag)
 
   log.info('Redacted %s instances of PHI from header and report' % found_PHI_count_header)

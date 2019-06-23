@@ -13,73 +13,73 @@ FORMAT dicom
 
 %header
 
-# KEEP Demographics
+# Demographics
 # =================
-# PatientAge
-# PatientAgeInYears
-# PatientAgeInMonths
-# PatientAgeInWeeks
-# PatientAgeInDays
-# PatientAgeInSeconds
-# PatientSex
-# PatientSexNeutered
-# PatientSize
-# PatientState
-# PatientStatus
-# PatientWeight
-# Allergies
-# EthnicGroup
-# PreMedication
-# PregnancyStatus
-# SmokingStatus
-# SpecialNeeds
-# ExaminedBodyThickness
+# KEEP PatientAge
+# KEEP PatientAgeInYears
+# KEEP PatientAgeInMonths
+# KEEP PatientAgeInWeeks
+# KEEP PatientAgeInDays
+# KEEP PatientAgeInSeconds
+# KEEP PatientSex
+# KEEP PatientSexNeutered
+# KEEP PatientSize
+# KEEP PatientState
+# KEEP PatientStatus
+# KEEP PatientWeight
+# KEEP Allergies
+# KEEP EthnicGroup
+# KEEP PreMedication
+# KEEP PregnancyStatus
+# KEEP SmokingStatus
+# KEEP SpecialNeeds
+# KEEP ExaminedBodyThickness
 # 
-# KEEP Proceedure Info
+# Proceedure Info
 # =================
-# ProtocolName
-# StationName
-# PerformedStationName
+# KEEP ProtocolName
+# KEEP StationName
+# KEEP PerformedStationName
 # 
-# KEEP Institution
+# Institution
 # =================
-# InstitutionAddress
-# InstitutionalDepartmentName
-# InstitutionCodeSequence
-# InstitutionName
+# KEEP InstitutionAddress
+# KEEP InstitutionalDepartmentName
+# KEEP InstitutionCodeSequence
+# KEEP InstitutionName
 # 
-# KEEP Calibration
+# Calibration
 # =================
-# DateofLastCalibration
-# DateofLastDetectorCalibration
+# KEEP DateofLastCalibration
+# KEEP DateofLastDetectorCalibration
 # 
-# KEEP Descriptions
+# Descriptions
 # =================
-# ReasonForStudy
-# ReasonForImagingServiceRequest
-# ReasonForRequestedProcedure
-# ReasonForRequestedProcedureCodeSeq
-# DerivationDescription
-# DischargeDiagnosisDescription
-# ModifiedImageDescription
-# PatientBreedDescription
-# PatientSpeciesDescription
-# SeriesDescription
-# StudyDescription
-# RouteOfAdmissions
-# AdmittingDiagnosesDescription
-# ImageComments
-# ImagePresentationComments
-# PatientComments
-# RequestedProcedureComments
-# StudyComments
-# TextComments
-# VisitComments
+# KEEP ReasonForStudy
+# KEEP ReasonForImagingServiceRequest
+# KEEP ReasonForRequestedProcedure
+# KEEP ReasonForRequestedProcedureCodeSeq
+# KEEP DerivationDescription
+# KEEP DischargeDiagnosisDescription
+# KEEP ModifiedImageDescription
+# KEEP PatientBreedDescription
+# KEEP PatientSpeciesDescription
+# KEEP SeriesDescription
+# KEEP StudyDescription
+# KEEP RouteOfAdmissions
+# KEEP AdmittingDiagnosesDescription
+# KEEP ImageComments
+# KEEP ImagePresentationComments
+# KEEP PatientComments
+# KEEP RequestedProcedureComments
+# KEEP StudyComments
+# KEEP TextComments
+# KEEP VisitComments
 #
-# KEEP AcquisitionDate
+# AcquisitionDate
 # =================
-# REPLACE AcquisitionDate func:generate_uid
-# REPLACE AcquisitionDatetime func:generate_uid
+# KEEP AcquisitionDate
+# KEEP AcquisitionDatetime
 
 
 # REMOVE
