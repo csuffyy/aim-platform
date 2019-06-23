@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>DWV DICOM Check</title>
+<meta charset="UTF-8">
+<meta name="description" content="DICOM Web Viewer (DWV) simple version">
+<meta name="keywords" content="DICOM,HTML5,JavaScript,medical,imaging,DWV">
+<!-- Style -->
+<style type="text/css">
+body { font-family: Arial, Helvetica, sans-serif; }
+.snapshot {
+    float: left; margin: 5px;
+    max-width: 200px; max-height: 200px;
+}
+.dwv {
+    float: left; margin: 5px;
+    width: 200px; height: 200px;
+}
+.doc { float: left; margin: 5px; }
+.path {
+    border-bottom: 1px dashed #999;
+    text-decoration: none;
+}
+.key {
+    color: #999;
+}
+.separator { clear: both; }
+.footer {
+    margin-top: 15px; padding: 5px;
+    background-color: #ccc;
+}
+</style>
+<!-- Local -->
+<script type="text/javascript" src="../../src/app/application.js"></script>
+<script type="text/javascript" src="../../src/app/viewController.js"></script>
+<script type="text/javascript" src="../../src/app/toolboxController.js"></script>
+<script type="text/javascript" src="../../src/dicom/dicomElementsWrapper.js"></script>
+<script type="text/javascript" src="../../src/dicom/dicomParser.js"></script>
+<script type="text/javascript" src="../../src/dicom/dictionary.js"></script>
+<script type="text/javascript" src="../../src/gui/filter.js"></script>
+<script type="text/javascript" src="../../src/gui/generic.js"></script>
+<script type="text/javascript" src="../../src/gui/help.js"></script>
+<script type="text/javascript" src="../../src/gui/info.js"></script>
+<script type="text/javascript" src="../../src/gui/html.js"></script>
+<script type="text/javascript" src="../../src/gui/layer.js"></script>
+<script type="text/javascript" src="../../src/gui/loader.js"></script>
+<script type="text/javascript" src="../../src/gui/style.js"></script>
+<script type="text/javascript" src="../../src/gui/tools.js"></script>
+<script type="text/javascript" src="../../src/gui/undo.js"></script>
+<script type="text/javascript" src="../../src/image/decoder.js"></script>
+<script type="text/javascript" src="../../src/image/dicomBufferToView.js"></script>
+<script type="text/javascript" src="../../src/image/domReader.js"></script>
+<script type="text/javascript" src="../../src/image/filter.js"></script>
+<script type="text/javascript" src="../../src/image/geometry.js"></script>
+<script type="text/javascript" src="../../src/image/image.js"></script>
+<script type="text/javascript" src="../../src/image/luts.js"></script>
+<script type="text/javascript" src="../../src/image/view.js"></script>
+<script type="text/javascript" src="../../src/io/urlsLoader.js"></script>
+<script type="text/javascript" src="../../src/io/dicomDataLoader.js"></script>
+<script type="text/javascript" src="../../src/io/rawImageLoader.js"></script>
+<script type="text/javascript" src="../../src/math/bucketQueue.js"></script>
+<script type="text/javascript" src="../../src/math/matrix.js"></script>
+<script type="text/javascript" src="../../src/math/point.js"></script>
+<script type="text/javascript" src="../../src/math/scissors.js"></script>
+<script type="text/javascript" src="../../src/math/shapes.js"></script>
+<script type="text/javascript" src="../../src/math/stats.js"></script>
+<script type="text/javascript" src="../../src/math/vector.js"></script>
+<script type="text/javascript" src="../../src/tools/toolbox.js"></script>
+<script type="text/javascript" src="../../src/tools/undo.js"></script>
+<script type="text/javascript" src="../../src/tools/scroll.js"></script>
+<script type="text/javascript" src="../../src/tools/windowLevel.js"></script>
+<script type="text/javascript" src="../../src/utils/browser.js"></script>
+<script type="text/javascript" src="../../src/utils/progress.js"></script>
+<script type="text/javascript" src="../../src/utils/string.js"></script>
+<script type="text/javascript" src="../../src/utils/uri.js"></script>
+<script type="text/javascript" src="../../src/utils/modernizr.js"></script>
+<script type="text/javascript" src="../../src/utils/thread.js"></script>
+
+<!-- Local -->
+<script>
+
+// Default window level presets.
+dwv.tool.defaultpresets = {};
+// Image decoders (for web workers)
+dwv.image.decoderScripts = {
+    "jpeg2000": "../../decoders/pdfjs/decode-jpeg2000.js",
+    "jpeg-lossless": "../../decoders/rii-mango/decode-jpegloss.js",
+    "jpeg-baseline": "../../decoders/pdfjs/decode-jpegbaseline.js",
+    "rle": "../../decoders/dwv/decode-rle.js"
+};
+// decode query
+dwv.utils.decodeQuery = dwv.utils.base.decodeQuery;
+// get element
+dwv.gui.getElement = dwv.gui.base.getElement;
+// Progress
+dwv.gui.displayProgress = function (/*percent*/) {};
+
+// dwv application
+var config = {
+    "containerDivId": "dwv",
+    "tools": ["Scroll", "WindowLevel"]
+};
+var app = new dwv.App();
+app.init(config);
+
+</script>
+
+</head>
+
+<body>
+
+<!-- DWV -->
+<div id="dwv">
+  <!-- Layer Container -->
+  <div class="layerContainer">
+  <canvas class="imageLayer">Only for HTML5 compatible browsers...</canvas>
+  </div><!-- /layerContainer -->
+</div><!-- /dwv -->
+
+</body>
+</html>
