@@ -1031,13 +1031,7 @@ dwv.dicom.DicomParser.prototype.readDataElement = function (reader, offset, impl
     if (dwv.dicom.isTagWithVR(tag.group, tag.element)) {
         // implicit VR
         if (implicit) {
-            // vr = "UN";
-            vr = "LT"; // THIS WILL FIX "Unknown Tag & Data    73\109\97\103\101\32\32\80\97\116" for /static/DEID/image/sample/CT-MONO2-8-abdo-TEST.dcm
-            var dict = dwv.dicom.dictionary;
-            if ( typeof dict[tag.group] !== "undefined" &&
-                    typeof dict[tag.group][tag.element] !== "undefined" ) {
-                vr = dwv.dicom.dictionary[tag.group][tag.element][0];
-            }
+            vr = "UN";
             is32bitVLVR = true;
         }
         else {
@@ -1214,12 +1208,6 @@ dwv.dicom.DicomParser.prototype.readDataElement = function (reader, offset, impl
     {
         data = reader.readUint8Array( offset, vl );
         offset += vl;
-        // THIS WILL FIX "Unknown Tag & Data    73\109\97\103\101\32\32\80\97\116" for /static/DEID/image/sample/CT-MONO2-8-abdo-TEST.dcm
-        //  Commented out because...
-        // THIS WILL BREAK (won't even load) for static/PHI/image/823-whole-body-MR-with-PHI.dcm 
-        // data = reader.readString( offset, vl );
-        // data = data.split("\\");
-        // offset += vl;
     }
     // sequence
     else if (vr === "SQ")
