@@ -1,3 +1,10 @@
+### AIM NOTES
+
+How to install new changes:
+```
+yarn run build && cp build/dist/* /home/dan/aim-platform/image-archive/dwv/node_modules/dwv/dist
+```
+
 DWV
 ===
 

@@ -5,17 +5,7 @@
 #
 # Usage:
 # source ../environments/local/env.sh
-# python3.7 deid_dicoms.py --input_range 1-10 --output_folder ./tmp/
-# OR
-# python3.7 deid_dicoms.py --input_filelist ~/Favourite_Images/file_list.txt --output_folder ./tmp/
-# OR
-# python3.5 deid_dicoms.py --input_file /home/dan/823-whole-body-MR-with-PHI.dcm --output_folder ./tmp/ --fast_crop
-# OR
-# kill %; pkill -9 eog; pkill display; python3.5 deid_dicoms.py --output_folder ./tmp/ --gif --disp --input_folder /home/dan/Favourite_Images/Requisition/
-# OR
-# kill %; pkill -9 eog; pkill display; python3.5 deid_dicoms.py --output_folder ~/aim-platform/image-archive/reactive-search/static/deid/ --gif --disp --input_file ../images/sample/CT-MONO2-16-ort.dcm --wait --fast_crop --input_base_path /home/dan/aim-platform/image-archive/images/ --input_report_base_path /home/dan/aim-platform/image-archive/reports/
-# OR
-# pkill -9 eog; pkill display; python3 deid_dicoms.py --output_folder ~/aim-platform/image-archive/reactive-search/static/ --output_folder_suffix PHI --input_file ~/823-whole-body-MR-with-PHI.dcm --fast_crop --input_base_path ~ --input_report_base_path /home/dan/aim-platform/image-archive/reports/ --no_deidentify
+# pkill -9 eog; pkill display; python3 deid_dicoms.py --output_folder ~/aim-platform/image-archive/reactive-search/static/ --output_folder_suffix DEID --input_file ../images/sample/CT-MONO2-16-ort.dcm --fast_crop --input_base_path /home/dan/aim-platform/image-archive/images/ --input_report_base_path /home/dan/aim-platform/image-archive/reports/ # Load DEID dicom
 #
 # Note:
 # If you get error "OSError: cannot identify image file", try using python3 instead of python3.7
@@ -104,29 +94,32 @@ MATCH_CONF_THRESHOLD = 50
 TOO_MUCH_TEXT_THRESHOLD = 0
 MAX_NUM_PIXELS = 36000000 # 36 million pixels calculated as 2000x2000 plus RESIZE_FACTOR=3, so 6000x6000. Anymore takes too long)
 RESIZE_FACTOR = 3 # how much to blow up image to make OCR work better
-DATE_FORMAT = '%Y-%m-%d' # standard format YYYY/MM/DD to comply with ElasticSearch searching
+DATE_FORMAT = '%Y-%m-%d' # standard format YYYY-MM-DD to comply with ElasticSearch searching
 
 def convert_dates_to_standard_format(dicom):
   """Converting dates to standard format YYYY-MM-DD to comply with ElasticSearch searching. It's important that we are confident that we are detecting the correct date because we wouldn't watch to put in place a different date. """
+  if args.skip_dates:
+    return
   log.info('Converting dates to standard format YYYY-MM-DD.')
+
   for field in iter_simple_fields(dicom):
     if not 'Date' in field.name:
       continue
     # Skip if not long enough to determine a date with confidence
     if not len(str(field.value))>=8:
       continue
-    found_date = list(datefinder.find_dates(str(field.value))) #finds all dates in text using datefinder
+    value = str(field.value).lstrip('0') # remove leading zeros because pydicom has a bug which introduces them. Example: 0095.07.24 given by pydicom is actually found by dcmdump to be 95.07.24
+    found_dates = list(datefinder.find_dates(value)) #finds all dates in text using datefinder
     # Skip if more than one date was found since we aren't confident
-    if not len(found_date)==1:
+    if not len(found_dates)==1:
       continue
-    found_date = found_date[0]
+    found_date = found_dates[0]
     # Skip any date that matches today's date in two sections (YY/MM/DD) because we have problems with datefiner assuming today's date when it can't figure it out
     if count_date_similarity_to_today(found_date) >= 2:
       continue
     # Replace the date with the standard format
     new_value = found_date.strftime(DATE_FORMAT)
-    new_value = found_date
-    dicom.update({field.name.replace(' ', ''): new_value})
+    dicom[field.tag].value = new_value
 
 def add_derived_fields(dicom):
   log.info('Adding derived fields.')
@@ -949,7 +942,7 @@ def insert_dicom_into_elastic(dicom):
   res = es.index(body=dicom_metadata, index=INDEX_NAME, doc_type=DOC_TYPE)
 
   if res['result'] == 'created':
-    log.info('Inserted de-identified dicom into ElasticSearch')
+    log.info('Inserted de-identified dicom into ElasticSearch: %s' % res['_id'])
   else:
     log.error('Insert de-identified report into ElasticSearch FAILED.')
     log.error('elasticsearch index result = %s' % res)
@@ -1025,7 +1018,7 @@ def insert_deid_report_into_elastic(dicom):
   res = es.index(body=report, index=DEID_REPORT_INDEX_NAME, doc_type=DEID_REPORT_DOC_TYPE)
 
   if res['result'] == 'created':
-    log.info('Inserted de-identified report into ElasticSearch')
+    log.info('Inserted de-identified dicom into ElasticSearch: %s' % res['_id'])
   else:
     log.error('Insert de-identified report into ElasticSearch FAILED.')
     log.error('elasticsearch index result = %s' % res)
@@ -1505,12 +1498,9 @@ def deidentify_header(dicom):
     #   dicom.data_element(key).VR = 'LO' # these fieldsa are now UUIDs and so their type should be long string LO
     #   dicom[cleaned_header_dicom.data_element(key).tag] = pydicom.DataElement(cleaned_header_dicom.data_element(key).tag, 'LO', cleaned_header_dicom.data_element(key).value) # set back into dicom
 
-
   # Look for detected PHI in all DICOM fields and replace with UUIDs (this will de-id the report if present in the DICOM)
   for field in iter_simple_fields(dicom):
     match_and_replace_PHI(dicom, field.tag)
-
-
 
   log.info('Redacted %s instances of PHI from header and report' % found_PHI_count_header)
 

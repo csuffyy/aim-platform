@@ -75,13 +75,17 @@ FORMAT dicom
 # StudyComments
 # TextComments
 # VisitComments
+#
+# KEEP AcquisitionDate
+# =================
+# REPLACE AcquisitionDate func:generate_uid
+# REPLACE AcquisitionDatetime func:generate_uid
+
 
 # REMOVE
 # ==============
 REPLACE AccessionNumber func:generate_uid
 REPLACE AcquisitionContextSeq func:generate_uid
-REPLACE AcquisitionDate func:generate_uid
-REPLACE AcquisitionDatetime func:generate_uid
 REPLACE ActualHumanPerformersSequence func:generate_uid
 REPLACE AdditionalPatientHistory func:generate_uid
 REPLACE AddressTrial func:generate_uid

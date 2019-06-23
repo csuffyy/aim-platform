@@ -1,7 +1,30 @@
+OLD
+==============
+# python3.7 deid_dicoms.py --input_range 1-10 --output_folder ./tmp/
+# OR
+# python3.7 deid_dicoms.py --input_filelist ~/Favourite_Images/file_list.txt --output_folder ./tmp/
+# OR
+# python3.5 deid_dicoms.py --input_file /home/dan/823-whole-body-MR-with-PHI.dcm --output_folder ./tmp/ --fast_crop
+# OR
+# kill %; pkill -9 eog; pkill display; python3.5 deid_dicoms.py --output_folder ./tmp/ --gif --disp --input_folder /home/dan/Favourite_Images/Requisition/
+# OR
+# kill %; pkill -9 eog; pkill display; python3.5 deid_dicoms.py --output_folder ~/aim-platform/image-archive/reactive-search/static/deid/ --gif --disp --input_file ../images/sample/CT-MONO2-16-ort.dcm --wait --fast_crop --input_base_path /home/dan/aim-platform/image-archive/images/ --input_report_base_path /home/dan/aim-platform/image-archive/reports/
+# OR
+# pkill -9 eog; pkill display; python3 deid_dicoms.py --output_folder ~/aim-platform/image-archive/reactive-search/static/ --output_folder_suffix PHI --input_file ~/823-whole-body-MR-with-PHI.dcm --fast_crop --input_base_path ~ --input_report_base_path /home/dan/aim-platform/image-archive/reports/ --no_deidentify
+# OR
+
+TEST FILE
+==============
 kill %; pkill -9 eog; pkill display; python3 deid_dicoms.py --output_folder ~/aim-platform/image-archive/reactive-search/static/ --output_folder_suffix DEID --input_file ../images/sample/CT-MONO2-8-abdo-TEST.dcm --fast_crop --input_base_path /home/dan/aim-platform/image-archive/images/ --input_report_base_path /home/dan/aim-platform/image-archive/reports/ --log_PHI --overwrite_report
 
+# Look at reports
+cat /home/dan/aim-platform/image-archive/reactive-search/static/DEID/report/sample/Report_testing.txt
+cat../reports/sample/Report_testing.txt
 
-diff ../reports/sample/Report_testing.txt /home/dan/aim-platform/image-archive/reactive-search/static/DEID/report/sample/Report_testing.txt; dcmdump /home/dan/aim-platform/image-archive/reactive-search/static/DEID/image/sample/CT-MONO2-8-abdo-TEST.dcm ../images/sample/CT-MONO2-8-abdo-TEST.dcm | grep -i -e accession -e patientname -e patientBirth | grep -v Report
+diff ../reports/sample/Report_testing.txt /home/dan/aim-platform/image-archive/reactive-search/static/DEID/report/sample/Report_testing.txt
+
+# Look at DICOMs
+dcmdump /home/dan/aim-platform/image-archive/reactive-search/static/DEID/image/sample/CT-MONO2-8-abdo-TEST.dcm ../images/sample/CT-MONO2-8-abdo-TEST.dcm | grep -i -e accession -e patientname -e patientBirth | grep -v Report
 ...
 report is diffed
 ...
