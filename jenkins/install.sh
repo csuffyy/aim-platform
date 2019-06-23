@@ -172,6 +172,7 @@ patch --verbose --ignore-whitespace -p 10 -F 10 ~/dwv-jqmobile/node_modules/dwv/
 patch --verbose --ignore-whitespace -p 10 -F 10 /usr/local/lib/python3.5/dist-packages/datefinder/constants.py < aim-platform/image-archive/de-id/datefinder/find-all-dates.patch
 patch --verbose --ignore-whitespace -p 10 -F 10 /usr/local/lib/python3.5/dist-packages/datefinder/__init__.py < aim-platform/image-archive/de-id/datefinder/overflowerror-fix.patch
 patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/reactive-search/node_modules/@appbaseio/reactivesearch/lib/components/result/ReactiveList.js < see-more-stats-after-querying.patch
+patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/reactive-search/node_modules/@appbaseio/reactivesearch/lib/components/date/DateRange.js < calendar-can-be-searched.patch
 npm run dev &
 
 # Fix HTTP 200 OK response with errors by checking for errors
