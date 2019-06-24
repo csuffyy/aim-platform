@@ -3,6 +3,7 @@ import { DataSearch } from "@appbaseio/reactivesearch";
 import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
 import ModalExample from "./Modal.jsx";
 import DiannaExample from "./downloadForm.js"
+import AboutExample from "./AboutModal.jsx"
 
 
 
@@ -16,15 +17,28 @@ function custQueryAllFields(value, props) {
 
   // Hanle possible leading "fields:" to allow user to specify what fields to look in for rest of search query
   var fields = null;
-  if (value.indexOf("fields:")===0) {
-    fields = value.split(" ")[0].replace('fields:','').split(","); // Use first part as the fields
-    value = value.split(" ").slice(1).join(" "); // Use the other parts as the string query value
+  var minimum_should_match = null;
+  var start_index = 0;
+  var end_index = 0;
+  if ((start_index = value.indexOf("fields:"))!== -1) {
+    end_index = value.substr(start_index, value.length).indexOf("]");
+    fields = value.substr(start_index, end_index).replace('fields:','').replace('[', '').trim().split(","); // Use first part as the fields
+    value = value.substr(0,start_index) + value.substr(end_index + start_index + 1,value.length); // Use the other parts as the string query value
+  }  
+
+  if ((start_index = value.indexOf("minimum_should_match:"))!== -1) {
+    end_index = value.substr(start_index, value.length).indexOf(" ");
+    minimum_should_match = value.substr(start_index, end_index).replace('minimum_should_match:',''); // Use first part as the minimum_should_match
+    value = value.substr(0,start_index) + value.substr(end_index + start_index + 1,value.length); // Use the other parts as the string query value
   }
 
   var query = {"query" : value };
 
   if (fields !== null) {
     query.fields = fields;
+  }
+  if (minimum_should_match !== null) {
+    query.minimum_should_match = minimum_should_match;
   }
 
   // Query String Query
@@ -201,13 +215,13 @@ class Navbar extends Component {
           <aside className="aside aside-buttons">
             <div className="btn-container">
               <div className="row">
-                <div className="col-sm">
-              <div>
-                            <span className="header-support-text">
+              <div className="col-sm">
+                <div>
+                <span className="header-support-text">
                 <a className="login-footer-link" href="mailto:daniel.snider@sickkids.ca?subject=Diagnostic Imaging Archive Support" target="_blank">Support</a> Provided by <a className="login-footer-link" href="https://ccm.sickkids.ca/" target="_blank">The Centre for Computational Medicine</a>
-              </span>
-              </div>
+                </span>
                 </div>
+              </div>
               </div>
 
               <div className="row btn-group">
