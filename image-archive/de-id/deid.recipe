@@ -236,6 +236,7 @@ REPLACE PhysiciansOfRecordIdentificationSequence func:generate_uid
 REPLACE PhysiciansOfRecordIDSequence func:generate_uid
 REPLACE PhysiciansReadingStudyIdentificationSequence func:generate_uid
 REPLACE PlaceOrderNumberOfImagingServiceReq func:generate_uid
+REPLACE PresentationCreationDate func:generate_uid
 REPLACE PPSID func:generate_uid
 REPLACE PPSStartDate func:generate_uid
 REPLACE RadiopharmaceuticalStartDateTime func:generate_uid

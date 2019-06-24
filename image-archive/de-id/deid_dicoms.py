@@ -47,6 +47,7 @@ from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 from elasticsearch import helpers
 from deid.config import DeidRecipe
+from interruptingcow import timeout
 from matplotlib import pyplot as plt
 from elasticsearch import Elasticsearch
 from dateparser.search import search_dates
@@ -207,10 +208,10 @@ def add_patient_age_units(dicom):
     log.error('Couldn\'t calculate PatientAge')
     return
 
-  PatientAgeInYears = age_in_seconds / 31557600.0
-  PatientAgeInMonths = age_in_seconds / 2629746.0
-  PatientAgeInWeeks = age_in_seconds / 604800.0
-  PatientAgeInDays = age_in_seconds / 86400.0
+  PatientAgeInYears = round(age_in_seconds / 31557600.0, 2)
+  PatientAgeInMonths = round(age_in_seconds / 2629746.0, 2)
+  PatientAgeInWeeks = round(age_in_seconds / 604800.0, 2)
+  PatientAgeInDays = round(age_in_seconds / 86400.0, 2)
   PatientAgeInSeconds = age_in_seconds
 
   # age = round(PatientAgeInDays / 365,2) # age in years with two decimal place precision
@@ -390,17 +391,17 @@ def get_pixels(dicom):
   if not 'pixel_array' in dicom:
     img = dicom.pixel_array
   else:
-    log.error('Pixel data not found in DICOM: %s' % filename)
+    log.error('Pixel data not found in DICOM: %s' % dicom_path)
     return
 
   # Image shape
   log.info('Got pixels of shape: %s TransferSyntaxUID: %s' % (str(img.shape), dicom.file_meta.TransferSyntaxUID))
   if len(img.shape) not in [2,3]:
     # TODO: Support 3rd physical dimension, z-slices. Assuming dimenions x,y,[color] from here on.
-    log.warning('Skipping image becasue shape is not 2d-grey or rgb: %s' % filename)
+    log.warning('Skipping image becasue shape is not 2d-grey or rgb: %s' % dicom_path)
     return
   if len(img.shape) == 3 and img.shape[2] != 3:
-    log.warning('Skipping image becasue shape is z-stack: %s' % filename)
+    log.warning('Skipping image becasue shape is z-stack: %s' % dicom_path)
     return
 
   # Crop the image to 100x100 just for fast algorithm testing
@@ -544,7 +545,6 @@ def ocr(img, ocr_num=None):
   detection = pd.DataFrame.from_dict(detection) # convert to dataframe
   detection = detection[[text.strip() != '' for text in detection.text]] # remove empty strings
   detection = detection.reset_index() # make sure index (row id) doesn't skip numbers
-  log.info('Redacted %d instances of PHI from pixels' % len(detection))
   return detection
 
 def ocr_match(search_strings, detection, ocr_num=None):
@@ -1028,6 +1028,7 @@ def insert_deid_report_into_elastic(dicom):
 def generate_uid(dicom_dict, function_name=None, field_name=None):
   """ This function generates a uuid to put in place of PHI and trackes the linking between UUID and PHI by inserting into ElasticSearch """
   orig = dicom_dict[field_name] if field_name in dicom_dict else ''
+
   if orig == '':
     return ''
 
@@ -1049,7 +1050,7 @@ def generate_uid(dicom_dict, function_name=None, field_name=None):
         query['id'] = dicom_dict['_id'] # Use same elasticsearch document ID from input index in the new index
       res = es.index(body=query, index=LINKING_INDEX_NAME, doc_type=LINKING_DOC_TYPE)
 
-    log.debug('Linking %s:%s-->%s' % (field_name, orig, uid))
+      log.debug('Linking %s:%s-->%s' % (field_name, orig, uid))
 
   # Keep track of what PHI was found
   found_PHI[field_name] = orig
@@ -1102,11 +1103,13 @@ def datematcher(possibly_dates, text, fuzzy=False):
   found_dates_dfinder = list(found_dates_dfinder)
   found_dates.extend(found_dates_dfinder) #add all the dates found from datefinder to the master list of dates
 
-  found_dates_dparser = search_dates(str(text)) #finds all dates in text using dateparser
-  if found_dates_dparser:
-    found_dates_dparser = list(found_dates_dparser)
-    for dp_date in found_dates_dparser: #add all the dates found from dateparser to the master list of dates in the correct order as a tuple with the datefinder object first and the part of the text that the date was found in
-      found_dates.append((dp_date[1], dp_date[0]))
+  ## NOTE: Commented out dateparser.search_dates because it adds A LOT of time to processing
+  # found_dates_dparser = search_dates(str(text), languages=['en']) #finds all dates in text using dateparser
+  # if found_dates_dparser:
+  #   found_dates_dparser = list(found_dates_dparser)
+  #   for dp_date in found_dates_dparser: #add all the dates found from dateparser to the master list of dates in the correct order as a tuple with the datefinder object first and the part of the text that the date was found in
+  #     found_dates.append((dp_date[1], dp_date[0]))
+  ## NOTE: For a comparison between dateparser vs datefinder see here: https://github.com/aim-sk/aim-platform/wiki/Performance-Comparison-of-DateFinder-and-DateParser
 
 
   for found_date in found_dates: #loop over ONLY found dates as any date has to be in both lists ton continue
@@ -1171,10 +1174,10 @@ def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
 
   if (field != None): #check if the field exists
     (PHI_dateobjects, PHI_notdates) = get_PHI(dates=True, notdates=True) #get all PHI values so far
-    PHI_dateobjects.extend(list(datefinder.find_dates("2035/02/15")))
-    PHI_dateobjects.extend(list(datefinder.find_dates("2035/02/16")))
-    PHI_dateobjects.extend(list(datefinder.find_dates("2034/06/20")))
-    PHI_dateobjects.extend(list(datefinder.find_dates("2035/11/02")))
+    # PHI_dateobjects.extend(list(datefinder.find_dates("2035/02/15")))
+    # PHI_dateobjects.extend(list(datefinder.find_dates("2035/02/16")))
+    # PHI_dateobjects.extend(list(datefinder.find_dates("2034/06/20")))
+    # PHI_dateobjects.extend(list(datefinder.find_dates("2035/11/02")))
     if not PHI_notdates and not PHI_dateobjects:
       return
 
@@ -1195,6 +1198,7 @@ def match_and_replace_PHI(dicom, field_tag, fuzzy=False):
     except Exception as e:
       print(traceback.format_exc())
       log.error('Failed to set dicom field "%s" with new value. The original value will remain in place without any redaction.' % field)
+      raise e
 
 def match_and_replace_exact(dicom, field_tag, PHI):
   """matches and replaces PHI dates that were the exact same format as those found in the specified field
@@ -1278,6 +1282,13 @@ def save_dicom_to_disk(dicom):
       dicom[(0x7fe0,0x0010)].is_undefined_length = False
       dicom.save_as(output_image_filepath)
       log.error('Successfully recovered from error and saved de-identified dicom to disk: %s\n' % output_image_filepath)
+    elif "a bytes-like object is required, not \'str\'" in str(e):
+      tag = (str(e)[10:14],str(e)[16:20]) # (0019, 109d)
+      dicom[tag].VR='LT'
+      dicom.save_as(output_image_filepath)
+      log.error('Successfully recovered from error and saved de-identified dicom to disk: %s\n' % output_image_filepath)
+    else:
+      raise e
 
 
 def save_deid_report_to_disk(dicom):
@@ -1314,6 +1325,8 @@ def put_to_dicom_private_header(dicom, key=None, tag=None, value=None, superkey=
   if tag:
     # This can overwrite an existing piece of data (this is a needed feature)
     loc = tag
+    if tag in dicom:
+      log.warning('Unexpected overwriting of data in dicom private header. Field was: %s'% dicom[tag])
   elif key:
     # Remove all non-word characters (everything except numbers and letters)
     key = re.sub(r"[^\w\s]", '', key)
@@ -1428,6 +1441,9 @@ def deidentify_report(dicom):
   # Get report from DICOM (which has info about tag numbers)
   dicom_report = get_report_from_dicom(dicom)
 
+  if not dicom_report:
+    return
+
   # Get rules for deidentification
   (recipe, replace_keys) = get_report_deid_recipe()
 
@@ -1517,7 +1533,6 @@ def deidentify_header(dicom):
                                       # overwrite=True,
                                       # output_folder=output_folder)
 
-  log.info('Found %s unique pieces of PHI.' % len(found_PHI.keys()))
   cleaned_header_dicom = cleaned_files[0] # we only pass in one at a time
   # note: cleaned_header_dicom is not a full dicom. It is not as functional as the "dicom" variable
   if args.log_PHI:
@@ -1533,8 +1548,6 @@ def deidentify_header(dicom):
     if to_short_fieldname(field.name) in dont_replace_field_names_list:
       continue # skip fields we've explicity said we want to keep in our deid recipe
     match_and_replace_PHI(dicom, field.tag)
-
-  log.info('Redacted %s instances of PHI from header and report' % found_PHI_count_header)
 
 def store_number_of_redacted_PHI(dicom_uuid):
   """Record how many PHI was found and replaced in ElasticSearch"""
@@ -1565,6 +1578,7 @@ def setup_args():
   parser.add_argument('--log_PHI', action='store_true', help='Log PHI for debugging purposes only')
   parser.add_argument('--overwrite_report', action='store_true', help='Overwrite existing report on disk and in elasticsearch')
   parser.add_argument('--skip_dates', action='store_true', help='For faster testing, allow skipping slow and frequent datefinding')
+  parser.add_argument('--timeout', type=int, default=1000, help='Limit the amonut of time processing one image')
 
 def log_settings():
   log.info("Settings: %s=%s" % ('output_folder', args.output_folder))
@@ -1609,6 +1623,7 @@ def log_settings():
   log.info("Settings: %s=%s" % ('log_PHI', not args.log_PHI))
   log.info("Settings: %s=%s" % ('overwrite_report', not args.overwrite_report))
   log.info("Settings: %s=%s" % ('skip_dates', not args.skip_dates))
+  log.info("Settings: %s=%s" % ('timeout', not args.timeout))
   
 
 if __name__ == '__main__':
@@ -1667,180 +1682,180 @@ if __name__ == '__main__':
   log.info("Number of input files: %d" % len(dicom_paths))
   t0 = time.time()
 
+  args.output_folder = os.path.abspath(os.path.expanduser(os.path.expandvars(args.output_folder))) # /home/dan/aim-platform/image-archive/reactive-search/static/
+  if args.output_folder_suffix:
+    log.info('args.output_folder_suffix = %s' % args.output_folder_suffix)
+    args.output_folder = os.path.join(args.output_folder, args.output_folder_suffix) # /home/dan/aim-platform/image-archive/reactive-search/static/deid/
+
   # MAIN LOOP: Process each dicom
   for idx, dicom_path in enumerate(dicom_paths):
-    log.info('Processing DICOM path: %s' % dicom_path)
-    found_PHI = {}
-    found_PHI_count_pixels = 0
-    found_PHI_count_header = 0
+    try:
+      with timeout(args.timeout, exception=RuntimeError): # Timeout if too slow
+        log.info('\n\nProcessing DICOM path: %s' % dicom_path)
+        found_PHI = {}
+        found_PHI_count_pixels = 0
+        found_PHI_count_header = 0
 
-    log.info('############')
-    log.info('##  Open  ##')
-    log.info('############')
+        log.info('############')
+        log.info('##  Open  ##')
+        log.info('############')
 
-    # Open DICOM
-    dicom = pydicom.dcmread(dicom_path, force=True)
+        # Open DICOM
+        dicom = pydicom.dcmread(dicom_path, force=True)
 
-    # Skip DICOMs that are requisitions, identified by SeriesNumber:999*
-    if is_requisition(dicom):
-      log.warning('Skipping requisition: %s' % dicom_path)
+        # Skip DICOMs that are requisitions, identified by SeriesNumber:999*
+        if is_requisition(dicom):
+          log.warning('Skipping requisition: %s' % dicom_path)
+          continue
+
+        # Open Report
+        report = get_report_from_elastic(dicom.get('AccessionNumber'))
+        if not report:
+          report  = get_report_from_dicom(dicom, return_only_key_values=True) # if not in elastic, check if alreadm
+
+        # Create output folders and filepaths (this must come near the start so that things can be saved when needed) (expand ~, environment variables, and make absolute path)
+        dicom_path = os.path.abspath(os.path.expanduser(os.path.expandvars(dicom_path))) # /home/dan/Favourite_Images/MRI/1795084_117225373.dcm
+        args.input_base_path = os.path.abspath(os.path.expanduser(os.path.expandvars(args.input_base_path))) # /home/dan/Favourite_Images/
+        if args.input_base_path not in dicom_path:
+          raise Exception('Error: Couldnt find "args.input_base_path" in "dicom_path". Please check your CLI arguments.')
+        dicom_path_short = dicom_path.replace(args.input_base_path,'').lstrip('/') # MRI/1795084_117225373.dcm
+        log.info('dicom_path = %s' % dicom_path)
+        log.info('args.output_folder = %s' % args.output_folder)
+        log.info('args.input_base_path = %s' % args.input_base_path)
+        log.info('dicom_path_short = %s' % dicom_path_short)
+        output_image_filepath = os.path.join(args.output_folder, 'image', dicom_path_short) # example: /home/dan/aim-platform/image-archive/reactive-search/static/deid/image/MRI/1795084_117225373.dcm
+        output_debug_filepath = os.path.join(args.output_folder, 'debug', dicom_path_short) # example: /home/dan/aim-platform/image-archive/reactive-search/static/deid/debug/MRI/1795084_117225373.dcm
+        output_thumbnail_filepath = os.path.join(args.output_folder, 'thumbnail', dicom_path_short) + '.png' # example: /home/dan/aim-platform/image-archive/reactive-search/static/deid/thumbnail/MRI/1795084_117225373.dcm.png
+        output_image_webpath = os.path.join('image', dicom_path_short) # example: image/MRI/1795084_117225373.dcm
+        output_debug_webpath = os.path.join('debug', dicom_path_short) # example: debug/MRI/1795084_117225373.dcm
+        output_thumbnail_webpath = os.path.join('thumbnail', dicom_path_short) + '.png' # example: thumbnail/MRI/1795084_117225373.dcm.png
+        if args.output_folder_suffix:
+          output_image_webpath = os.path.join(args.output_folder_suffix, output_image_webpath) # example: deid/image/MRI/1795084_117225373.dcm
+          output_debug_webpath = os.path.join(args.output_folder_suffix, output_debug_webpath) # example: deid/debug/MRI/1795084_117225373.dcm
+          output_thumbnail_webpath = os.path.join(args.output_folder_suffix, output_thumbnail_webpath) # example: deid/thumbnail/MRI/1795084_117225373.dcm.png
+        log.info('output_image_filepath = %s' % output_image_filepath)
+        log.info('output_debug_filepath = %s' % output_debug_filepath)
+        log.info('output_thumbnail_filepath = %s' % output_thumbnail_filepath)
+        log.info('output_image_webpath = %s' % output_image_webpath)
+        log.info('output_debug_webpath = %s' % output_debug_webpath)
+        log.info('output_thumbnail_webpath = %s' % output_thumbnail_webpath)
+        output_image_folder = os.path.dirname(output_image_filepath)
+        output_debug_folder = os.path.dirname(output_debug_filepath)
+        output_thumbnail_folder = os.path.dirname(output_thumbnail_filepath)
+        if not os.path.exists(output_image_folder):
+          os.makedirs(output_image_folder)
+        if not os.path.exists(output_debug_folder):
+          os.makedirs(output_debug_folder)
+        if not os.path.exists(output_thumbnail_folder):
+          os.makedirs(output_thumbnail_folder)
+        if report:
+          args.input_report_base_path = os.path.abspath(os.path.expanduser(os.path.expandvars(args.input_report_base_path))) # example: /home/dan/aim-platform/image-archive/reports
+          input_report_filepath = os.path.abspath(os.path.expanduser(os.path.expandvars(report['filepath']))) # example: /home/dan/aim-platform/image-archive/reports/sample/Report_55123.txt
+          if args.input_report_base_path not in input_report_filepath:
+            raise Exception('Error: Couldnt find "args.input_report_base_path" in "input_report_filepath". Please check your CLI arguments.')
+          report_path_short = input_report_filepath.replace(args.input_report_base_path,'').lstrip('/') # example: sample/Report_55123.txt
+          output_report_filepath = os.path.join(args.output_folder, 'report', report_path_short) # example: /home/dan/aim-platform/image-archive/reactive-search/static/deid/report/sample/Report_55123.txt
+          output_report_webpath = os.path.join('report', report_path_short) # example: report/sample/Report_55123.txt
+          if args.output_folder_suffix:
+            output_report_webpath = os.path.join(args.output_folder_suffix, output_report_webpath) # example: deid/report/sample/Report_testing.txt
+          output_report_folder = os.path.dirname(output_report_filepath)
+          if not os.path.exists(output_report_folder):
+            os.makedirs(output_report_folder)
+          log.info('args.input_report_base_path = %s' % args.input_report_base_path)
+          log.info('input_report_filepath = %s' % input_report_filepath)
+          log.info('report_path_short = %s' % report_path_short)
+          log.info('output_report_filepath = %s' % output_report_filepath)
+
+        log.info('##############')
+        log.info('##  Enrich  ##')
+        log.info('##############')
+
+        # Convert dates to standard format YYYY-MM-DD to comply with ElasticSearch searching and DWV viewing.
+        convert_dates_to_standard_format(dicom)
+
+        # Add derived fields (must happen before de-identification since that could remove needed data)
+        add_derived_fields(dicom)
+        
+        # Convert PatientAge into PatientAgeInYears, PatientAgeInWeeks, PatientAgeInDays, etc.
+        add_patient_age_units(dicom)
+
+        # Add report
+        add_report(dicom, report)
+        
+        # Add UUID
+        uid = add_uuid(dicom)
+
+        # Record where the original DICOM file came from before it was de-identified
+        put_to_dicom_private_header(dicom, key='filepath_orig', value=dicom_path, superkey='Image  ')
+        put_to_dicom_private_header(dicom, key='filepath', value=output_image_filepath, superkey='Image  ')
+        put_to_dicom_private_header(dicom, key='webpath', value=output_image_webpath, superkey='Image  ')
+        put_to_dicom_private_header(dicom, key='thubnail_webpath', value=output_thumbnail_webpath, superkey='Image  ')
+        
+        # Record what code touched the image
+        add_audit_to_dicom(dicom)
+
+        if not args.no_deidentify:
+          log.info('###################')
+          log.info('##  De-Identify  ##')
+          log.info('###################')
+
+          # Store cleaned tag names so that they can be skipped at later times for faster performance
+          cleaned_tag_names_list = already_cleaned_tag_names()
+
+          # De-Identify Metadata (including much of the report) (and keep track of value replacements ie. linking) (and this will populate the found_PHI global variable and so must come before other de-identification)
+          deidentify_header(dicom)
+
+          # De-Identify Report
+          deidentify_report(dicom)
+
+          # Record how many PHI was found and replaced in ElasticSearch
+          store_number_of_redacted_PHI(uid)
+
+          # Process pixels (de-id pixels and save debug gif)
+          result = process_pixels(dicom)
+          if result is None:
+            log.warning('Couldnt read pixels so skipping: %s' % dicom_path)
+            continue
+
+          log.info('Found %s fields matching PHI died.recipe.' % len(found_PHI.keys()))
+          log.info('Found %s unique pieces of PHI.' % len(set(found_PHI.values())))
+          log.info('Redacted %s instances of PHI from header and report' % found_PHI_count_header)
+          log.info('Redacted %d instances of PHI from pixels' % found_PHI_count_pixels)
+
+        log.info('############')
+        log.info('##  Save  ##')
+        log.info('############')
+
+        # Save de-identified radiology report (if present) to disk
+        save_deid_report_to_disk(dicom)
+
+        # Insert de-identified report into ElasticSearch
+        insert_deid_report_into_elastic(dicom)
+
+        # Save image thumbnail to disk
+        thumbnail_filepath = save_thumbnail_of_dicom(dicom)
+        if not thumbnail_filepath:
+          log.error('Couldn\'t save thumbnail. Skipping image.')
+          continue
+
+        # Save de-identified DICOM to disk
+        save_dicom_to_disk(dicom)
+
+        # Insert de-identified DICOM into ElasticSearch
+        insert_dicom_into_elastic(dicom)
+
+        if args.wait:
+          input("Press Enter to continue...")
+
+    except RuntimeError as e:
+      print(traceback.format_exc())
+      log.error("didn't finish within %s seconds going to next image" % args.timeout)
       continue
 
-    # Open Report
-    report = get_report_from_elastic(dicom.get('AccessionNumber'))
-    if not report:
-      report  = get_report_from_dicom(dicom, return_only_key_values=True) # if not in elastic, check if alreadm
-
-    # Create output folders and filepaths (this must come near the start so that things can be saved when needed) (expand ~, environment variables, and make absolute path)
-    dicom_path = os.path.abspath(os.path.expanduser(os.path.expandvars(dicom_path))) # /home/dan/Favourite_Images/MRI/1795084_117225373.dcm
-    args.output_folder = os.path.abspath(os.path.expanduser(os.path.expandvars(args.output_folder))) # /home/dan/aim-platform/image-archive/reactive-search/static/
-    args.input_base_path = os.path.abspath(os.path.expanduser(os.path.expandvars(args.input_base_path))) # /home/dan/Favourite_Images/
-    if args.input_base_path not in dicom_path:
-      raise Exception('Error: Couldnt find "args.input_base_path" in "dicom_path". Please check your CLI arguments.')
-    dicom_path_short = dicom_path.replace(args.input_base_path,'').lstrip('/') # MRI/1795084_117225373.dcm
-    log.info('dicom_path = %s' % dicom_path)
-    if args.output_folder_suffix:
-      log.info('args.output_folder_suffix = %s' % args.output_folder_suffix)
-      args.output_folder = os.path.join(args.output_folder, args.output_folder_suffix) # /home/dan/aim-platform/image-archive/reactive-search/static/deid/
-    log.info('args.output_folder = %s' % args.output_folder)
-    log.info('args.input_base_path = %s' % args.input_base_path)
-    log.info('dicom_path_short = %s' % dicom_path_short)
-    output_image_filepath = os.path.join(args.output_folder, 'image', dicom_path_short) # example: /home/dan/aim-platform/image-archive/reactive-search/static/deid/image/MRI/1795084_117225373.dcm
-    output_debug_filepath = os.path.join(args.output_folder, 'debug', dicom_path_short) # example: /home/dan/aim-platform/image-archive/reactive-search/static/deid/debug/MRI/1795084_117225373.dcm
-    output_thumbnail_filepath = os.path.join(args.output_folder, 'thumbnail', dicom_path_short) + '.png' # example: /home/dan/aim-platform/image-archive/reactive-search/static/deid/thumbnail/MRI/1795084_117225373.dcm.png
-    output_image_webpath = os.path.join('image', dicom_path_short) # example: image/MRI/1795084_117225373.dcm
-    output_debug_webpath = os.path.join('debug', dicom_path_short) # example: debug/MRI/1795084_117225373.dcm
-    output_thumbnail_webpath = os.path.join('thumbnail', dicom_path_short) + '.png' # example: thumbnail/MRI/1795084_117225373.dcm.png
-    if args.output_folder_suffix:
-      output_image_webpath = os.path.join(args.output_folder_suffix, output_image_webpath) # example: deid/image/MRI/1795084_117225373.dcm
-      output_debug_webpath = os.path.join(args.output_folder_suffix, output_debug_webpath) # example: deid/debug/MRI/1795084_117225373.dcm
-      output_thumbnail_webpath = os.path.join(args.output_folder_suffix, output_thumbnail_webpath) # example: deid/thumbnail/MRI/1795084_117225373.dcm.png
-    log.info('output_image_filepath = %s' % output_image_filepath)
-    log.info('output_debug_filepath = %s' % output_debug_filepath)
-    log.info('output_thumbnail_filepath = %s' % output_thumbnail_filepath)
-    log.info('output_image_webpath = %s' % output_image_webpath)
-    log.info('output_debug_webpath = %s' % output_debug_webpath)
-    log.info('output_thumbnail_webpath = %s' % output_thumbnail_webpath)
-    output_image_folder = os.path.dirname(output_image_filepath)
-    output_debug_folder = os.path.dirname(output_debug_filepath)
-    output_thumbnail_folder = os.path.dirname(output_thumbnail_filepath)
-    if not os.path.exists(output_image_folder):
-      os.makedirs(output_image_folder)
-    if not os.path.exists(output_debug_folder):
-      os.makedirs(output_debug_folder)
-    if not os.path.exists(output_thumbnail_folder):
-      os.makedirs(output_thumbnail_folder)
-    if report:
-      args.input_report_base_path = os.path.abspath(os.path.expanduser(os.path.expandvars(args.input_report_base_path))) # example: /home/dan/aim-platform/image-archive/reports
-      input_report_filepath = os.path.abspath(os.path.expanduser(os.path.expandvars(report['filepath']))) # example: /home/dan/aim-platform/image-archive/reports/sample/Report_55123.txt
-      if args.input_report_base_path not in input_report_filepath:
-        raise Exception('Error: Couldnt find "args.input_report_base_path" in "input_report_filepath". Please check your CLI arguments.')
-      report_path_short = input_report_filepath.replace(args.input_report_base_path,'').lstrip('/') # example: sample/Report_55123.txt
-      output_report_filepath = os.path.join(args.output_folder, 'report', report_path_short) # example: /home/dan/aim-platform/image-archive/reactive-search/static/deid/report/sample/Report_55123.txt
-      output_report_webpath = os.path.join('report', report_path_short) # example: report/sample/Report_55123.txt
-      output_report_folder = os.path.dirname(output_report_filepath)
-      if not os.path.exists(output_report_folder):
-        os.makedirs(output_report_folder)
-      log.info('args.input_report_base_path = %s' % args.input_report_base_path)
-      log.info('input_report_filepath = %s' % input_report_filepath)
-      log.info('report_path_short = %s' % report_path_short)
-
-    # if not os.path.exists(output_debug_folder):
-    #   os.makedirs(output_debug_folder)
-    # if not os.path.exists(output_thumbnail_folder):
-    #   os.makedirs(output_thumbnail_folder)
-    # if report:
-    #   args.input_report_base_path = os.path.abspath(os.path.expanduser(os.path.expandvars(args.input_report_base_path))) # example: /home/dan/aim-platform/image-archive/reports
-    #   input_report_filepath = os.path.abspath(os.path.expanduser(os.path.expandvars(report['filepath']))) # example: /home/dan/aim-platform/image-archive/reports/sample/Report_55123.txt
-    #   if args.input_report_base_path not in input_report_filepath:
-    #     raise Exception('Error: Couldnt find "args.input_report_base_path" in "input_report_filepath". Please check your CLI arguments.')
-    #   report_path_short = input_report_filepath.replace(args.input_report_base_path,'').lstrip('/') # example: sample/Report_55123.txt
-    #   output_report_filepath = os.path.join(args.output_folder, 'report', report_path_short) # example: /home/dan/aim-platform/image-archive/reactive-search/static/deid/report/sample/Report_55123.txt
-    #   output_report_webpath = os.path.join('report', report_path_short) # example: report/sample/Report_55123.txt
-    #   output_report_folder = os.path.dirname(output_report_filepath)
-    #   if not os.path.exists(output_report_folder):
-    #     os.makedirs(output_report_folder)
-    #   log.info('args.input_report_base_path = %s' % args.input_report_base_path)
-    #   log.info('input_report_filepath = %s' % input_report_filepath)
-    #   log.info('report_path_short = %s' % report_path_short)
-
-      log.info('output_report_filepath = %s' % output_report_filepath)
-
-    log.info('##############')
-    log.info('##  Enrich  ##')
-    log.info('##############')
-
-    # Convert dates to standard format YYYY-MM-DD to comply with ElasticSearch searching and DWV viewing.
-    convert_dates_to_standard_format(dicom)
-
-    # Add derived fields (must happen before de-identification since that could remove needed data)
-    add_derived_fields(dicom)
-    
-    # Convert PatientAge into PatientAgeInYears, PatientAgeInWeeks, PatientAgeInDays, etc.
-    add_patient_age_units(dicom)
-
-    # Add report
-    add_report(dicom, report)
-    
-    # Add UUID
-    uid = add_uuid(dicom)
-
-    # Record where the original DICOM file came from before it was de-identified
-    put_to_dicom_private_header(dicom, key='filepath_orig', value=dicom_path, superkey='Image  ')
-    
-    # Record what code touched the image
-    add_audit_to_dicom(dicom)
-
-    if not args.no_deidentify:
-      log.info('###################')
-      log.info('##  De-Identify  ##')
-      log.info('###################')
-
-      # Store cleaned tag names so that they can be skipped at later times for faster performance
-      cleaned_tag_names_list = already_cleaned_tag_names()
-
-      # De-Identify Metadata (including much of the report) (and keep track of value replacements ie. linking) (and this will populate the found_PHI global variable and so must come before other de-identification)
-      deidentify_header(dicom)
-
-      # De-Identify Report
-      deidentify_report(dicom)
-
-      # Record how many PHI was found and replaced in ElasticSearch
-      store_number_of_redacted_PHI(uid)
-
-      # Process pixels (de-id pixels and save debug gif)
-      result = process_pixels(dicom)
-      if result is None:
-        log.warning('Couldnt read pixels so skipping: %s' % dicom_path)
-        continue
-
-    log.info('############')
-    log.info('##  Save  ##')
-    log.info('############')
-
-    # Save de-identified radiology report (if present) to disk
-    save_deid_report_to_disk(dicom)
-
-    # Insert de-identified report into ElasticSearch
-    insert_deid_report_into_elastic(dicom)
-
-    # Save image thumbnail to disk
-    thumbnail_filepath = save_thumbnail_of_dicom(dicom)
-    if not thumbnail_filepath:
-      log.error('Couldn\'t save thumbnail. Skipping image.')
-      continue
-
-    # Save de-identified DICOM to disk
-    save_dicom_to_disk(dicom)
-
-    # Insert de-identified DICOM into ElasticSearch
-    insert_dicom_into_elastic(dicom)
-
-    if args.wait:
-      input("Press Enter to continue...")
 
   # Print Summary
   elapsed_time = time.time() - t0
   ingest_rate = len(dicom_paths) / elapsed_time
   log.info('{} documents processed '.format(len(dicom_paths)) + 'in {:.2f} seconds at '.format(elapsed_time) + 'rate (documents/s): {:.2f}'.format(ingest_rate))
   log.info('Finished.')
+

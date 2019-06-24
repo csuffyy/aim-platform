@@ -1,17 +1,48 @@
-OLD
-==============
-# python3.7 deid_dicoms.py --input_range 1-10 --output_folder ./tmp/
-# OR
-# python3.7 deid_dicoms.py --input_filelist ~/Favourite_Images/file_list.txt --output_folder ./tmp/
-# OR
-# python3.5 deid_dicoms.py --input_file /home/dan/823-whole-body-MR-with-PHI.dcm --output_folder ./tmp/ --fast_crop
-# OR
-# kill %; pkill -9 eog; pkill display; python3.5 deid_dicoms.py --output_folder ./tmp/ --gif --disp --input_folder /home/dan/Favourite_Images/Requisition/
-# OR
-# kill %; pkill -9 eog; pkill display; python3.5 deid_dicoms.py --output_folder ~/aim-platform/image-archive/reactive-search/static/deid/ --gif --disp --input_file ../images/sample/CT-MONO2-16-ort.dcm --wait --fast_crop --input_base_path /home/dan/aim-platform/image-archive/images/ --input_report_base_path /home/dan/aim-platform/image-archive/reports/
-# OR
-# pkill -9 eog; pkill display; python3 deid_dicoms.py --output_folder ~/aim-platform/image-archive/reactive-search/static/ --output_folder_suffix PHI --input_file ~/823-whole-body-MR-with-PHI.dcm --fast_crop --input_base_path ~ --input_report_base_path /home/dan/aim-platform/image-archive/reports/ --no_deidentify
-# OR
+CLI ARGUMENTS
+========
+optional arguments:
+  -h, --help            show this help message and exit
+  --output_folder OUTPUT_FOLDER
+                        Save processed DICOM files to this path.
+  --output_folder_suffix OUTPUT_FOLDER_SUFFIX
+                        Add this folder to the output path and webpath.
+  --input_range INPUT_RANGE
+                        Positional document numbers in ElasticSearch (ex.
+                        1-10). These documents will be processed.
+  --input_filelist INPUT_FILELIST
+                        Pass in file that contains list of DICOM files which
+                        will be processed.
+  --input_file INPUT_FILE
+                        Pass in a single DICOM file by giving path on disk.
+  --input_folder INPUT_FOLDER
+                        Pass a folder containing DICOMs.
+  --input_base_path INPUT_BASE_PATH
+                        Ignore this part of the input path when creating
+                        output folders.
+  --input_report_base_path INPUT_REPORT_BASE_PATH
+                        Ignore this part of the report input path when
+                        creating output folders.
+  --no_elastic          Skip saving metadata to ElasticSearch.
+  --deid_recipe DEID_RECIPE
+                        De-id rules.
+  --no_deidentify       Whether or not to perform de-identification.
+  --input_dicom_filename INPUT_DICOM_FILENAME
+                        Process only this DICOM by name (looked up in
+                        ElasticSearch)
+  --ocr_fallback_enabled
+                        Only try one pass of OCR to find PHI
+  --fast_crop           Crop the image to 100x100 just for fast algorithm
+                        testing
+  --screen              Display output pixels on screen
+  --gifs                Save output pixels to gifs
+  --display_gif         Open the gif for the user to see
+  --wait                Wait for user to press enter after processing each
+                        dicom
+  --log_PHI             Log PHI for debugging purposes only
+  --overwrite_report    Overwrite existing report on disk and in elasticsearch
+  --skip_dates          For faster testing, allow skipping slow and frequent
+                        datefinding
+
 
 TEST FILE
 ==============
@@ -40,3 +71,120 @@ report is diffed
 diff <(dcmdump ../images/sample/CT-MONO2-8-abdo-TEST.dcm) <(dcmdump /home/dan/aim-platform/image-archive/reactive-search/static/DEID/image/sample/CT-MONO2-8-abdo-TEST.dcm)
 
 cat /home/dan/aim-platform/image-archive/reactive-search/static/DEID/report/sample/Report_testing.txt
+
+# Display Images
+--disp --gif
+
+DICOM Test Folder
+====================
+kill %; pkill -9 eog; pkill display; python3 deid_dicoms.py \
+  --input_filelist /home/dan/aim-platform/image-archive/images/sample/file_list.txt \
+  --input_base_path /home/dan/aim-platform/image-archive/images/ \
+  --input_report_base_path /home/dan/aim-platform/image-archive/reports/ \
+  --output_folder ~/aim-platform/image-archive/reactive-search/static/ \
+  --output_folder_suffix DEID \
+  --fast_crop \
+  --log_PHI \
+  --gifs \
+  --overwrite_report
+
+
+DICOM Favourites Folder
+========================
+kill %; pkill -9 eog; pkill display; python3 deid_dicoms.py \
+  --input_filelist ~/Favourite_Images/file_list.txt \
+  --input_base_path ~/Favourite_Images/ \
+  --input_report_base_path /home/dan/aim-platform/image-archive/reports/ \
+  --output_folder ~/aim-platform/image-archive/reactive-search/static/ \
+  --output_folder_suffix DEID \
+  --fast_crop \
+  --log_PHI \
+  --gifs \
+  --overwrite_report
+
+# one file in Favourites Folder (slow for datefinder)
+time python3 deid_dicoms.py \
+  --input_file "/home/dan/Favourite_Images/Artifacts + Unknown/95059323.dcm" \
+  --input_base_path ~/Favourite_Images/ \
+  --input_report_base_path /home/dan/aim-platform/image-archive/reports/ \
+  --output_folder ~/aim-platform/image-archive/reactive-search/static/ \
+  --output_folder_suffix DEID \
+  --fast_crop \
+  --log_PHI \
+  --gifs \
+  --overwrite_report
+
+# one file in Favourites Folder (slow for datefinder)
+time python3 deid_dicoms.py \
+  --input_file "/home/dan/Favourite_Images/Artifacts + Unknown/87972507.dcm" \
+  --input_base_path ~/Favourite_Images/ \
+  --input_report_base_path /home/dan/aim-platform/image-archive/reports/ \
+  --output_folder ~/aim-platform/image-archive/reactive-search/static/ \
+  --output_folder_suffix DEID \
+  --fast_crop \
+  --log_PHI \
+  --gifs \
+  --overwrite_report
+
+
+
+DELETE INDEXES
+==============
+Delete count, linking, image, and deid_report
+
+curl -X POST "localhost:9200/image/_delete_by_query" -H 'Content-Type: application/json' -d'{"query": {"match_all": {} } } '; curl -X POST "localhost:9200/linking/_delete_by_query" -H 'Content-Type: application/json' -d'{"query": {"match_all": {} } } '; curl -X POST "localhost:9200/count/_delete_by_query" -H 'Content-Type: application/json' -d'{"query": {"match_all": {} } } '; curl -X POST "localhost:9200/deid_report/_delete_by_query" -H 'Content-Type: application/json' -d'{"query": {"match_all": {} } } ';
+
+
+curl -X POST "localhost:9200/image/_delete_by_query" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "match_all": {}
+  }
+}
+' 
+
+curl -X POST "localhost:9200/linking/_delete_by_query" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "match_all": {}
+  }
+}
+' 
+
+curl -X POST "localhost:9200/count/_delete_by_query" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "match_all": {}
+  }
+}
+' 
+
+curl -X POST "localhost:9200/deid_report/_delete_by_query" -H 'Content-Type: application/json' -d'
+{
+  "query": {
+    "match_all": {}
+  }
+}
+'
+
+# LINKING
+=========
+
+curl -s -H 'Content-Type: application/json' -XGET 'http://127.0.0.1:9200/linking/linking/_search?size=999'  | jq .hits.hits[]._source.orig
+
+
+
+OLD
+==============
+# python3.7 deid_dicoms.py --input_range 1-10 --output_folder ./tmp/
+# OR
+# python3.7 deid_dicoms.py --input_filelist ~/Favourite_Images/file_list.txt --output_folder ./tmp/
+# OR
+# python3.5 deid_dicoms.py --input_file /home/dan/823-whole-body-MR-with-PHI.dcm --output_folder ./tmp/ --fast_crop
+# OR
+# kill %; pkill -9 eog; pkill display; python3.5 deid_dicoms.py --output_folder ./tmp/ --gif --disp --input_folder /home/dan/Favourite_Images/Requisition/
+# OR
+# kill %; pkill -9 eog; pkill display; python3.5 deid_dicoms.py --output_folder ~/aim-platform/image-archive/reactive-search/static/deid/ --gif --disp --input_file ../images/sample/CT-MONO2-16-ort.dcm --wait --fast_crop --input_base_path /home/dan/aim-platform/image-archive/images/ --input_report_base_path /home/dan/aim-platform/image-archive/reports/
+# OR
+# pkill -9 eog; pkill display; python3 deid_dicoms.py --output_folder ~/aim-platform/image-archive/reactive-search/static/ --output_folder_suffix PHI --input_file ~/823-whole-body-MR-with-PHI.dcm --fast_crop --input_base_path ~ --input_report_base_path /home/dan/aim-platform/image-archive/reports/ --no_deidentify
+# or
