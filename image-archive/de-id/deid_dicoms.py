@@ -1325,8 +1325,8 @@ def put_to_dicom_private_header(dicom, key=None, tag=None, value=None, superkey=
   if tag:
     # This can overwrite an existing piece of data (this is a needed feature)
     loc = tag
-    if tag in dicom:
-      log.warning('Unexpected overwriting of data in dicom private header. Field was: %s'% dicom[tag])
+    # if tag in dicom: # Turns out this is not so unexpected because we overwrite when we're replacing report fields with de-id report fields.
+    #   log.warning('Unexpected overwriting of data in dicom private header. Field was: %s'% dicom[tag])
   elif key:
     # Remove all non-word characters (everything except numbers and letters)
     key = re.sub(r"[^\w\s]", '', key)
