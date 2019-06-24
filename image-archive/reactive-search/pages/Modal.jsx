@@ -366,6 +366,20 @@ class ModalExample extends React.Component {
             </td>
           </tr>
         </tbody>
+        <tbody className="blue-line">
+          <tr>
+            <th className="blue-line">
+            Should Match
+            </th>
+            <td className="blue-line"> <pre className="app-pre">
+            minimum_should_match:75% <br></br>
+             head OR neck OR shoulders
+            </pre> </td>
+            <td className="blue-line">
+            Results that match 75% of the clauses. More info <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/reference/2.4/query-dsl-minimum-should-match.html#query-dsl-minimum-should-match" target="_blank">here</a>
+            </td>
+          </tr>
+        </tbody>
       </Table>
 
       {/*A list of the fields that can be searched and those that can't be
@@ -639,7 +653,6 @@ elasticdump \\
       <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> Searches will timeout after 1 minute. If this happens to you then you will have to be more specific on which fields you search.</div>
       <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> Number of search terms is limited to 1024. That means maximum 1024 PatientIDs or AccessionNumbers can be searched at once.</div>
       <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> Spaces are not allowed in field names. When you see "Report FINDINGS" in the Dicom Web Viewer, the correct search is "ReportFINDINGS:cancer" for example.</div>
-      <div className="sml-padding-bottom"><tt className="sick-blue">•</tt> The parameter <a className="sick-blue" href="https://www.elastic.co/guide/en/elasticsearch/reference/2.4/query-dsl-minimum-should-match.html#query-dsl-minimum-should-match" target="_blank">minimum_should_match </a> can be used to specify the amount of exact matches there are between the query performed and the results given.</div>
 
 
 
