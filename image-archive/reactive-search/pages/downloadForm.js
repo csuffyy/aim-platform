@@ -84,6 +84,9 @@ class DiannaExample extends Component {
         var _div = document.getElementsByClassName('result-stats')[0];
         var split_div = _div.innerHTML.split(" ");
         this.state.images = split_div[0]; //gives number of images found in search
+        this.state.exams = split_div[2]; //gives number of exams found in search
+        this.state.patients = split_div[4]; //gives number of patients found in search
+        console.log(split_div);
         this.state.exampleSearch_style ='0px solid grey' //border is regular grey
         this.state.exampleColour = "#495057"; //text is regular grey font
     }
@@ -223,7 +226,7 @@ class DiannaExample extends Component {
           </Col>
           <Col md={3}>
               <Label for="examplePatients" style={{display: this.state.examplePatient_display}}>Patients</Label>
-              <Input type="text" name="# Patients" id="examplePatients" value={this.state.exams}placeholder="Number of patients" style={{border: this.state.exampleSearch_style, display:this.state.examplePatient_display, color: this.state.exampleColour}} disabled/>
+              <Input type="text" name="# Patients" id="examplePatients" value={this.state.patients}placeholder="Number of patients" style={{border: this.state.exampleSearch_style, display:this.state.examplePatient_display, color: this.state.exampleColour}} disabled/>
           </Col>
         </FormGroup>
 
