@@ -1499,7 +1499,7 @@ def deidentify_header(dicom):
   # Prepare to De-Identify Metadata
   log.info('De-identifying DICOM header...')
   recipe = DeidRecipe(args.deid_recipe) # de-id rules
-  dicom_dict = get_identifiers([dicom_path])
+  dicom_dict = get_identifiers([dicom_path], expand_sequences=True, config='deid_config.json')
   dicom_dict[dicom_path]['new_path'] = output_image_filepath
   dicom_dict[dicom_path]['orig_path'] = dicom_path
   dicom_dict[dicom_path]['generate_uid'] = generate_uid # Remember, the action found in deid.recipe is "REPLACE StudyInstanceUID func:generate_uid" so the key here needs to be "generate_uid"
@@ -1509,18 +1509,22 @@ def deidentify_header(dicom):
                                       deid=recipe,
                                       ids=dicom_dict,
                                       save=False,
+                                      strip_sequences=False,
                                       remove_private=False)
                                       # overwrite=True,
                                       # output_folder=output_folder)
 
   cleaned_header_dicom = cleaned_files[0] # we only pass in one at a time
+
   # note: cleaned_header_dicom is not a full dicom. It is not as functional as the "dicom" variable
   if args.log_PHI:
     log.info(found_PHI)
 
   # Copy from "cleaned_header_dicom" to "dicom" variable so that UUIDs take place of PHI. "dicom" is the preferred variable
-  for field_name in found_PHI.keys():
-    dicom.data_element(field_name).value = cleaned_header_dicom.data_element(field_name).value
+  found_keys = found_PHI.keys()
+  for field in dicom.iterall(): # iterall() will look inside sequences
+    if field.keyword in found_keys:
+      field.value = cleaned_header_dicom.data_element(field.keyword).value
     
   # Look for detected PHI in all DICOM fields and replace with UUIDs (this will de-id the report if present in the DICOM)
   dont_replace_field_names_list = dont_replace_field_names()
