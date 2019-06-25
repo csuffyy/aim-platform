@@ -13,5 +13,6 @@ module.exports.publicRuntimeConfig = {
   AUTH_TOKEN: process.env.AUTH_TOKEN,
   FILESERVER_TOKEN: process.env.FILESERVER_TOKEN,
   STATIC_WEBSERVER_URL: process.env.STATIC_WEBSERVER_URL,
+  STATIC_PREFIX: process.env.STATIC_PREFIX,
   DWV_URL: process.env.DWV_URL
 }

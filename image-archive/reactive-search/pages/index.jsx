@@ -21,6 +21,7 @@ const {AUTH_TOKEN} = publicRuntimeConfig;
 const {FILESERVER_TOKEN} = publicRuntimeConfig;
 const {STATIC_WEBSERVER_URL} = publicRuntimeConfig;
 const {DWV_URL} = publicRuntimeConfig;
+const {STATIC_PREFIX} = publicRuntimeConfig;
 
 var lastquery;
 
@@ -37,7 +38,6 @@ if (FILESERVER_TOKEN != '' && FILESERVER_TOKEN != undefined) {
 
 var FILESERVER_SECRET = '';
 var FILESERVER_SECRET_DCM = '';
-var STATIC_PREFIX = '';
 
 function redSearchBar() {
   if (typeof window !== 'undefined') {

@@ -3,7 +3,7 @@ import { DataSearch } from "@appbaseio/reactivesearch";
 import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
 import ModalExample from "./Modal.jsx";
 import DiannaExample from "./downloadForm.js"
-import AboutExample from "./AboutModal.jsx"
+// import AboutExample from "./AboutModal.jsx"
 
 
 

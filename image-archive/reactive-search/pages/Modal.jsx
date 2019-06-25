@@ -652,7 +652,7 @@ elasticdump \\
       <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> It is best to specify and search within known fields names to speed up results. Not specifying field names will searching across all fields which is much slower. </div>
       <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> Searches will timeout after 1 minute. If this happens to you then you will have to be more specific on which fields you search.</div>
       <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> Number of search terms is limited to 1024. That means maximum 1024 PatientIDs or AccessionNumbers can be searched at once.</div>
-      <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> Spaces are not allowed in field names. When you see "Report FINDINGS" in the Dicom Web Viewer, the correct search is "ReportFINDINGS:cancer" for example.</div>
+      <div className="sml-padding-bottom"> <tt className="sick-blue">•</tt> Spaces are not expected in Report field names. When you see "Report FINDINGS" in the Dicom Web Viewer, the correct search is "ReportFINDINGS:cancer" for example.</div>
 
 
 

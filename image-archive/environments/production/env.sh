@@ -20,4 +20,5 @@ export AUTH_TOKEN='771100'
 export FILESERVER_TOKEN=''
 export STATIC_WEBSERVER_URL='https://staticimages.ccm.sickkids.ca/'
 export DWV_URL='https://dwvimages.ccm.sickkids.ca/'
+export STATIC_PREFIX="static/"
 source /etc/secrets.sh
