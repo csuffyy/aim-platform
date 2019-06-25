@@ -1580,7 +1580,7 @@ def deidentify_header(dicom):
   # Prepare to De-Identify Metadata
   log.info('De-identifying DICOM header...')
   recipe = DeidRecipe(args.deid_recipe) # de-id rules
-  config_filepath = os.path.abspath(os.path.expanduser(os.path.expandvars('~/aim-platform/image-archive/de-id/deid_config.json')))
+  config_filepath = os.path.abspath(os.path.expanduser(os.path.expandvars('/home/dsnider/aim-platform/image-archive/de-id/deid_config.json')))
   dicom_dict = get_identifiers([dicom_path], expand_sequences=True, config=config_filepath)
   dicom_dict[dicom_path]['new_path'] = output_image_filepath
   dicom_dict[dicom_path]['orig_path'] = dicom_path
