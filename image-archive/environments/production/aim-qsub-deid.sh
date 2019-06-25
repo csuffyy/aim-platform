@@ -24,6 +24,7 @@ env
 module load python/3.7.1_GDCM
 module load tesseract/4.0.0
 
+cd ~/aim-platform/image-archive/de-id/ # important (some paths are not absolute :-())
 python ~/aim-platform/image-archive/de-id/deid_dicoms.py \
   --input_filelist $INPUT_FILE_LIST \
   --input_base_path "/hpf/largeprojects/diagimage_common/" \
