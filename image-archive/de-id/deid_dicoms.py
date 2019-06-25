@@ -48,7 +48,6 @@ from fuzzywuzzy import process
 from elasticsearch import helpers
 from deid.config import DeidRecipe
 from interruptingcow import timeout
-from matplotlib import pyplot as plt
 from elasticsearch import Elasticsearch
 from dateparser.search import search_dates
 from dateutil.relativedelta import relativedelta
@@ -57,7 +56,9 @@ from deid.dicom import get_files, replace_identifiers, get_identifiers
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True # fixes OSError: broken data stream when reading image file 
 
+import matplotlib
 matplotlib.use('Agg') # Generating a PNG with matplotlib when DISPLAY is undefined
+from matplotlib import pyplot as plt
 
 ## Change logging level for deid library (see ./logger/message.py for levels)
 # from deid.logger import bot
