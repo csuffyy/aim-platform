@@ -57,6 +57,8 @@ from deid.dicom import get_files, replace_identifiers, get_identifiers
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True # fixes OSError: broken data stream when reading image file 
 
+matplotlib.use('Agg') # Generating a PNG with matplotlib when DISPLAY is undefined
+
 ## Change logging level for deid library (see ./logger/message.py for levels)
 # from deid.logger import bot
 # bot.level=5
