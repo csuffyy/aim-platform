@@ -114,15 +114,16 @@ time python3 deid_dicoms.py \
   --gifs \
   --overwrite_report
 
+# RADWORKSSA_ONLY_BEST Folder
 kill %; pkill -9 eog; pkill display; python3 deid_dicoms.py \
   --input_folder "/home/dan/Favourite_Images/StationName_RADWORKSSA_ONLY_BEST/" \
   --input_base_path ~/Favourite_Images/ \
   --input_report_base_path /home/dan/aim-platform/image-archive/reports/ \
   --output_folder ~/aim-platform/image-archive/reactive-search/static/ \
   --output_folder_suffix BEST \
-  --fast_crop \
   --log_PHI \
   --gifs \
+  --ocr_fallback_enabled
   --overwrite_report
 
 

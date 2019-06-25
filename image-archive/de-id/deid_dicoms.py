@@ -399,10 +399,17 @@ def get_pixels(dicom):
     log.warning('Skipping image becasue shape is z-stack: %s' % dicom_path)
     return
 
-  # Crop the image to 100x100 just for fast algorithm testing
+  # Crop the image to 100x200 just for fast algorithm testing
   if args.fast_crop:
-    log.warning('Cropping image to 100x133')
-    img = img[0:100, 0:133]
+    log.warning('Cropping image to 100x200')
+    img = img[0:100, 0:200]
+
+  # embed()
+  # # Only check top of ultrasound
+  # is_ultrasound = dicom.Modality == 'US'
+  # if is_ultrasound:
+  #   log.warning('Cropping ultrasound')
+  #   img = img[0:100, 0:img.shape[1]] # top 100px
 
   # Colorspace
   img = convert_colorspace(img, dicom)
@@ -432,7 +439,6 @@ def flatten(l):
       yield el
 
 def tophat_proprocess(img):
-
   # Unsharp (sharpen)
   img = cv2.GaussianBlur(img, (9,9), 10.0)
   gaussian_3 = cv2.GaussianBlur(img, (9,9), 10.0)
@@ -463,12 +469,12 @@ def tophat_proprocess(img):
 
   img = cv2.GaussianBlur(img, (9,9), 10.0)
 
-  # if screen:
-  #   fig, ax = plt.subplots()
-  #   ax.set_title('TopHat Preprocess')
-  #   im = ax.imshow(img, vmin=None, vmax=None) # https://matplotlib.org/3.1.0/api/_as_gen/matplotlib.pyplot.imshow.html
-  #   ax.axis('off')
-  #   plt.show()
+  if args.screen:
+    fig, ax = plt.subplots()
+    ax.set_title('TopHat Preprocess')
+    im = ax.imshow(img, vmin=None, vmax=None) # https://matplotlib.org/3.1.0/api/_as_gen/matplotlib.pyplot.imshow.html
+    ax.axis('off')
+    # plt.show()
 
   return img
 
@@ -478,6 +484,13 @@ def blur_sharpen_preprocess(img):
   image = image.filter( ImageFilter.GaussianBlur(radius=1.5))
   # Sharpen Edges a Lot
   image = image.filter( ImageFilter.EDGE_ENHANCE_MORE )
+  img = np.array(image)
+  return img
+
+def blur_preprocess(img):
+  image = Image.fromarray(img,'L')
+  # Blur
+  image = image.filter( ImageFilter.GaussianBlur(radius=1.5))
   img = np.array(image)
   return img
 
@@ -572,7 +585,12 @@ def ocr_match(search_strings, detection, ocr_num=None):
         if match_conf > heighest_match_conf:
           heighest_match_conf = match_conf
           heighest_match_text = match_text
-      if heighest_match_conf > MATCH_CONF_THRESHOLD:
+      # Calculate whether word is at least half as long
+      longer_word_length = np.max([len(word), len(match_text)])
+      shorter_word_length = np.min([len(word), len(match_text)])
+      word_is_at_least_half_as_long = (shorter_word_length / longer_word_length) >= 0.5
+      # Add match
+      if heighest_match_conf > MATCH_CONF_THRESHOLD and word_is_at_least_half_as_long:
         match_texts.append(match_text)
         match_confs.append(match_conf)
         match_bool.append(True)
@@ -583,7 +601,6 @@ def ocr_match(search_strings, detection, ocr_num=None):
       if match_dict:
         first_key_name = list(match_dict.keys())[0] # TODO: Instead of using only the first, check all possible matched dates
         match_dict = match_dict[first_key_name]
-        embed()
         match_texts.append(match_dict['object'].strftime(DATE_FORMAT))
         match_confs.append(match_dict['match_conf']) # TODO: get fuzzy confidence from datematcher
         match_bool.append(True)
@@ -719,18 +736,19 @@ def create_debug_images(dicom, img_orig, img_enhanced, detection, is_mostly_text
   # Display
   if args.screen:
     image_PHI.show()
+    image_all_txt.show()
     plt.show()
   if args.gifs:
     # Make Gif
-    gif_filepath = '%s.gif' % output_debug_filepath
+    gif_filepath = '%s.gif.gif' % output_debug_filepath
     image_orig = image_orig.convert('RGB')
     image_PHI = image_PHI.convert('RGB')
     image_all_txt = image_all_txt.convert('RGB')
     frames = [image_all_txt, image_PHI, image_enhanced, image_orig, image_PHI_list]
-    frames[0].save(gif_filepath, format='GIF', append_images=frames[1:], save_all=True, duration=2222, loop=0)
-    log.info('Saved debug GIF: %s' % gif_filepath)
+    # frames[0].save(gif_filepath, format='GIF', append_images=frames[1:], save_all=True, duration=2222, loop=0)
+    # log.info('Saved debug GIF: %s' % gif_filepath)
     # Make Montage
-    montage_filepath = '%s.montage.gif' % output_debug_filepath
+    montage_filepath = '%s.gif' % output_debug_filepath
     montage = make_image_montage(frames)
     montage.save(montage_filepath, format='gif')
     log.info('Saved debug montage: %s' % montage_filepath)
@@ -858,11 +876,12 @@ def process_pixels(dicom):
 
   # Preprocess Pixels (Variety #1)
   log.info('Processing 1...')
-  # img_enhanced = tophat_proprocess(img_bw)
-  img_enhanced = img_bw
+  img_enhanced = img_bw # no preprocessing
 
   # Detect Text with OCR
   detection = ocr(img_enhanced, ocr_num=2)
+
+  # embed()
 
   # Detect if image has so much text that it's probably a requisition and should be rejected or so little text that it should be accepted without PHI matching
 
@@ -879,13 +898,42 @@ def process_pixels(dicom):
   if args.ocr_fallback_enabled:
     # Preprocess Pixels (Variety #2)
     log.info('Processing 2...')
-    img_enhanced = blur_sharpen_preprocess(img_bw)
+    # img_enhanced = blur_sharpen_preprocess(img_bw)
+    img_enhanced = tophat_proprocess(img_bw)
 
     # Detect Text with OCR
     detection2 = ocr(img_enhanced, ocr_num=2)
 
     # Match Detected Text to PHI
     log.info('Matching 2...')
+    detection2 = ocr_match(get_PHI(), detection2, ocr_num=2)
+
+    # Combine detection results of different preprocessing
+    detection = pd.concat([detection, detection2], ignore_index=True, sort=True)
+
+    # Preprocess Pixels (Variety #3)
+    log.info('Processing 3...')
+    img_enhanced = blur_sharpen_preprocess(img_bw)
+
+    # Detect Text with OCR
+    detection2 = ocr(img_enhanced, ocr_num=2)
+
+    # Match Detected Text to PHI
+    log.info('Matching 3...')
+    detection2 = ocr_match(get_PHI(), detection2, ocr_num=2)
+
+    # Combine detection results of different preprocessing
+    detection = pd.concat([detection, detection2], ignore_index=True, sort=True)
+
+    # Preprocess Pixels (Variety #4)
+    log.info('Processing 4...')
+    img_enhanced = blur_preprocess(img_bw)
+
+    # Detect Text with OCR
+    detection2 = ocr(img_enhanced, ocr_num=2)
+
+    # Match Detected Text to PHI
+    log.info('Matching 4...')
     detection2 = ocr_match(get_PHI(), detection2, ocr_num=2)
 
     # Combine detection results of different preprocessing
