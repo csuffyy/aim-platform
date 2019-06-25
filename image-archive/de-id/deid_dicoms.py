@@ -1124,26 +1124,6 @@ def datematcher(possibly_dates, text, fuzzy=False):
         # The >=75 allows for two different digit swaps assuming 8 characters. And the >=5 confirms that the date is long enough to be an actual date not just a short string of random numbers. And the !=today() ignores "found" dates that match todays date because datefinder assumes today's date if there is missing date information
         if fuzz.ratio(date_string, found_date_string) >= 75 and len(found_date['string']) >= 5 and found_date['object'].date() != datetime.datetime.today().date():
           returning.add(found_date['string'])
-
-    #--------------------OLD CODE-----------------------------------
-
-  # for datetime_object in possibly_dates:
-  #   for found_date in found_dates:
-  #     found_date = {
-  #       'object' : found_date[0],
-  #       'string' : found_date[1],
-  #     }
-  #     if datetime_object == found_date['object']: #if the date matches one that was in input text
-  #       returning.add(found_date['string']) #append the line of text where the dates matched
-
-  #     elif fuzzy: #not an exact match so should check if it is a fuzzy match
-  #       date_string = datetime_object.strftime('%Y%m%d')
-  #       found_date_string = found_date['object'].strftime('%Y%m%d')
-  #       # The >=75 allows for two different digit swaps assuming 8 characters. And the >=5 confirms that the date is long enough to be an actual date not just a short string of random numbers. And the !=today() ignores "found" dates that match todays date because datefinder assumes today's date if there is missing date information
-  #       if fuzz.ratio(date_string, found_date_string) >= 75 and len(found_date['string']) >= 5 and found_date['object'].date() != datetime.datetime.today().date():
-  #         returning.add(found_date['string'])
-
-    #--------------------OLD CODE-----------------------------------
     
   return list(returning)
 
