@@ -86,7 +86,7 @@ REPORT_DOC_TYPE = os.environ.get('REPORT_ELASTIC_DOC_TYPE','report')
 DEID_REPORT_INDEX_NAME = os.environ.get('DEID_REPORT_ELASTIC_INDEX','deid_report')
 DEID_REPORT_DOC_TYPE = os.environ.get('DEID_REPORT_ELASTIC_DOC_TYPE','deid_report')
 ENVIRON = os.environ['ENVIRON']
-MATCH_CONF_THRESHOLD = 50
+MATCH_CONF_THRESHOLD = 55
 TOO_MUCH_TEXT_THRESHOLD = 0
 MAX_NUM_PIXELS = 36000000 # 36 million pixels calculated as 2000x2000 plus RESIZE_FACTOR=3, so 6000x6000. Anymore takes too long)
 RESIZE_FACTOR = 3 # how much to blow up image to make OCR work better
@@ -550,6 +550,7 @@ def ocr_match(search_strings, detection, ocr_num=None):
   match_confs = [] # confidence
   match_texts = [] # closest match
   match_bool = [] # whether it's a positive match
+  PHI_dateobjects = get_PHI(dates=True)
 
   for i in range(0,len(detection)):
     text = detection.text.iloc[i]
@@ -578,11 +579,11 @@ def ocr_match(search_strings, detection, ocr_num=None):
         continue
 
       # Fall back to fuzzy date matching
-      PHI_dateobjects = get_PHI(dates=True)
-      _match_text = datematcher(PHI_dateobjects, text, fuzzy=True)
+      _match_text = datematcher(PHI_dateobjects, text, fuzzy=True, return_tuple=True)
       if _match_text:
+        embed()
         match_texts.append(_match_text[0])
-        match_confs.append(999) # no confidence given by datematcher
+        match_confs.append(999) # TODO: get fuzzy confidence from datematcher
         match_bool.append(True)
         continue
 
@@ -1083,19 +1084,27 @@ def count_date_similarity_to_today(input_date):
   today = datetime.date.today() #get today's date
   return sum([today.year == input_date.year, today.month == input_date.month, today.day == input_date.day])
   
-def datematcher(possibly_dates, text, fuzzy=False):
+def datematcher(known_dateobjects, text, fuzzy=False, return_tuple=False):
   """
-  @param possibly_dates: a list of strings of dates
+  @param known_dateobjects: a list of dateobjects
   @param text: the block of text that will be searched for dates
-  @return Returns dates exactly as found in text that match dates in input possibly_dates
+  @return Returns dates exactly as found in text that match dates in input known_dateobjects
 
   TODO (low priority): Explore enabling parser.parse(fuzzy=true) in: /usr/local/lib/python3.5/dist-packages/datefinder/__init__.py
   https://dateutil.readthedocs.io/en/stable/parser.html#dateutil.parser.parse
   """
   found_dates = []
-  returning = set()
+  returning = []
+  text = str(text)
 
-  found_dates_dfinder = datefinder.find_dates(str(text), source=True) #finds all dates in text using datefinder
+  # To speed up computation don't try to match dates if we can till it's not going to be a date.
+  # Skip if not 2 or more numbers
+  if not re.match('.*[0-9].*[0-9].*', text.replace('\n','')):
+    return returning
+  if len(text) < 5:
+    return returning
+
+  found_dates_dfinder = datefinder.find_dates(text, source=True) #finds all dates in text using datefinder
   found_dates_dfinder = list(found_dates_dfinder)
   found_dates.extend(found_dates_dfinder) #add all the dates found from datefinder to the master list of dates
 
@@ -1113,17 +1122,25 @@ def datematcher(possibly_dates, text, fuzzy=False):
         'object' : found_date[0],
         'string' : found_date[1],
       }
-    if found_date['object'] in possibly_dates: 
-      returning.add(found_date['string'])
+    if found_date['object'] in known_dateobjects: 
+      if return_tuple:
+        returning.append(found_date)
+      else:
+        returning.append(found_date['string'])
 
     elif fuzzy: #not an exact match so should check if it is a fuzzy match
       found_date_string = found_date['object'].strftime('%Y%m%d')
-      for datetime_object in possibly_dates:
+      for datetime_object in known_dateobjects:
         date_string = datetime_object.strftime('%Y%m%d')
 
         # The >=75 allows for two different digit swaps assuming 8 characters. And the >=5 confirms that the date is long enough to be an actual date not just a short string of random numbers. And the !=today() ignores "found" dates that match todays date because datefinder assumes today's date if there is missing date information
-        if fuzz.ratio(date_string, found_date_string) >= 75 and len(found_date['string']) >= 5 and found_date['object'].date() != datetime.datetime.today().date():
-          returning.add(found_date['string'])
+        match_conf = fuzz.ratio(date_string, found_date_string)
+        if match_conf >= 75 and len(found_date['string']) >= 5 and found_date['object'].date() != datetime.datetime.today().date():
+          found_date['match_conf'] = match_conf
+          if return_tuple:
+            returning.append(found_date)
+          else:
+            returning.append(found_date['string'])
     
   return list(returning)
 
