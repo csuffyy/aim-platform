@@ -702,7 +702,7 @@ def create_debug_images(dicom, img_orig, img_enhanced, detection, is_mostly_text
     # Black out pixels with debug info overlayed in boxes (for debugging only)
     annotation = 'ocr: %s, %d\nmatch: %s, %d' % (row.text, row.conf, row.match_text, row.match_conf)
     xy = [row.left, row.top, row.left+row.width, row.top+row.height]
-    font = ImageFont.truetype('Roboto-Regular.ttf', size=int(row.height/2.5))
+    font = ImageFont.truetype('/home/dsnider/aim-platform/image-archive/de-id/Roboto-Regular.ttf', size=int(row.height/2.5))
     draw_all_txt.rectangle(xy, fill=black, outline=yellow)
     draw_all_txt.multiline_text((row.left, row.top), annotation, fill=yellow, font=font)
     if row.match_bool:
@@ -720,7 +720,7 @@ def create_debug_images(dicom, img_orig, img_enhanced, detection, is_mostly_text
   metadata_fontsize = int(14*img_orig.shape[1]/200/RESIZE_FACTOR)
   img_dtype = str(img_orig.dtype)
   annotation = ' %s, %d text score, %s, %s' % (filename, amount_of_text_score, img_dtype, choice_str)
-  font = ImageFont.truetype('Roboto-Regular.ttf', size=metadata_fontsize)
+  font = ImageFont.truetype('/home/dsnider/aim-platform/image-archive/de-id/Roboto-Regular.ttf', size=metadata_fontsize)
   draw_PHI.rectangle(xy, fill=black, outline=yellow)
   draw_PHI.multiline_text((left, top), ' PHI' + annotation, fill=yellow, font=font, align='left')
   draw_all_txt.rectangle(xy, fill=black, outline=yellow)
