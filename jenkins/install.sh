@@ -134,7 +134,6 @@ curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
 echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
 sudo apt update
 sudo apt install yarn nodejs
-cp -r image-archive/reactive-search/appbase-js/* image-archive/reactive-search/node_modules/appbase-js/
 
 # Start our entire application 
 cd ~/aim-platform/image-archive
@@ -172,10 +171,9 @@ patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/rea
 # cp ~/aim-platform/image-archive/reactive-search/ReactiveList.js ~/aim-platform/image-archive/reactive-search/node_modules/@appbaseio/reactivesearch/lib/components/result/ReactiveList.js  # NOT THE DESIRED APPROACH BECAUSE CAUSES EXTRA FETCH
 
 # Patch AppBase-js
-# Fix HTTP 200 OK response with errors by checking for errors
-cp -r image-archive/reactive-search/appbase-js/* image-archive/reactive-search/node_modules/appbase-js/
+# Fix HTTP 200 OK response with errors by checking for errors AND,
 # Set 1 minute timeout for all ElasticSearch queries (see "ADDED BY DANIEL AND DIANNA" in msearch.js)
-yarn && cp ./dist/appbase-js.* ~/aim-platform/image-archive/reactive-search/node_modules/appbase-js/dist
+patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/reactive-search/node_modules/appbase-js/dist/appbase-js.cjs.js <  ~/aim-platform/image-archive/reactive-search/appbase-js-200-OK-msearch.patch
 
 # For more fixes to appbase-js (a reactive-search depedency) follow these steps:
 # 1. Download repo for appbase-js

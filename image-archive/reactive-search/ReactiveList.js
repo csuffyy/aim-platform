@@ -479,30 +479,69 @@ var _initialiseProps = function _initialiseProps() {
 	};
 
 	this.renderResultStats = function () {
+		//import * as util from 'util' // has no default export
+		//import { inspect } from 'util' // or directly
+		// or 
+		var util = require('util');
 		if (_this4.props.onResultStats && _this4.props.total) {
 			return _this4.props.onResultStats(_this4.props.total, _this4.props.time);
 		} else if (_this4.props.total) {
+			var data = _this4.props.queryLog;
+			data.aggs = {"exam_count" : {"cardinality" : {"field" : "AccessionNumber.keyword"} }, "patient_count" : {"cardinality" : {"field" : "PatientID.keyword"} } };
+
+			var _props2 = _this4.props, config = _props2.config, searchId = _props2.analytics.searchId;
+			var url = config.url, app = config.app, credentials = config.credentials;
+
+			var merging_url = [url, app, '/image/_search'];
+			var full_url = merging_url.join('/').replace(/([^:]\/)\/+/g, "$1");
+			fetch (full_url, {
+              method: 'POST', // or 'PUT'
+              body: JSON.stringify(data), // data can be `string` or {object}!
+              headers:{
+                'Content-Type': 'application/json'
+              }
+            })
+
+			.then(function(response) {
+                return response.json();
+              })
+              .then(function(response) {
+                var str = [_this4.props.total.toLocaleString(),
+                                ' results, ',
+                                response.aggregations.exam_count.value.toLocaleString(),
+                                ' exams, ',
+                                response.aggregations.patient_count.value.toLocaleString(),
+                                ' patients found in ',
+                                _this4.props.time.toLocaleString(),
+                                'ms'].join('');
+                var div = document.getElementsByClassName('result-list-info')[0];
+                div.innerHTML = str;
+                div.className += " result-stats ";
+
+
 			return _react2.default.createElement(
 				'p',
-				{
-					className: _results.resultStats + ' ' + (0, _helper.getClassName)(_this4.props.innerClass, 'resultStats')
-				},
-				_this4.props.total,
-				' results found in ',
-				_this4.props.time,
-				'ms'
-			);
-		}
-		return null;
-	};
+{
+                  className: _results.resultStats + ' ' + (0, _helper.getClassName)(_this4.props.innerClass, 'resultStats')
+                },
+                str
+              );
+        });
+    }
+    return null;
+  };;
 
 	this.renderNoResults = function () {
-		return _react2.default.createElement(
-			'p',
-			{ className: (0, _helper.getClassName)(_this4.props.innerClass, 'noResults') || null },
-			_this4.props.onNoResults
-		);
-	};
+		if (typeof document !== 'undefined') {
+		          var div = document.getElementsByClassName('result-list-info')[0];
+		          div.innerHTML = '';
+		      }
+		    return _react2.default.createElement(
+		      'p',
+		      { className: (0, _helper.getClassName)(_this4.props.innerClass, 'noResults') || null },
+		      _this4.props.onNoResults
+		    );
+		  };
 
 	this.handleSortChange = function (e) {
 		var _ref10;

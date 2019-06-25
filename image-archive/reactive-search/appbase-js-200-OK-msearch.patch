@@ -1,0 +1,51 @@
+--- appbase-js/dist/appbase-js.cjs.js	2019-06-25 10:40:19.427860858 -0400
++++ good_appbase-js/dist/appbase-js.cjs.js	2019-06-25 10:37:47.555053609 -0400
+@@ -227,6 +227,17 @@
+       }
+       var responseHeaders = {};
+       return fetch(_this.protocol + '://' + _this.url + '/' + _this.app + '/' + path + '?' + querystring.stringify(params), finalRequest).then(function (res) {
++        res.clone().json().then(function (res2) {
++          var allResponses = res2.responses.length;
++          console.log(allResponses);
++          var errorResponses = res2.responses.filter(function (entry) {
++            return entry.hasOwnProperty('error');
++          }).length;
++          console.log(errorResponses);
++          if (allResponses === errorResponses) {
++            return reject(res2);
++          }
++        });
+         if (res.status >= 500) {
+           return reject(res);
+         }
+@@ -235,6 +246,16 @@
+           if (res.status >= 400) {
+             return reject(res);
+           }
++          if (data && data.responses instanceof Array) {
++            var allResponses = data.responses.length;
++            var errorResponses = data.responses.filter(function (entry) {
++              return Object.prototype.hasOwnProperty.call(entry, 'error');
++            }).length;
++            // reject only when all responses has error
++            if (allResponses === errorResponses) {
++              return reject(data);
++            }
++          }
+           var response = Object.assign({}, data, {
+             _timestamp: timestamp,
+             _headers: responseHeaders
+@@ -652,6 +673,13 @@
+ 
+   var body = parsedArgs.body;
+ 
++  console.log(body);
++  for (var i = 0; i < body.length; i++) {
++    body[i].timeout = "1ms";
++    body[i].aggs = { "exam_count": { "cardinality": { "field": "AccessionNumber.keyword" } }, "patient_count": { "cardinality": { "field": "PatientID.keyword" } } };
++  }
++  console.log("after changes");
++  console.log(body);
+ 
+   delete parsedArgs.type;
+   delete parsedArgs.body;
