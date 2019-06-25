@@ -230,4 +230,4 @@ split -l 40 StationName_RADWORKSSA_filelist.txt  Subset_StationName # split list
 
 # Ingest and deid all images
 qlogin
-aim-platform/image-archive/environments/production/qsub_deid_jobs_loop.sh
+bash ~/aim-platform/image-archive/environments/production/qsub_deid_jobs_loop.sh
