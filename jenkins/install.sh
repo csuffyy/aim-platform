@@ -180,7 +180,8 @@ patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/rea
 # 2. Change javascript in src of appbase-js
 # 3. Run yarn after removing line in ./appbase-js/package_scripts
 # 4. Copy the files created by running yarn into node-modules
-# 5. Restart React
+# 5. Run a bash script so that the 1ms timeout is converted to 1min timeout
+# 6. Restart React
 # BELOW IS CODE TO EXECUTE BOTH 3&4 TOGETHER:
 cd ~
 git clone https://github.com/appbaseio/appbase-js
