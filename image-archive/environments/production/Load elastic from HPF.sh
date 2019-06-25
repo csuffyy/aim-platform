@@ -159,3 +159,29 @@ aim-platform/image-archive/environments/production/qsub_jobs_loop.sh
 qlogin
 aim-platform/image-archive/environments/production/qsub_reports_jobs_loop.sh
 
+
+# Install tesseract data on HPF
+wget https://www.dropbox.com/s/ssdg5m7p5yxpk9p/tessdata.zip?dl=0
+export TESSDATA_PREFIX=/home/dsnider/tessdata
+
+# First test with died_dicoms.py
+qlogin -l walltime=99:99:99,mem=8gb,vmem=8gb
+source ./image-archive/environments/production/deid-env.sh
+module load tesseract/4.0.0
+module load python/3.7.1_GDCM
+export TESSDATA_PREFIX=/home/dsnider/tessdata
+export ELASTIC_IP='192.168.100.61' # special elastic location via tunnel when in HPF
+export ELASTIC_INDEX='deid_image'
+export ELASTIC_DOC_TYPE='deid_image'
+cd ./image-archive/de-id/
+time python deid_dicoms.py \
+  --input_file "/hpf/largeprojects/diagimage_common/src/disk3/Images/NASLibrary5/1995/08/08/1855102/34520973.dcm" \
+  --input_base_path "/hpf/largeprojects/diagimage_common/src/" \
+  --input_report_base_path "/hpf/largeprojects/diagimage_common/shared/reports/" \
+  --output_folder "/hpf/largeprojects/diagimage_common/shared/deid-all/" \
+  --output_folder_suffix "" \
+  --deid_recipe "/home/dsnider/aim-platform/image-archive/de-id/deid.recipe" \
+  --fast_crop \
+  --log_PHI \
+  --gifs \
+  --overwrite_report
