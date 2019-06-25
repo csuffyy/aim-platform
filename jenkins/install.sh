@@ -162,31 +162,46 @@ bash -c 'while [[ "`curl -v -s -o /dev/null -w ''%{http_code}'' localhost:8080`"
 cd image-archive/reactive-search/
 npm install --verbose --color false 2>&1
 
-# Apply Patches
-patch --verbose --ignore-whitespace -p 10 -F 10 node_modules/@appbaseio/reactivesearch/lib/server/index.js < server-side-provide-headers-to-elastic.patch
-patch --verbose --ignore-whitespace -p 10 -F 10 node_modules/@appbaseio/reactivesearch/lib/components/result/ReactiveList.js < comma-seperated-numbers.patch
-patch --verbose --ignore-whitespace -p 10 -F 10 ~/dwv-jqmobile/node_modules/dwv/dist/dwv.js < 0001-increased-text-limit-to-65000.patch
-# patch --verbose --ignore-whitespace -p 10 -F 10 ~/.local/lib/python3.7/site-packages/datefinder/constants.py < find-all-dates.patch
-# patch --verbose --ignore-whitespace -p 10 -F 10 ~/.local/lib/python3.7/site-packages/datefinder/__init__.py < overflowerror-fix.patch
-patch --verbose --ignore-whitespace -p 10 -F 10 /usr/local/lib/python3.5/dist-packages/datefinder/constants.py < aim-platform/image-archive/de-id/datefinder/find-all-dates.patch
-patch --verbose --ignore-whitespace -p 10 -F 10 /usr/local/lib/python3.5/dist-packages/datefinder/__init__.py < aim-platform/image-archive/de-id/datefinder/overflowerror-fix.patch
-patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/reactive-search/node_modules/@appbaseio/reactivesearch/lib/components/result/ReactiveList.js < see-more-stats-after-querying.patch
-patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/reactive-search/node_modules/@appbaseio/reactivesearch/lib/components/date/DateRange.js < calendar-can-be-searched.patch
-patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/reactive-search/node_modules/appbase-js/dist/appbase-js.cjs.js <  ~/aim-platform/image-archive/reactive-search/appbase-js-200-OK-msearch.patch
-npm run dev &
+## Patches
+# Patch ReactiveSearch
+patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/reactive-search/node_modules/@appbaseio/reactivesearch/lib/components/date/DateRange.js < ~/aim-platform/image-archive/reactive-search/calendar-can-be-searched.patch
+patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/reactive-search/node_modules/@appbaseio/reactivesearch/lib/server/index.js < ~/aim-platform/image-archive/reactive-search/server-side-provide-headers-to-elastic.patch
+# patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/reactive-search/node_modules/@appbaseio/reactivesearch/lib/components/result/ReactiveList.js < ~/aim-platform/image-archive/reactive-search/see-more-stats-after-querying.patch # NOT THE DESIRED APPROACH BECAUSE CAUSES EXTRA FETCH
+# OR
+# cp ~/aim-platform/image-archive/reactive-search/ReactiveList.js ~/aim-platform/image-archive/reactive-search/node_modules/@appbaseio/reactivesearch/lib/components/result/ReactiveList.js  # NOT THE DESIRED APPROACH BECAUSE CAUSES EXTRA FETCH
 
-# Fix HTTP 200 OK response with errors by checking for errors
-cp -r image-archive/reactive-search/appbase-js/* image-archive/reactive-search/node_modules/appbase-js/
+# Patch AppBase-js
+# Fix HTTP 200 OK response with errors by checking for errors AND,
+# Set 1 minute timeout for all ElasticSearch queries (see "ADDED BY DANIEL AND DIANNA" in msearch.js)
+patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/reactive-search/node_modules/appbase-js/dist/appbase-js.cjs.js <  ~/aim-platform/image-archive/reactive-search/appbase-js-200-OK-msearch.patch
 
 # For more fixes to appbase-js (a reactive-search depedency) follow these steps:
-#Making Changes to Set Timeout
 # 1. Download repo for appbase-js
 # 2. Change javascript in src of appbase-js
 # 3. Run yarn after removing line in ./appbase-js/package_scripts
 # 4. Copy the files created by running yarn into node-modules
 # 5. Restart React
 # BELOW IS CODE TO EXECUTE BOTH 3&4 TOGETHER:
-# yarn && cp ./dist/appbase-js.* ~/aim-platform/image-archive/reactive-search/node_modules/appbase-js/dist
+cd /home/ubuntu/aim-platform/image-archive/reactive-search/appbase-js
+yarn && cp ./dist/appbase-js.* ~/aim-platform/image-archive/reactive-search/node_modules/appbase-js/dist
+
+# Patch Datefinder
+patch --verbose --ignore-whitespace -p 10 -F 10 /usr/local/lib/python3.5/dist-packages/datefinder/constants.py < ~/aim-platform/image-archive/de-id/datefinder/find-all-dates.patch
+patch --verbose --ignore-whitespace -p 10 -F 10 /usr/local/lib/python3.5/dist-packages/datefinder/__init__.py < ~/aim-platform/image-archive/de-id/datefinder/overflowerror-fix.patch
+
+# Patch DWV
+#    - View more than 65000 character values
+#    - View multiline values
+#    - Size columns more appropriately
+#    - Don't try to parse values to make them "pretty"
+#    - Change assumed "UN" to "LT"
+# How to install new changes:
+cd aim-platform/image-archive/dwv/dwv/
+# vim ... # make changes
+# yarn run build # build changes 
+# cp build/dist/* ~/aim-platform/image-archive/dwv/node_modules/dwv/dist # test changes
+# cp build/dist/* dist/ # commit changes
+cp dist/* ~/aim-platform/image-archive/dwv/node_modules/dwv/dist
 
 
 ###############################
@@ -230,7 +245,6 @@ systemctl restart apache2
 cp aim-platform/image-archive/environments/production/apache-https-proxy.conf /etc/apache2/sites-enabled/images.conf
 systemctl restart apache2
 
-
 # install secrets
 sudo echo "export AUTH_TOKEN='771100'" > /etc/secrets.sh
 sudo echo "export FILESERVER_TOKEN='771100'" > /etc/secrets.sh
@@ -242,3 +256,36 @@ set -g status-bg red
 set -g status-fg white
 EOT
 
+# Symlink HPF NFS mount to react static webserver on prod
+cd /home/ubuntu/aim-platform/image-archive/reactive-search/static
+ln -s /mnt/hpf/src/ ./src
+ln -s /mnt/hpf/shared/ ./shared
+
+# Prod old needs this fix
+export ENVIRON='production'
+export PUBLIC_IP='172.20.4.83'
+export ELASTIC_IP='172.20.4.83'
+export FALLBACK_ELASTIC_IP='172.20.4.83'
+export FALLBACK_ELASTIC_PORT=9200
+export ELASTIC_PORT=9200
+export ELASTIC_INDEX='image'
+export ELASTIC_DOC_TYPE='image'
+export ELASTIC_URL='http://172.20.4.83:9200'  # important
+export LINKING_ELASTIC_INDEX='linking'
+export LINKING_ELASTIC_DOC_TYPE='linking'
+export REPORT_ELASTIC_INDEX='report'
+export REPORT_ELASTIC_DOC_TYPE='report'
+export ES_JAVA_OPTS='-Xms32g -Xmx32g'
+export FILESERVER_IP='172.20.4.83'
+export FILESERVER_PORT='8000'
+export FILESERVER_DICOM_PATH='/hpf/largeprojects/diagimage_common/'
+export FILESERVER_THUMBNAIL_PATH='shared/thumbnails'
+export FILESERVER_TOKEN=''
+export STATIC_WEBSERVER_URL='https://staticimages.ccm.sickkids.ca/'
+export DWV_URL='https://dwvimages.ccm.sickkids.ca/'
+source /etc/secrets.sh
+export AUTH_TOKEN='' # important
+cp pages/index.jsx.FOR_PROD_OLD_DO_NOT_DELETE pages/index.jsx
+npm run dev
+# sed -i '/s/res.dicom_webpath/res.dicom_relativepath/g' /home/ubuntu/aim-platform/image-archive/reactive-search/pages/index.jsx
+# sed -i '/s/res.thumbnail_webpath/res.thumbnail_filepath/g' /home/ubuntu/aim-platform/image-archive/reactive-search/pages/index.jsx

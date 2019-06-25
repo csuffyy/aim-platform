@@ -1,11 +1,11 @@
---- backup/reactivesearch/lib/components/date/DateRange.js      2019-06-21 11:52:24.691516390 -0400
+--- @appbaseio/reactivesearch/lib/components/date/DateRange.js      2019-06-21 11:52:24.691516390 -0400
 +++ @appbaseio/reactivesearch/lib/components/date/DateRange.js  1985-10-26 04:15:00.000000000 -0400
 @@ -191,7 +191,7 @@
                                                 },
                                                 onDayChange: this.handleStartDate,
                                                 inputProps: {
--                                                       readOnly: false
-+                                                       readOnly: true
++                                                       readOnly: false
+-                                                       readOnly: true
                                                 },
                                                 classNames: {
                                                         container: (0, _helper.getClassName)(this.props.innerClass, 'daypicker-container') || 'DayPickerInput',
@@ -13,8 +13,8 @@
                                                 },
                                                 onDayChange: this.handleEndDate,
                                                 inputProps: {
--                                                       readOnly: false
-+                                                       readOnly: true
++                                                       readOnly: false
+-                                                       readOnly: true
                                                 },
                                                 classNames: {
                                                         container: (0, _helper.getClassName)(this.props.innerClass, 'daypicker-container') || 'DayPickerInput',
@@ -22,10 +22,10 @@
         autoFocusEnd: true,
         numberOfMonths: 2,
         placeholder: {
--               start: 'yyyy-mm-dd',
--               end: 'yyyy-mm-dd'
-+               start: 'Start date',
-+               end: 'End date'
++               start: 'yyyy-mm-dd',
++               end: 'yyyy-mm-dd'
+-               start: 'Start date',
+-               end: 'End date'
         },
         showClear: true,
         showFilter: true
