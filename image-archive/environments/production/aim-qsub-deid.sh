@@ -2,7 +2,7 @@
 # Usage:
 # INPUT_FILE_LIST=~/Disk1_Part_aa OUTPUT_THUMBNAIL_DIR=/hpf/largeprojects/diagimage_common/shared/thumbnails aim-qsub.sh
 
-#PBS -l mem=4gb,vmem=4gb
+#PBS -l mem=8gb,vmem=8gb
 #PBS -l nodes=1:ppn=1
 #PBS -l walltime=24:00:00
 #PBS -j oe
