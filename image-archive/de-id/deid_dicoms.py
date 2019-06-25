@@ -579,11 +579,13 @@ def ocr_match(search_strings, detection, ocr_num=None):
         continue
 
       # Fall back to fuzzy date matching
-      _match_text = datematcher(PHI_dateobjects, text, fuzzy=True, return_tuple=True)
-      if _match_text:
+      match_dict = datematcher(PHI_dateobjects, text, fuzzy=True, return_dict=True)
+      if match_dict:
+        first_key_name = list(match_dict.keys())[0] # TODO: Instead of using only the first, check all possible matched dates
+        match_dict = match_dict[first_key_name]
         embed()
-        match_texts.append(_match_text[0])
-        match_confs.append(999) # TODO: get fuzzy confidence from datematcher
+        match_texts.append(match_dict['object'].strftime(DATE_FORMAT))
+        match_confs.append(match_dict['match_conf']) # TODO: get fuzzy confidence from datematcher
         match_bool.append(True)
         continue
 
@@ -1085,7 +1087,11 @@ def count_date_similarity_to_today(input_date):
   today = datetime.date.today() #get today's date
   return sum([today.year == input_date.year, today.month == input_date.month, today.day == input_date.day])
   
-def datematcher(known_dateobjects, text, fuzzy=False, return_tuple=False):
+def strip_non_alphanumeric_start_or_end(word):
+  """ strip non-alphanumeric characters at the beginning or end of a string"""
+  return re.sub(r"^\W+|\W+$", "", word)
+
+def datematcher(known_dateobjects, text, fuzzy=False, return_dict=False):
   """
   @param known_dateobjects: a list of dateobjects
   @param text: the block of text that will be searched for dates
@@ -1095,7 +1101,10 @@ def datematcher(known_dateobjects, text, fuzzy=False, return_tuple=False):
   https://dateutil.readthedocs.io/en/stable/parser.html#dateutil.parser.parse
   """
   found_dates = []
-  returning = []
+  if return_dict:
+    returning = {}
+  else:
+    returning = set()
   text = str(text)
 
   # To speed up computation don't try to match dates if we can till it's not going to be a date.
@@ -1123,27 +1132,34 @@ def datematcher(known_dateobjects, text, fuzzy=False, return_tuple=False):
         'object' : found_date[0],
         'string' : found_date[1],
       }
+    found_date['string'] = strip_non_alphanumeric_start_or_end(found_date['string']) # make cleaner string date for improved fuzzy matching performance
     if found_date['object'] in known_dateobjects: 
-      if return_tuple:
-        returning.append(found_date)
+      if return_dict:
+        found_date['match_conf'] = 100
+        returning[found_date['string']] = found_date
       else:
-        returning.append(found_date['string'])
+        returning.add(found_date['string'])
 
     elif fuzzy: #not an exact match so should check if it is a fuzzy match
-      found_date_string = found_date['object'].strftime('%Y%m%d')
+      found_date_string = found_date['object'].strftime('%y%m%d')
       for datetime_object in known_dateobjects:
-        date_string = datetime_object.strftime('%Y%m%d')
+        date_string = datetime_object.strftime('%y%m%d')
 
         # The >=75 allows for two different digit swaps assuming 8 characters. And the >=5 confirms that the date is long enough to be an actual date not just a short string of random numbers. And the !=today() ignores "found" dates that match todays date because datefinder assumes today's date if there is missing date information
         match_conf = fuzz.ratio(date_string, found_date_string)
         if match_conf >= 75 and len(found_date['string']) >= 5 and found_date['object'].date() != datetime.datetime.today().date():
-          found_date['match_conf'] = match_conf
-          if return_tuple:
-            returning.append(found_date)
+          if found_date['string'] == '13.00':
+            embed()
+          if return_dict:
+            found_date['match_conf'] = match_conf
+            returning[found_date['string']] = found_date
           else:
-            returning.append(found_date['string'])
-    
-  return list(returning)
+            returning.add(found_date['string'])
+
+  if return_dict:
+    return returning
+  else:
+    return list(returning)
 
 def to_short_fieldname(field_name):
   """ Example: "Patient's Birth Date" to "PatientBirthDate"""
