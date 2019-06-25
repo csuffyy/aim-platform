@@ -41,7 +41,7 @@
  
 +  console.log(body);
 +  for (var i = 0; i < body.length; i++) {
-+    body[i].timeout = "1ms";
++    body[i].timeout = "60000ms";
 +    body[i].aggs = { "exam_count": { "cardinality": { "field": "AccessionNumber.keyword" } }, "patient_count": { "cardinality": { "field": "PatientID.keyword" } } };
 +  }
 +  console.log("after changes");
