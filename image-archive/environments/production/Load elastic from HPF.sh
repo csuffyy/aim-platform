@@ -237,4 +237,5 @@ split -l 40 ~/StationName_RADWORKSSA_filelist.txt  ~/SubsetStationName/Subset_St
 
 # Ingest and deid all images
 qlogin
+cd ~/aim-platform/image-archive/de-id/ # important (some paths are not absolute :-())
 bash ~/aim-platform/image-archive/environments/production/qsub_deid_jobs_loop.sh

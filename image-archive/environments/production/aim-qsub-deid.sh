@@ -34,4 +34,5 @@ python ~/aim-platform/image-archive/de-id/deid_dicoms.py \
   --deid_recipe "/home/dsnider/aim-platform/image-archive/de-id/deid.recipe" \
   --gifs \
   --overwrite_report \
+  --ocr_fallback_enabled \
   --timeout 300

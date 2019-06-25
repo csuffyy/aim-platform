@@ -1912,6 +1912,10 @@ if __name__ == '__main__':
       print(traceback.format_exc())
       log.error("didn't finish within %s seconds going to next image" % args.timeout)
       continue
+    except Exception as e:
+      print(traceback.format_exc())
+      log.error("going to next image")
+      continue
 
 
   # Print Summary
