@@ -48,7 +48,6 @@ from fuzzywuzzy import process
 from elasticsearch import helpers
 from deid.config import DeidRecipe
 from interruptingcow import timeout
-from matplotlib import pyplot as plt
 from elasticsearch import Elasticsearch
 from dateparser.search import search_dates
 from dateutil.relativedelta import relativedelta
@@ -56,6 +55,10 @@ from skimage.morphology import white_tophat, opening, disk
 from deid.dicom import get_files, replace_identifiers, get_identifiers
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True # fixes OSError: broken data stream when reading image file 
+
+import matplotlib
+matplotlib.use('Agg') # Generating a PNG with matplotlib when DISPLAY is undefined
+from matplotlib import pyplot as plt
 
 ## Change logging level for deid library (see ./logger/message.py for levels)
 # from deid.logger import bot
@@ -86,7 +89,7 @@ REPORT_DOC_TYPE = os.environ.get('REPORT_ELASTIC_DOC_TYPE','report')
 DEID_REPORT_INDEX_NAME = os.environ.get('DEID_REPORT_ELASTIC_INDEX','deid_report')
 DEID_REPORT_DOC_TYPE = os.environ.get('DEID_REPORT_ELASTIC_DOC_TYPE','deid_report')
 ENVIRON = os.environ['ENVIRON']
-MATCH_CONF_THRESHOLD = 50
+MATCH_CONF_THRESHOLD = 55
 TOO_MUCH_TEXT_THRESHOLD = 0
 MAX_NUM_PIXELS = 36000000 # 36 million pixels calculated as 2000x2000 plus RESIZE_FACTOR=3, so 6000x6000. Anymore takes too long)
 RESIZE_FACTOR = 3 # how much to blow up image to make OCR work better
@@ -399,10 +402,17 @@ def get_pixels(dicom):
     log.warning('Skipping image becasue shape is z-stack: %s' % dicom_path)
     return
 
-  # Crop the image to 100x100 just for fast algorithm testing
+  # Crop the image to 100x200 just for fast algorithm testing
   if args.fast_crop:
-    log.warning('Cropping image to 100x133')
-    img = img[0:100, 0:133]
+    log.warning('Cropping image to 100x200')
+    img = img[0:100, 0:200]
+
+  # embed()
+  # # Only check top of ultrasound
+  # is_ultrasound = dicom.Modality == 'US'
+  # if is_ultrasound:
+  #   log.warning('Cropping ultrasound')
+  #   img = img[0:100, 0:img.shape[1]] # top 100px
 
   # Colorspace
   img = convert_colorspace(img, dicom)
@@ -432,7 +442,6 @@ def flatten(l):
       yield el
 
 def tophat_proprocess(img):
-
   # Unsharp (sharpen)
   img = cv2.GaussianBlur(img, (9,9), 10.0)
   gaussian_3 = cv2.GaussianBlur(img, (9,9), 10.0)
@@ -463,12 +472,12 @@ def tophat_proprocess(img):
 
   img = cv2.GaussianBlur(img, (9,9), 10.0)
 
-  # if screen:
-  #   fig, ax = plt.subplots()
-  #   ax.set_title('TopHat Preprocess')
-  #   im = ax.imshow(img, vmin=None, vmax=None) # https://matplotlib.org/3.1.0/api/_as_gen/matplotlib.pyplot.imshow.html
-  #   ax.axis('off')
-  #   plt.show()
+  if args.screen:
+    fig, ax = plt.subplots()
+    ax.set_title('TopHat Preprocess')
+    im = ax.imshow(img, vmin=None, vmax=None) # https://matplotlib.org/3.1.0/api/_as_gen/matplotlib.pyplot.imshow.html
+    ax.axis('off')
+    # plt.show()
 
   return img
 
@@ -478,6 +487,13 @@ def blur_sharpen_preprocess(img):
   image = image.filter( ImageFilter.GaussianBlur(radius=1.5))
   # Sharpen Edges a Lot
   image = image.filter( ImageFilter.EDGE_ENHANCE_MORE )
+  img = np.array(image)
+  return img
+
+def blur_preprocess(img):
+  image = Image.fromarray(img,'L')
+  # Blur
+  image = image.filter( ImageFilter.GaussianBlur(radius=1.5))
   img = np.array(image)
   return img
 
@@ -550,6 +566,7 @@ def ocr_match(search_strings, detection, ocr_num=None):
   match_confs = [] # confidence
   match_texts = [] # closest match
   match_bool = [] # whether it's a positive match
+  PHI_dateobjects = get_PHI(dates=True)
 
   for i in range(0,len(detection)):
     text = detection.text.iloc[i]
@@ -571,18 +588,24 @@ def ocr_match(search_strings, detection, ocr_num=None):
         if match_conf > heighest_match_conf:
           heighest_match_conf = match_conf
           heighest_match_text = match_text
-      if heighest_match_conf > MATCH_CONF_THRESHOLD:
+      # Calculate whether word is at least half as long
+      longer_word_length = np.max([len(word), len(match_text)])
+      shorter_word_length = np.min([len(word), len(match_text)])
+      word_is_at_least_half_as_long = (shorter_word_length / longer_word_length) >= 0.5
+      # Add match
+      if heighest_match_conf > MATCH_CONF_THRESHOLD and word_is_at_least_half_as_long:
         match_texts.append(match_text)
         match_confs.append(match_conf)
         match_bool.append(True)
         continue
 
       # Fall back to fuzzy date matching
-      PHI_dateobjects = get_PHI(dates=True)
-      _match_text = datematcher(PHI_dateobjects, text, fuzzy=True)
-      if _match_text:
-        match_texts.append(_match_text[0])
-        match_confs.append(999) # no confidence given by datematcher
+      match_dict = datematcher(PHI_dateobjects, text, fuzzy=True, return_dict=True)
+      if match_dict:
+        first_key_name = list(match_dict.keys())[0] # TODO: Instead of using only the first, check all possible matched dates
+        match_dict = match_dict[first_key_name]
+        match_texts.append(match_dict['object'].strftime(DATE_FORMAT))
+        match_confs.append(match_dict['match_conf']) # TODO: get fuzzy confidence from datematcher
         match_bool.append(True)
         continue
 
@@ -679,7 +702,7 @@ def create_debug_images(dicom, img_orig, img_enhanced, detection, is_mostly_text
     # Black out pixels with debug info overlayed in boxes (for debugging only)
     annotation = 'ocr: %s, %d\nmatch: %s, %d' % (row.text, row.conf, row.match_text, row.match_conf)
     xy = [row.left, row.top, row.left+row.width, row.top+row.height]
-    font = ImageFont.truetype('Roboto-Regular.ttf', size=int(row.height/2.5))
+    font = ImageFont.truetype('/home/dsnider/aim-platform/image-archive/de-id/Roboto-Regular.ttf', size=int(row.height/2.5))
     draw_all_txt.rectangle(xy, fill=black, outline=yellow)
     draw_all_txt.multiline_text((row.left, row.top), annotation, fill=yellow, font=font)
     if row.match_bool:
@@ -697,7 +720,7 @@ def create_debug_images(dicom, img_orig, img_enhanced, detection, is_mostly_text
   metadata_fontsize = int(14*img_orig.shape[1]/200/RESIZE_FACTOR)
   img_dtype = str(img_orig.dtype)
   annotation = ' %s, %d text score, %s, %s' % (filename, amount_of_text_score, img_dtype, choice_str)
-  font = ImageFont.truetype('Roboto-Regular.ttf', size=metadata_fontsize)
+  font = ImageFont.truetype('/home/dsnider/aim-platform/image-archive/de-id/Roboto-Regular.ttf', size=metadata_fontsize)
   draw_PHI.rectangle(xy, fill=black, outline=yellow)
   draw_PHI.multiline_text((left, top), ' PHI' + annotation, fill=yellow, font=font, align='left')
   draw_all_txt.rectangle(xy, fill=black, outline=yellow)
@@ -716,18 +739,19 @@ def create_debug_images(dicom, img_orig, img_enhanced, detection, is_mostly_text
   # Display
   if args.screen:
     image_PHI.show()
+    image_all_txt.show()
     plt.show()
   if args.gifs:
     # Make Gif
-    gif_filepath = '%s.gif' % output_debug_filepath
+    gif_filepath = '%s.gif.gif' % output_debug_filepath
     image_orig = image_orig.convert('RGB')
     image_PHI = image_PHI.convert('RGB')
     image_all_txt = image_all_txt.convert('RGB')
     frames = [image_all_txt, image_PHI, image_enhanced, image_orig, image_PHI_list]
-    frames[0].save(gif_filepath, format='GIF', append_images=frames[1:], save_all=True, duration=2222, loop=0)
-    log.info('Saved debug GIF: %s' % gif_filepath)
+    # frames[0].save(gif_filepath, format='GIF', append_images=frames[1:], save_all=True, duration=2222, loop=0)
+    # log.info('Saved debug GIF: %s' % gif_filepath)
     # Make Montage
-    montage_filepath = '%s.montage.gif' % output_debug_filepath
+    montage_filepath = '%s.gif' % output_debug_filepath
     montage = make_image_montage(frames)
     montage.save(montage_filepath, format='gif')
     log.info('Saved debug montage: %s' % montage_filepath)
@@ -855,11 +879,12 @@ def process_pixels(dicom):
 
   # Preprocess Pixels (Variety #1)
   log.info('Processing 1...')
-  # img_enhanced = tophat_proprocess(img_bw)
-  img_enhanced = img_bw
+  img_enhanced = img_bw # no preprocessing
 
   # Detect Text with OCR
   detection = ocr(img_enhanced, ocr_num=2)
+
+  # embed()
 
   # Detect if image has so much text that it's probably a requisition and should be rejected or so little text that it should be accepted without PHI matching
 
@@ -876,13 +901,42 @@ def process_pixels(dicom):
   if args.ocr_fallback_enabled:
     # Preprocess Pixels (Variety #2)
     log.info('Processing 2...')
-    img_enhanced = blur_sharpen_preprocess(img_bw)
+    # img_enhanced = blur_sharpen_preprocess(img_bw)
+    img_enhanced = tophat_proprocess(img_bw)
 
     # Detect Text with OCR
     detection2 = ocr(img_enhanced, ocr_num=2)
 
     # Match Detected Text to PHI
     log.info('Matching 2...')
+    detection2 = ocr_match(get_PHI(), detection2, ocr_num=2)
+
+    # Combine detection results of different preprocessing
+    detection = pd.concat([detection, detection2], ignore_index=True, sort=True)
+
+    # Preprocess Pixels (Variety #3)
+    log.info('Processing 3...')
+    img_enhanced = blur_sharpen_preprocess(img_bw)
+
+    # Detect Text with OCR
+    detection2 = ocr(img_enhanced, ocr_num=2)
+
+    # Match Detected Text to PHI
+    log.info('Matching 3...')
+    detection2 = ocr_match(get_PHI(), detection2, ocr_num=2)
+
+    # Combine detection results of different preprocessing
+    detection = pd.concat([detection, detection2], ignore_index=True, sort=True)
+
+    # Preprocess Pixels (Variety #4)
+    log.info('Processing 4...')
+    img_enhanced = blur_preprocess(img_bw)
+
+    # Detect Text with OCR
+    detection2 = ocr(img_enhanced, ocr_num=2)
+
+    # Match Detected Text to PHI
+    log.info('Matching 4...')
     detection2 = ocr_match(get_PHI(), detection2, ocr_num=2)
 
     # Combine detection results of different preprocessing
@@ -1084,19 +1138,34 @@ def count_date_similarity_to_today(input_date):
   today = datetime.date.today() #get today's date
   return sum([today.year == input_date.year, today.month == input_date.month, today.day == input_date.day])
   
-def datematcher(possibly_dates, text, fuzzy=False):
+def strip_non_alphanumeric_start_or_end(word):
+  """ strip non-alphanumeric characters at the beginning or end of a string"""
+  return re.sub(r"^\W+|\W+$", "", word)
+
+def datematcher(known_dateobjects, text, fuzzy=False, return_dict=False):
   """
-  @param possibly_dates: a list of strings of dates
+  @param known_dateobjects: a list of dateobjects
   @param text: the block of text that will be searched for dates
-  @return Returns dates exactly as found in text that match dates in input possibly_dates
+  @return Returns dates exactly as found in text that match dates in input known_dateobjects
 
   TODO (low priority): Explore enabling parser.parse(fuzzy=true) in: /usr/local/lib/python3.5/dist-packages/datefinder/__init__.py
   https://dateutil.readthedocs.io/en/stable/parser.html#dateutil.parser.parse
   """
   found_dates = []
-  returning = set()
+  if return_dict:
+    returning = {}
+  else:
+    returning = set()
+  text = str(text)
 
-  found_dates_dfinder = datefinder.find_dates(str(text), source=True) #finds all dates in text using datefinder
+  # To speed up computation don't try to match dates if we can till it's not going to be a date.
+  # Skip if not 2 or more numbers
+  if not re.match('.*[0-9].*[0-9].*', text.replace('\n','')):
+    return returning
+  if len(text) < 5:
+    return returning
+
+  found_dates_dfinder = datefinder.find_dates(text, source=True) #finds all dates in text using datefinder
   found_dates_dfinder = list(found_dates_dfinder)
   found_dates.extend(found_dates_dfinder) #add all the dates found from datefinder to the master list of dates
 
@@ -1114,19 +1183,34 @@ def datematcher(possibly_dates, text, fuzzy=False):
         'object' : found_date[0],
         'string' : found_date[1],
       }
-    if found_date['object'] in possibly_dates: 
-      returning.add(found_date['string'])
+    found_date['string'] = strip_non_alphanumeric_start_or_end(found_date['string']) # make cleaner string date for improved fuzzy matching performance
+    if found_date['object'] in known_dateobjects: 
+      if return_dict:
+        found_date['match_conf'] = 100
+        returning[found_date['string']] = found_date
+      else:
+        returning.add(found_date['string'])
 
     elif fuzzy: #not an exact match so should check if it is a fuzzy match
-      found_date_string = found_date['object'].strftime('%Y%m%d')
-      for datetime_object in possibly_dates:
-        date_string = datetime_object.strftime('%Y%m%d')
+      found_date_string = found_date['object'].strftime('%y%m%d')
+      for datetime_object in known_dateobjects:
+        date_string = datetime_object.strftime('%y%m%d')
 
         # The >=75 allows for two different digit swaps assuming 8 characters. And the >=5 confirms that the date is long enough to be an actual date not just a short string of random numbers. And the !=today() ignores "found" dates that match todays date because datefinder assumes today's date if there is missing date information
-        if fuzz.ratio(date_string, found_date_string) >= 75 and len(found_date['string']) >= 5 and found_date['object'].date() != datetime.datetime.today().date():
-          returning.add(found_date['string'])
-    
-  return list(returning)
+        match_conf = fuzz.ratio(date_string, found_date_string)
+        if match_conf >= 75 and len(found_date['string']) >= 5 and found_date['object'].date() != datetime.datetime.today().date():
+          if found_date['string'] == '13.00':
+            embed()
+          if return_dict:
+            found_date['match_conf'] = match_conf
+            returning[found_date['string']] = found_date
+          else:
+            returning.add(found_date['string'])
+
+  if return_dict:
+    return returning
+  else:
+    return list(returning)
 
 def to_short_fieldname(field_name):
   """ Example: "Patient's Birth Date" to "PatientBirthDate"""
@@ -1496,7 +1580,8 @@ def deidentify_header(dicom):
   # Prepare to De-Identify Metadata
   log.info('De-identifying DICOM header...')
   recipe = DeidRecipe(args.deid_recipe) # de-id rules
-  dicom_dict = get_identifiers([dicom_path], expand_sequences=True, config='deid_config.json')
+  config_filepath = os.path.abspath(os.path.expanduser(os.path.expandvars('/home/dsnider/aim-platform/image-archive/de-id/deid_config.json')))
+  dicom_dict = get_identifiers([dicom_path], expand_sequences=True, config=config_filepath)
   dicom_dict[dicom_path]['new_path'] = output_image_filepath
   dicom_dict[dicom_path]['orig_path'] = dicom_path
   dicom_dict[dicom_path]['generate_uid'] = generate_uid # Remember, the action found in deid.recipe is "REPLACE StudyInstanceUID func:generate_uid" so the key here needs to be "generate_uid"
