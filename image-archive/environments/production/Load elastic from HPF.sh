@@ -185,3 +185,15 @@ time python deid_dicoms.py \
   --log_PHI \
   --gifs \
   --overwrite_report
+
+
+
+# GET Filelist for "StationName:RADWORKSSA" (run on laptop)
+elasticdump \
+  --input=https://elasticimages.ccm.sickkids.ca \
+  --output=$ \
+  --headers='{"X-Requested-With": "224400"}' \
+  --searchBody='{"query":{"bool":{"must":[{"bool":{"must":[{"query_string":{"query":"StationName:RADWORKSSA"}},{"range":{"PatientAgeInt":{"gte":0,"lte":30,"boost":2}}}]}}]}}}' \
+| jq ._source.dicom_filepath | tee output.txt
+
+mv output.txt StationName_RADWORKSSA_filelist.txt
