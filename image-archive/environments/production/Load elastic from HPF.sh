@@ -214,8 +214,8 @@ export ELASTIC_INDEX='deid_image'
 export ELASTIC_DOC_TYPE='deid_image'
 cd ./image-archive/de-id/
 time python deid_dicoms.py \
-  --input_file "/hpf/largeprojects/diagimage_common//src/disk1//Images/NASLibrary10/2010/06/17/2360595/85538387.dcm" \
-  --input_base_path "/hpf/largeprojects/diagimage_common/src/" \
+  --input_file "/hpf/largeprojects/diagimage_common/src/disk1/Images/NASLibrary10/2010/06/17/2360595/85538387.dcm" \
+  --input_base_path "/hpf/largeprojects/diagimage_common/" \
   --input_report_base_path "/hpf/largeprojects/diagimage_common/shared/reports/" \
   --output_folder "/hpf/largeprojects/diagimage_common/shared/deid-all/" \
   --output_folder_suffix "" \
@@ -225,8 +225,15 @@ time python deid_dicoms.py \
   --gifs \
   --overwrite_report
 
+# Strip quotes from filename 
+sed -i 's/"//g' ~/StationName_RADWORKSSA_filelist.txt
+
+# Cleanup (optional)
+mkdir -p ~/SubsetStationName/
+rm ~/SubsetStationName/*
+
 # Split Files
-split -l 40 StationName_RADWORKSSA_filelist.txt  Subset_StationName # split list of files into smaller groups
+split -l 40 ~/StationName_RADWORKSSA_filelist.txt  ~/SubsetStationName/Subset_StationName # split list of files into smaller groups
 
 # Ingest and deid all images
 qlogin

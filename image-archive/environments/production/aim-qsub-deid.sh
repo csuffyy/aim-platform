@@ -26,7 +26,7 @@ module load tesseract/4.0.0
 
 python ~/aim-platform/image-archive/de-id/deid_dicoms.py \
   --input_filelist $INPUT_FILE_LIST \
-  --input_base_path "/hpf/largeprojects/diagimage_common/src/" \
+  --input_base_path "/hpf/largeprojects/diagimage_common/" \
   --input_report_base_path "/hpf/largeprojects/diagimage_common/shared/reports/" \
   --output_folder "/hpf/largeprojects/diagimage_common/shared/deid-all/" \
   --output_folder_suffix "" \
