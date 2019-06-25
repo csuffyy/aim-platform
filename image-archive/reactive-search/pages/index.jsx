@@ -35,6 +35,10 @@ if (FILESERVER_TOKEN != '' && FILESERVER_TOKEN != undefined) {
   FILESERVER_SECRET_DCM = '-0TO0-' + AUTH_TOKEN + '.dcm'
 }
 
+var FILESERVER_SECRET = '';
+var FILESERVER_SECRET_DCM = '';
+var STATIC_PREFIX = '';
+
 function redSearchBar() {
   if (typeof window !== 'undefined') {
     var elem = document.getElementsByClassName("search-bar");
@@ -184,14 +188,14 @@ const components = {
               href={
                 DWV_URL + 
                 "index.html?input=" + 
-                STATIC_WEBSERVER_URL +
+                STATIC_WEBSERVER_URL + STATIC_PREFIX +
                 res.dicom_webpath + FILESERVER_SECRET_DCM
               }
             >
 
               <div className="img">
                 <img
-                  src={STATIC_WEBSERVER_URL + res.thumbnail_webpath + FILESERVER_SECRET}
+                  src={STATIC_WEBSERVER_URL + STATIC_PREFIX + res.thumbnail_webpath + FILESERVER_SECRET}
                   alt={res.original_title}
                   className="result-image"
                 />
@@ -269,7 +273,7 @@ const components = {
       url:
         DWV_URL + 
         "index.html?input=" + 
-        STATIC_WEBSERVER_URL +
+        STATIC_WEBSERVER_URL + STATIC_PREFIX +
         res.dicom_webpath + FILESERVER_SECRET_DCM
     }},
     innerClass: {

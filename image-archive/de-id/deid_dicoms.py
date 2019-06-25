@@ -86,11 +86,6 @@ REPORT_DOC_TYPE = os.environ.get('REPORT_ELASTIC_DOC_TYPE','report')
 DEID_REPORT_INDEX_NAME = os.environ.get('DEID_REPORT_ELASTIC_INDEX','deid_report')
 DEID_REPORT_DOC_TYPE = os.environ.get('DEID_REPORT_ELASTIC_DOC_TYPE','deid_report')
 ENVIRON = os.environ['ENVIRON']
-FILESERVER_IP = os.environ['FILESERVER_IP']
-FILESERVER_PORT = os.environ['FILESERVER_PORT']
-FILESERVER_TOKEN = os.environ.get('FILESERVER_TOKEN','')
-FILESERVER_DICOM_PATH = os.environ['FILESERVER_DICOM_PATH']
-FILESERVER_THUMBNAIL_PATH = os.environ['FILESERVER_THUMBNAIL_PATH']
 MATCH_CONF_THRESHOLD = 50
 TOO_MUCH_TEXT_THRESHOLD = 0
 MAX_NUM_PIXELS = 36000000 # 36 million pixels calculated as 2000x2000 plus RESIZE_FACTOR=3, so 6000x6000. Anymore takes too long)
@@ -840,7 +835,8 @@ def process_pixels(dicom):
 
   # Skip if image is too large (this just takes too long)
   if img_bw.size > MAX_NUM_PIXELS:
-    log.warning('Couldnt read pixels so skipping: %s' % dicom_path)
+    log.warning('Too many pixels so skipping: %s' % dicom_path)
+    return
 
   # Triage for text. Count number of egdes, if few edges then OCR is not needed so return early.
   # log.info('Triaging for text...')
@@ -1610,11 +1606,6 @@ def log_settings():
   log.info("Settings: %s=%s" % ('DEID_REPORT_INDEX_NAME', DEID_REPORT_INDEX_NAME))
   log.info("Settings: %s=%s" % ('DEID_REPORT_DOC_TYPE', DEID_REPORT_DOC_TYPE))
   log.info("Settings: %s=%s" % ('ENVIRON', ENVIRON))
-  log.info("Settings: %s=%s" % ('FILESERVER_IP', FILESERVER_IP))
-  log.info("Settings: %s=%s" % ('FILESERVER_PORT', FILESERVER_PORT))
-  log.info("Settings: %s=%s" % ('FILESERVER_TOKEN', FILESERVER_TOKEN))
-  log.info("Settings: %s=%s" % ('FILESERVER_DICOM_PATH', FILESERVER_DICOM_PATH))
-  log.info("Settings: %s=%s" % ('FILESERVER_THUMBNAIL_PATH', FILESERVER_THUMBNAIL_PATH))
   log.info("Settings: %s=%s" % ('MATCH_CONF_THRESHOLD', MATCH_CONF_THRESHOLD))
   log.info("Settings: %s=%s" % ('TOO_MUCH_TEXT_THRESHOLD', TOO_MUCH_TEXT_THRESHOLD))
   log.info("Settings: %s=%s" % ('RESIZE_FACTOR', RESIZE_FACTOR))

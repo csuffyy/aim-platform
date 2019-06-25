@@ -23,186 +23,186 @@ export DWV_URL='https://dwvimages.ccm.sickkids.ca/'
 source /etc/secrets.sh
 
 
-# Create index
-curl -s -H 'Content-Type: application/json' -X PUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX -w "\n" -d  @- << EOF
-{
-  "mappings": {
-    "$ELASTIC_DOC_TYPE": {
-      "date_detection": false,
-      "properties": {
-        "descriptions": {
-          "type": "text",
-          "fields": {
-            "raw": {
-              "type": "keyword"
-            }
-          },
-          "analyzer": "standard"
-        },
-        "Modality": {
-          "type": "text",
-          "fields": {
-            "raw": {
-              "type": "keyword"
-            }
-          },
-          "analyzer": "standard"
-        },
-        "StudyDescription": {
-          "type": "text",
-          "copy_to": "descriptions",
-          "fields": {
-            "raw": {
-              "type": "keyword"
-            }
-          },
-          "analyzer": "standard"
-        },
-        "ReasonForStudy": {
-          "type": "text",
-          "copy_to": "descriptions",
-          "fields": {
-            "raw": {
-              "type": "keyword"
-            }
-          },
-          "analyzer": "standard"
-        },
-        "SeriesDescription": {
-          "type": "text",
-          "copy_to": "descriptions",
-          "fields": {
-            "raw": {
-              "type": "keyword"
-            }
-          },
-          "analyzer": "standard"
-        },
-        "StudyComments": {
-          "type": "text",
-          "copy_to": "descriptions",
-          "fields": {
-            "raw": {
-              "type": "keyword"
-            }
-          },
-          "analyzer": "standard"
-        },
-        "Manufacturer": {
-          "type": "text",
-          "fields": {
-            "raw": {
-              "type": "keyword"
-            }
-          },
-          "analyzer": "standard"
-        },
-        "InstitutionalDepartmentName": {
-          "type": "text",
-          "fields": {
-            "raw": {
-              "type": "keyword"
-            }
-          },
-          "analyzer": "standard"
-        },
-        "InstitutionName": {
-          "type": "text",
-          "fields": {
-            "raw": {
-              "type": "keyword"
-            }
-          },
-          "analyzer": "standard"
-        },
-        "BodyPartExamined": {
-          "type": "text",
-          "fields": {
-            "raw": {
-              "type": "keyword"
-            }
-          },
-          "analyzer": "standard"
-        },
-        "PatientSex": {
-          "type": "text",
-          "fields": {
-            "raw": {
-              "type": "keyword"
-            }
-          },
-          "analyzer": "standard"
-        }
-      }
-    }
-  }
-}
-EOF
+# # Create index
+# curl -s -H 'Content-Type: application/json' -X PUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX -w "\n" -d  @- << EOF
+# {
+#   "mappings": {
+#     "$ELASTIC_DOC_TYPE": {
+#       "date_detection": false,
+#       "properties": {
+#         "descriptions": {
+#           "type": "text",
+#           "fields": {
+#             "raw": {
+#               "type": "keyword"
+#             }
+#           },
+#           "analyzer": "standard"
+#         },
+#         "Modality": {
+#           "type": "text",
+#           "fields": {
+#             "raw": {
+#               "type": "keyword"
+#             }
+#           },
+#           "analyzer": "standard"
+#         },
+#         "StudyDescription": {
+#           "type": "text",
+#           "copy_to": "descriptions",
+#           "fields": {
+#             "raw": {
+#               "type": "keyword"
+#             }
+#           },
+#           "analyzer": "standard"
+#         },
+#         "ReasonForStudy": {
+#           "type": "text",
+#           "copy_to": "descriptions",
+#           "fields": {
+#             "raw": {
+#               "type": "keyword"
+#             }
+#           },
+#           "analyzer": "standard"
+#         },
+#         "SeriesDescription": {
+#           "type": "text",
+#           "copy_to": "descriptions",
+#           "fields": {
+#             "raw": {
+#               "type": "keyword"
+#             }
+#           },
+#           "analyzer": "standard"
+#         },
+#         "StudyComments": {
+#           "type": "text",
+#           "copy_to": "descriptions",
+#           "fields": {
+#             "raw": {
+#               "type": "keyword"
+#             }
+#           },
+#           "analyzer": "standard"
+#         },
+#         "Manufacturer": {
+#           "type": "text",
+#           "fields": {
+#             "raw": {
+#               "type": "keyword"
+#             }
+#           },
+#           "analyzer": "standard"
+#         },
+#         "InstitutionalDepartmentName": {
+#           "type": "text",
+#           "fields": {
+#             "raw": {
+#               "type": "keyword"
+#             }
+#           },
+#           "analyzer": "standard"
+#         },
+#         "InstitutionName": {
+#           "type": "text",
+#           "fields": {
+#             "raw": {
+#               "type": "keyword"
+#             }
+#           },
+#           "analyzer": "standard"
+#         },
+#         "BodyPartExamined": {
+#           "type": "text",
+#           "fields": {
+#             "raw": {
+#               "type": "keyword"
+#             }
+#           },
+#           "analyzer": "standard"
+#         },
+#         "PatientSex": {
+#           "type": "text",
+#           "fields": {
+#             "raw": {
+#               "type": "keyword"
+#             }
+#           },
+#           "analyzer": "standard"
+#         }
+#       }
+#     }
+#   }
+# }
+# EOF
 
-curl -s -X POST http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_close -w "\n"
+# curl -s -X POST http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_close -w "\n"
 
-# followed by the actual addition of analyzers with:
-curl -s -H 'Content-Type: application/json' -X PUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -w "\n" -d  @- << EOF
-{
-  "analysis" : {
-    "analyzer":{
-        "autosuggest_analyzer": {
-            "filter": [
-                "lowercase",
-                "asciifolding",
-                "autosuggest_filter"
-            ],
-            "tokenizer": "standard",
-            "type": "custom"
-        },
-        "ngram_analyzer": {
-            "filter": [
-                "lowercase",
-                "asciifolding",
-                "ngram_filter"
-            ],
-            "tokenizer": "standard",
-            "type": "custom"
-        }
-    },
-    "filter": {
-        "autosuggest_filter": {
-            "max_gram": "20",
-            "min_gram": "1",
-            "token_chars": [
-                "letter",
-                "digit",
-                "punctuation",
-                "symbol"
-            ],
-            "type": "edge_ngram"
-        },
-        "ngram_filter": {
-            "max_gram": "9",
-            "min_gram": "2",
-            "token_chars": [
-                "letter",
-                "digit",
-                "punctuation",
-                "symbol"
-            ],
-            "type": "ngram"
-        }
-    }
-  }
-}
-EOF
+# # followed by the actual addition of analyzers with:
+# curl -s -H 'Content-Type: application/json' -X PUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -w "\n" -d  @- << EOF
+# {
+#   "analysis" : {
+#     "analyzer":{
+#         "autosuggest_analyzer": {
+#             "filter": [
+#                 "lowercase",
+#                 "asciifolding",
+#                 "autosuggest_filter"
+#             ],
+#             "tokenizer": "standard",
+#             "type": "custom"
+#         },
+#         "ngram_analyzer": {
+#             "filter": [
+#                 "lowercase",
+#                 "asciifolding",
+#                 "ngram_filter"
+#             ],
+#             "tokenizer": "standard",
+#             "type": "custom"
+#         }
+#     },
+#     "filter": {
+#         "autosuggest_filter": {
+#             "max_gram": "20",
+#             "min_gram": "1",
+#             "token_chars": [
+#                 "letter",
+#                 "digit",
+#                 "punctuation",
+#                 "symbol"
+#             ],
+#             "type": "edge_ngram"
+#         },
+#         "ngram_filter": {
+#             "max_gram": "9",
+#             "min_gram": "2",
+#             "token_chars": [
+#                 "letter",
+#                 "digit",
+#                 "punctuation",
+#                 "symbol"
+#             ],
+#             "type": "ngram"
+#         }
+#     }
+#   }
+# }
+# EOF
 
-# Increase number of allowed fields
-curl -s -H 'Content-Type: application/json' -XPUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
-{
-  "index.mapping.total_fields.limit": 100000
-}'
+# # Increase number of allowed fields
+# curl -s -H 'Content-Type: application/json' -XPUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
+# {
+#   "index.mapping.total_fields.limit": 100000
+# }'
 
-# Reduce replica count to 0 to prefer performance over availability
-curl -s -H 'Content-Type: application/json' -XPUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
-{
-    "index" : {
-        "number_of_replicas" : 0
-    }
-}'
+# # Reduce replica count to 0 to prefer performance over availability
+# curl -s -H 'Content-Type: application/json' -XPUT http://$ELASTIC_IP:$ELASTIC_PORT/$ELASTIC_INDEX/_settings -d '
+# {
+#     "index" : {
+#         "number_of_replicas" : 0
+#     }
+# }'
