@@ -182,8 +182,11 @@ patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/rea
 # 4. Copy the files created by running yarn into node-modules
 # 5. Restart React
 # BELOW IS CODE TO EXECUTE BOTH 3&4 TOGETHER:
-cd /home/ubuntu/aim-platform/image-archive/reactive-search/appbase-js
+cd ~
+git clone https://github.com/appbaseio/appbase-js
+cd ~/appbase-js
 yarn && cp ./dist/appbase-js.* ~/aim-platform/image-archive/reactive-search/node_modules/appbase-js/dist
+bash timeout-in-min-instead-of-1ms.sh
 
 # Patch Datefinder
 patch --verbose --ignore-whitespace -p 10 -F 10 /usr/local/lib/python3.5/dist-packages/datefinder/constants.py < ~/aim-platform/image-archive/de-id/datefinder/find-all-dates.patch

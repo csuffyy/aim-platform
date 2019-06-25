@@ -1,0 +1,1 @@
+sed -i 's/1ms/60000ms/g' node_modules/appbase-js/dist/appbase-js.*
