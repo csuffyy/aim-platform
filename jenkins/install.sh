@@ -134,7 +134,6 @@ curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
 echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
 sudo apt update
 sudo apt install yarn nodejs
-cp -r image-archive/reactive-search/appbase-js/* image-archive/reactive-search/node_modules/appbase-js/
 
 # Start our entire application 
 cd ~/aim-platform/image-archive
@@ -173,6 +172,7 @@ patch --verbose --ignore-whitespace -p 10 -F 10 /usr/local/lib/python3.5/dist-pa
 patch --verbose --ignore-whitespace -p 10 -F 10 /usr/local/lib/python3.5/dist-packages/datefinder/__init__.py < aim-platform/image-archive/de-id/datefinder/overflowerror-fix.patch
 patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/reactive-search/node_modules/@appbaseio/reactivesearch/lib/components/result/ReactiveList.js < see-more-stats-after-querying.patch
 patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/reactive-search/node_modules/@appbaseio/reactivesearch/lib/components/date/DateRange.js < calendar-can-be-searched.patch
+patch --verbose --ignore-whitespace -p 10 -F 10 ~/aim-platform/image-archive/reactive-search/node_modules/appbase-js/dist/appbase-js.cjs.js <  ~/aim-platform/image-archive/reactive-search/appbase-js-200-OK-msearch.patch
 npm run dev &
 
 # Fix HTTP 200 OK response with errors by checking for errors
