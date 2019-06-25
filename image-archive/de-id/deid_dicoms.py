@@ -830,14 +830,15 @@ def process_pixels(dicom):
 
   img_bw, img_orig, dicom = ret
 
+  # Skip if image is too large (this just takes too long)
+  total_pixel_count = img_bw.shape[1]*RESIZE_FACTOR * img_bw.shape[0]*RESIZE_FACTOR
+  if total_pixel_count > MAX_NUM_PIXELS:
+    log.warning('Too many pixels so skipping: %s' % dicom_path)
+    return
+
   # Upscale image to improve OCR
   img_bw = cv2.resize(img_bw, dsize=(int(img_bw.shape[1]*RESIZE_FACTOR), int(img_bw.shape[0]*RESIZE_FACTOR)), interpolation=cv2.INTER_CUBIC)
   img_orig = cv2.resize(img_orig, dsize=(int(img_orig.shape[1]*RESIZE_FACTOR), int(img_orig.shape[0]*RESIZE_FACTOR)), interpolation=cv2.INTER_CUBIC)
-
-  # Skip if image is too large (this just takes too long)
-  if img_bw.size > MAX_NUM_PIXELS:
-    log.warning('Too many pixels so skipping: %s' % dicom_path)
-    return
 
   # Triage for text. Count number of egdes, if few edges then OCR is not needed so return early.
   # log.info('Triaging for text...')
