@@ -11,7 +11,7 @@
 +            return entry.hasOwnProperty('error');
 +          }).length;
 +          console.log(errorResponses);
-+          if (allResponses === errorResponses) {
++          if (errorResponses > 0) {
 +            return reject(res2);
 +          }
 +        });
