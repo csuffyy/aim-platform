@@ -67,6 +67,20 @@ echo "Unique SeriesNumber: $(echo $Unique_SeriesNumber | sed ':a;s/\B[0-9]\{3\}\
 # Count Pixels
 curl -s -X POST "localhost:9200/image/_search" -H 'Content-Type: application/json' --data-binary @count_pixel_agg.json | jq .aggregations.type_count.value
 
+# Count header PHI
+curl -s -H 'Content-Type: application/json' -XGET 'http://127.0.0.1:9200/count/count/_search' -d '
+{
+    "size" : 0,
+    "query" : { "match": { "type": "header_PHI" } },
+    "aggs" : {
+        "header_PHI_count" : {
+            "sum" : { 
+                  "field": "count"
+            }
+          }
+    }
+}' | jq .
+
 # Count all values in all fields
 for FIELD_NAME in $(curl -s -XGET localhost:9200/image/_mapping | jq .image.mappings.image.properties | jq 'keys' | jq .[]); do FIELD_NAME=$(echo "$FIELD_NAME" | tr -d '"') ;  NUM_NOT_NULL=$(curl -s -X POST "localhost:9200/image/_search?size=0" -H 'Content-Type: application/json' -d'
 {
