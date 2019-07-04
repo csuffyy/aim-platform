@@ -44,6 +44,7 @@ function redSearchBar() {
     var elem = document.getElementsByClassName("search-bar");
     if (elem) {
       elem[0].style.border = '2px solid #f95959';
+      document.getElementsByClassName('Result_card')[0].innerHTML = 'No Results found.';
     }
   }
 }
