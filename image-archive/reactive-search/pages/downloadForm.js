@@ -90,6 +90,7 @@ class DiannaExample extends Component {
         this.state.exampleSearch_style ='0px solid grey' //border is regular grey
         this.state.exampleColour = "#495057"; //text is regular grey font
     }
+
     else { //no images found so red box and text is shown with everything else being set to 0
         this.state.search = "No results found, please alter your search.";
         this.state.images = 0;
@@ -145,10 +146,30 @@ class DiannaExample extends Component {
     var comment_split = comments.split("\n");
     comments = comment_split.join("%0D%0A");
 
-    window.open(
-    "mailto:daniel.snider@sickkids.ca?subject=Diagnostic Imaging Archive Download Request&body=User: " + name + "%0D%0A%0D%0A Date: " + date +"%0D%0A%0D%0A Search: " + search + "%0D%0A%0D%0A Number of Images: " + numImages + " %0D%0A%0D%0A Number of Exams: " + numExams + "%0D%0A%0D%0A Number of Patients: " + numPatients + "%0D%0A%0D%0A Email: " + email + "%0D%0A%0D%0A PI: " + PI + "%0D%0A%0D%0A Use Case: " + useCase + "%0D%0A%0D%0A Other Comments: " + comments + "%0D%0A%0D%0A",
-    '_blank' // <- This is what makes it open in a new window.
-  );
+    if (this.state.examplePatient_display != 'none' && this.state.exampleExam_display != 'none') {
+      window.open(
+      "mailto:daniel.snider@sickkids.ca?subject=Diagnostic Imaging Archive Download Request&body=User: " + name + "%0D%0A%0D%0A Date: " + date +"%0D%0A%0D%0A Search: " + search + "%0D%0A%0D%0A Number of Images: " + numImages + " %0D%0A%0D%0A Number of Exams: " + numExams + "%0D%0A%0D%0A Number of Patients: " + numPatients + "%0D%0A%0D%0A Email: " + email + "%0D%0A%0D%0A PI: " + PI + "%0D%0A%0D%0A Use Case: " + useCase + "%0D%0A%0D%0A Other Comments: " + comments + "%0D%0A%0D%0A",
+      '_blank' // <- This is what makes it open in a new window.
+      );
+    }
+    else if (this.state.exampleExam_display == 'none' && this.state.examplePatient_display == 'none') {
+      window.open(
+      "mailto:daniel.snider@sickkids.ca?subject=Diagnostic Imaging Archive Download Request&body=User: " + name + "%0D%0A%0D%0A Date: " + date +"%0D%0A%0D%0A Search: " + search + "%0D%0A%0D%0A Number of Images: " + numImages + " %0D%0A%0D%0A Email: " + email + "%0D%0A%0D%0A PI: " + PI + "%0D%0A%0D%0A Use Case: " + useCase + "%0D%0A%0D%0A Other Comments: " + comments + "%0D%0A%0D%0A",
+      '_blank' // <- This is what makes it open in a new window.
+      );
+    }
+    else if (this.state.examplePatient_display == 'none') {
+      window.open(
+      "mailto:daniel.snider@sickkids.ca?subject=Diagnostic Imaging Archive Download Request&body=User: " + name + "%0D%0A%0D%0A Date: " + date +"%0D%0A%0D%0A Search: " + search + "%0D%0A%0D%0A Number of Images: " + numImages + " %0D%0A%0D%0A Number of Exams: " + numExams + "%0D%0A%0D%0A Email: " + email + "%0D%0A%0D%0A PI: " + PI + "%0D%0A%0D%0A Use Case: " + useCase + "%0D%0A%0D%0A Other Comments: " + comments + "%0D%0A%0D%0A",
+      '_blank' // <- This is what makes it open in a new window.
+      );
+    }
+    else if (this.state.exampleExam_display == 'none') {
+      window.open(
+      "mailto:daniel.snider@sickkids.ca?subject=Diagnostic Imaging Archive Download Request&body=User: " + name + "%0D%0A%0D%0A Date: " + date +"%0D%0A%0D%0A Search: " + search + "%0D%0A%0D%0A Number of Images: " + numImages + " %0D%0A%0D%0A Number of Patients: " + numPatients + "%0D%0A%0D%0A Email: " + email + "%0D%0A%0D%0A PI: " + PI + "%0D%0A%0D%0A Use Case: " + useCase + "%0D%0A%0D%0A Other Comments: " + comments + "%0D%0A%0D%0A",
+      '_blank' // <- This is what makes it open in a new window.
+      );
+    }
 
 
     // window.location.href = "mailto:daniel.snider@sickkids.ca?subject=Diagnostic Imaging Archive Document Request&body=User: " + name + "%0D%0A%0D%0A Date: " + date +"%0D%0A%0D%0A Search: " + search + "%0D%0A%0D%0A Number of Images: " + numImages + " %0D%0A%0D%0A Number of Exams: " + numExams + "%0D%0A%0D%0A Number of Patients: " + numPatients + "%0D%0A%0D%0A Email: " + email + "%0D%0A%0D%0A PI: " + PI + "%0D%0A%0D%0A Use Case: " + useCase + "%0D%0A%0D%0A Other Comments: " + comments + "%0D%0A%0D%0A";
